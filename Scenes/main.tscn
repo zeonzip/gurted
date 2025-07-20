@@ -1,24 +1,74 @@
-[gd_scene load_steps=10 format=3 uid="uid://bytm7bt2s4ak8"]
+[gd_scene load_steps=22 format=3 uid="uid://bytm7bt2s4ak8"]
 
 [ext_resource type="Script" uid="uid://bg5iqnwic1rio" path="res://Scripts/main.gd" id="1_8q3xr"]
+[ext_resource type="Texture2D" uid="uid://df1m4j7uxi63v" path="res://Icons/chevron-down.svg" id="2_6bp64"]
 [ext_resource type="Texture2D" uid="uid://dioe63fr47oq7" path="res://Scripts/youtube.png" id="2_bo1nx"]
 [ext_resource type="Texture2D" uid="uid://bf0vx7qwo28k6" path="res://Icons/search.svg" id="3_8gbba"]
 [ext_resource type="Texture2D" uid="uid://bp42ccs2nmbmw" path="res://Icons/arrow-left.svg" id="3_21xkr"]
 [ext_resource type="Texture2D" uid="uid://dyyylow47qd0k" path="res://Icons/arrow-right.svg" id="4_6bp64"]
 [ext_resource type="Texture2D" uid="uid://cu4hjoba6etf" path="res://Icons/rotate-cw.svg" id="5_344ge"]
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_344ge"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hptm8"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.169245, 0.169245, 0.169245, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6bp64"]
+bg_color = Color(0.109804, 0.109804, 0.109804, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6bp64"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ynf5e"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.169245, 0.169245, 0.169245, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_344ge"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.109804, 0.109804, 0.109804, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d1ilt"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+draw_center = false
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ynf5e"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hptm8"]
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8gbba"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8gbba"]
-corner_radius_top_left = 9
-corner_radius_top_right = 9
-corner_radius_bottom_right = 9
-corner_radius_bottom_left = 9
-expand_margin_left = 35.0
+bg_color = Color(0.168627, 0.168627, 0.168627, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+expand_margin_left = 40.0
 
 [sub_resource type="Theme" id="Theme_jjvhh"]
 LineEdit/styles/focus = SubResource("StyleBoxEmpty_8gbba")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_8gbba")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6iyac"]
+bg_color = Color(0.105882, 0.105882, 0.105882, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_21xkr"]
+bg_color = Color(0.168627, 0.168627, 0.168627, 1)
 
 [node name="Control" type="Control"]
 layout_mode = 3
@@ -29,73 +79,121 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_8q3xr")
 
-[node name="ColorRect" type="ColorRect" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = 10.0
-offset_right = -10.0
-offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="HFlowContainer" type="HFlowContainer" parent="VBoxContainer"]
+[node name="Spacer" type="Control" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="VBoxContainer/HFlowContainer"]
-custom_minimum_size = Vector2(250, 40)
+[node name="TabContainer" type="HFlowContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Spacer" type="Control" parent="VBoxContainer/TabContainer"]
+layout_mode = 2
+
+[node name="Popup" type="Button" parent="VBoxContainer/TabContainer"]
+custom_minimum_size = Vector2(42, 0)
+layout_mode = 2
+theme_override_styles/focus = SubResource("StyleBoxEmpty_344ge")
+theme_override_styles/hover = SubResource("StyleBoxFlat_hptm8")
+theme_override_styles/normal = SubResource("StyleBoxFlat_6bp64")
+icon = ExtResource("2_6bp64")
+icon_alignment = 1
+
+[node name="Button" type="Button" parent="VBoxContainer/TabContainer"]
+custom_minimum_size = Vector2(250, 42)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_constants/h_separation = 8
+theme_override_constants/icon_max_width = 23
+theme_override_styles/focus = SubResource("StyleBoxEmpty_6bp64")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ynf5e")
+theme_override_styles/normal = SubResource("StyleBoxFlat_344ge")
 text = "(2) YouTube - Home Page testing"
 icon = ExtResource("2_bo1nx")
 alignment = 0
 text_overrun_behavior = 3
-expand_icon = true
 
-[node name="Button2" type="Button" parent="VBoxContainer/HFlowContainer"]
-custom_minimum_size = Vector2(50, 40)
+[node name="Button2" type="Button" parent="VBoxContainer/TabContainer"]
+custom_minimum_size = Vector2(250, 42)
 layout_mode = 2
-text = "hello world"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/h_separation = 8
+theme_override_constants/icon_max_width = 23
+theme_override_styles/focus = SubResource("StyleBoxEmpty_6bp64")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ynf5e")
+theme_override_styles/normal = SubResource("StyleBoxFlat_344ge")
+text = "(2) YouTube - Home Page testing"
+icon = ExtResource("2_bo1nx")
+alignment = 0
+text_overrun_behavior = 3
 
-[node name="Button3" type="Button" parent="VBoxContainer/HFlowContainer"]
-custom_minimum_size = Vector2(50, 40)
+[node name="Button3" type="Button" parent="VBoxContainer/TabContainer"]
+custom_minimum_size = Vector2(250, 42)
 layout_mode = 2
-text = "hello world"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/h_separation = 8
+theme_override_constants/icon_max_width = 23
+theme_override_styles/focus = SubResource("StyleBoxEmpty_6bp64")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ynf5e")
+theme_override_styles/normal = SubResource("StyleBoxFlat_344ge")
+text = "(2) YouTube - Home Page testing"
+icon = ExtResource("2_bo1nx")
+alignment = 0
+text_overrun_behavior = 3
 
-[node name="Button4" type="Button" parent="VBoxContainer/HFlowContainer"]
-custom_minimum_size = Vector2(50, 40)
+[node name="Button4" type="Button" parent="VBoxContainer/TabContainer"]
+custom_minimum_size = Vector2(250, 42)
 layout_mode = 2
-text = "hello world"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/h_separation = 8
+theme_override_constants/icon_max_width = 23
+theme_override_styles/focus = SubResource("StyleBoxEmpty_6bp64")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ynf5e")
+theme_override_styles/normal = SubResource("StyleBoxFlat_344ge")
+text = "(2) YouTube - Home Page testing"
+icon = ExtResource("2_bo1nx")
+alignment = 0
+text_overrun_behavior = 3
 
-[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+[node name="Spacer2" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 45)
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Spacer" type="Control" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
 [node name="BackButton" type="Button" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_d1ilt")
 icon = ExtResource("3_21xkr")
+icon_alignment = 1
 
 [node name="ForwardButton" type="Button" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ynf5e")
 icon = ExtResource("4_6bp64")
+icon_alignment = 1
 
 [node name="ReloadButton" type="Button" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_hptm8")
 icon = ExtResource("5_344ge")
+icon_alignment = 1
 
 [node name="Control" type="Control" parent="VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(32, 0)
@@ -110,9 +208,42 @@ caret_blink = true
 
 [node name="TextureRect" type="TextureRect" parent="VBoxContainer/HBoxContainer/LineEdit"]
 layout_mode = 2
-offset_left = -27.0
-offset_right = -3.0
-offset_bottom = 37.0
+offset_left = -32.0
+offset_right = -2.0
+offset_bottom = 53.0
 scale = Vector2(0.85, 0.85)
 texture = ExtResource("3_8gbba")
 stretch_mode = 5
+
+[node name="Spacer3" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="BottomContainer" type="Control" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ColorRect2" type="ColorRect" parent="VBoxContainer/BottomContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="."]
+z_index = -1
+layout_mode = 2
+offset_top = 50.0
+offset_right = 1920.0
+offset_bottom = 117.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_6iyac")
+
+[node name="Panel2" type="Panel" parent="."]
+z_index = -2
+layout_mode = 2
+offset_right = 1920.0
+offset_bottom = 117.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_21xkr")
