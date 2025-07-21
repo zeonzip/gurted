@@ -2,18 +2,20 @@
 
 [ext_resource type="Script" uid="uid://bg5iqnwic1rio" path="res://Scripts/main.gd" id="1_8q3xr"]
 [ext_resource type="Texture2D" uid="uid://df1m4j7uxi63v" path="res://Icons/chevron-down.svg" id="2_6bp64"]
-[ext_resource type="Texture2D" uid="uid://dioe63fr47oq7" path="res://Scripts/youtube.png" id="2_bo1nx"]
+[ext_resource type="Script" uid="uid://cy0c74thgjwok" path="res://Scripts/TabContainer.gd" id="2_hptm8"]
 [ext_resource type="Texture2D" uid="uid://bf0vx7qwo28k6" path="res://Icons/search.svg" id="3_8gbba"]
 [ext_resource type="Texture2D" uid="uid://bp42ccs2nmbmw" path="res://Icons/arrow-left.svg" id="3_21xkr"]
 [ext_resource type="Texture2D" uid="uid://dyyylow47qd0k" path="res://Icons/arrow-right.svg" id="4_6bp64"]
+[ext_resource type="PackedScene" uid="uid://sqhcxhcre081" path="res://Scenes/Tab.tscn" id="4_344ge"]
 [ext_resource type="Texture2D" uid="uid://cu4hjoba6etf" path="res://Icons/rotate-cw.svg" id="5_344ge"]
+[ext_resource type="Texture2D" uid="uid://cehbtwq6gq0cn" path="res://Icons/plus.svg" id="5_ynf5e"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_344ge"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hptm8"]
 content_margin_left = 8.0
 content_margin_right = 8.0
-bg_color = Color(0.169245, 0.169245, 0.169245, 1)
+bg_color = Color(0, 0, 0, 1)
 corner_radius_top_left = 15
 corner_radius_top_right = 15
 corner_radius_bottom_right = 15
@@ -21,34 +23,29 @@ corner_radius_bottom_left = 15
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6bp64"]
 bg_color = Color(0.109804, 0.109804, 0.109804, 1)
-corner_radius_top_left = 15
-corner_radius_top_right = 15
-corner_radius_bottom_right = 15
-corner_radius_bottom_left = 15
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6bp64"]
+draw_center = false
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ynf5e"]
 content_margin_left = 8.0
 content_margin_right = 8.0
-bg_color = Color(0.169245, 0.169245, 0.169245, 1)
-corner_radius_top_left = 15
-corner_radius_top_right = 15
+bg_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 50
+corner_radius_top_right = 50
+corner_radius_bottom_right = 50
+corner_radius_bottom_left = 50
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_344ge"]
-content_margin_left = 8.0
-content_margin_right = 8.0
-bg_color = Color(0.109804, 0.109804, 0.109804, 1)
-corner_radius_top_left = 15
-corner_radius_top_right = 15
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_d1ilt"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fdnlq"]
+bg_color = Color(0.168627, 0.168627, 0.168627, 1)
+corner_radius_top_left = 50
+corner_radius_top_right = 50
+corner_radius_bottom_right = 50
+corner_radius_bottom_left = 50
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d1ilt"]
 bg_color = Color(0.6, 0.6, 0.6, 0)
 draw_center = false
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ynf5e"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hptm8"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8gbba"]
 
@@ -92,74 +89,36 @@ layout_mode = 2
 
 [node name="TabContainer" type="HFlowContainer" parent="VBoxContainer"]
 layout_mode = 2
+script = ExtResource("2_hptm8")
 
 [node name="Spacer" type="Control" parent="VBoxContainer/TabContainer"]
 layout_mode = 2
 
 [node name="Popup" type="Button" parent="VBoxContainer/TabContainer"]
-custom_minimum_size = Vector2(42, 0)
+custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 theme_override_styles/focus = SubResource("StyleBoxEmpty_344ge")
 theme_override_styles/hover = SubResource("StyleBoxFlat_hptm8")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_6bp64")
 theme_override_styles/normal = SubResource("StyleBoxFlat_6bp64")
 icon = ExtResource("2_6bp64")
 icon_alignment = 1
 
-[node name="Button" type="Button" parent="VBoxContainer/TabContainer"]
-custom_minimum_size = Vector2(250, 42)
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/TabContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_constants/h_separation = 8
-theme_override_constants/icon_max_width = 23
-theme_override_styles/focus = SubResource("StyleBoxEmpty_6bp64")
-theme_override_styles/hover = SubResource("StyleBoxFlat_ynf5e")
-theme_override_styles/normal = SubResource("StyleBoxFlat_344ge")
-text = "(2) YouTube - Home Page testing"
-icon = ExtResource("2_bo1nx")
-alignment = 0
-text_overrun_behavior = 3
 
-[node name="Button2" type="Button" parent="VBoxContainer/TabContainer"]
-custom_minimum_size = Vector2(250, 42)
+[node name="Tab1" parent="VBoxContainer/TabContainer/HBoxContainer" instance=ExtResource("4_344ge")]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_constants/h_separation = 8
-theme_override_constants/icon_max_width = 23
-theme_override_styles/focus = SubResource("StyleBoxEmpty_6bp64")
-theme_override_styles/hover = SubResource("StyleBoxFlat_ynf5e")
-theme_override_styles/normal = SubResource("StyleBoxFlat_344ge")
-text = "(2) YouTube - Home Page testing"
-icon = ExtResource("2_bo1nx")
-alignment = 0
-text_overrun_behavior = 3
 
-[node name="Button3" type="Button" parent="VBoxContainer/TabContainer"]
-custom_minimum_size = Vector2(250, 42)
+[node name="NewTabButton" type="Button" parent="VBoxContainer/TabContainer"]
+custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_constants/h_separation = 8
-theme_override_constants/icon_max_width = 23
-theme_override_styles/focus = SubResource("StyleBoxEmpty_6bp64")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_344ge")
 theme_override_styles/hover = SubResource("StyleBoxFlat_ynf5e")
-theme_override_styles/normal = SubResource("StyleBoxFlat_344ge")
-text = "(2) YouTube - Home Page testing"
-icon = ExtResource("2_bo1nx")
-alignment = 0
-text_overrun_behavior = 3
-
-[node name="Button4" type="Button" parent="VBoxContainer/TabContainer"]
-custom_minimum_size = Vector2(250, 42)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_constants/h_separation = 8
-theme_override_constants/icon_max_width = 23
-theme_override_styles/focus = SubResource("StyleBoxEmpty_6bp64")
-theme_override_styles/hover = SubResource("StyleBoxFlat_ynf5e")
-theme_override_styles/normal = SubResource("StyleBoxFlat_344ge")
-text = "(2) YouTube - Home Page testing"
-icon = ExtResource("2_bo1nx")
-alignment = 0
-text_overrun_behavior = 3
+theme_override_styles/pressed = SubResource("StyleBoxFlat_6bp64")
+theme_override_styles/normal = SubResource("StyleBoxFlat_6bp64")
+icon = ExtResource("5_ynf5e")
+icon_alignment = 1
 
 [node name="Spacer2" type="Control" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 5)
@@ -168,30 +127,39 @@ layout_mode = 2
 [node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 45)
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
 
 [node name="Spacer" type="Control" parent="VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
 [node name="BackButton" type="Button" parent="VBoxContainer/HBoxContainer"]
-custom_minimum_size = Vector2(30, 30)
+custom_minimum_size = Vector2(45, 0)
 layout_mode = 2
+theme_override_styles/focus = SubResource("StyleBoxEmpty_d1ilt")
+theme_override_styles/hover = SubResource("StyleBoxFlat_fdnlq")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_d1ilt")
 theme_override_styles/normal = SubResource("StyleBoxFlat_d1ilt")
 icon = ExtResource("3_21xkr")
 icon_alignment = 1
 
 [node name="ForwardButton" type="Button" parent="VBoxContainer/HBoxContainer"]
-custom_minimum_size = Vector2(30, 30)
+custom_minimum_size = Vector2(45, 0)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_ynf5e")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_d1ilt")
+theme_override_styles/hover = SubResource("StyleBoxFlat_fdnlq")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_d1ilt")
+theme_override_styles/normal = SubResource("StyleBoxFlat_d1ilt")
 icon = ExtResource("4_6bp64")
 icon_alignment = 1
 
-[node name="ReloadButton" type="Button" parent="VBoxContainer/HBoxContainer"]
-custom_minimum_size = Vector2(30, 30)
+[node name="RefreshButton" type="Button" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(45, 0)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_hptm8")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_d1ilt")
+theme_override_styles/hover = SubResource("StyleBoxFlat_fdnlq")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_d1ilt")
+theme_override_styles/normal = SubResource("StyleBoxFlat_d1ilt")
 icon = ExtResource("5_344ge")
 icon_alignment = 1
 
@@ -232,18 +200,20 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="Panel" parent="."]
-z_index = -1
+z_index = -5
 layout_mode = 2
-offset_top = 50.0
+offset_top = 58.0
 offset_right = 1920.0
-offset_bottom = 117.0
+offset_bottom = 125.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_6iyac")
 
 [node name="Panel2" type="Panel" parent="."]
-z_index = -2
+z_index = -6
 layout_mode = 2
 offset_right = 1920.0
 offset_bottom = 117.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_21xkr")
+
+[connection signal="pressed" from="VBoxContainer/TabContainer/NewTabButton" to="VBoxContainer/TabContainer" method="_on_new_tab_button_pressed"]

@@ -1,0 +1,73 @@
+[gd_scene load_steps=11 format=3 uid="uid://sqhcxhcre081"]
+
+[ext_resource type="Script" uid="uid://crpnnfqm3k5xv" path="res://Scripts/Tab.gd" id="1_q3baj"]
+[ext_resource type="Texture2D" uid="uid://gq8g7t4s3ryg" path="res://Icons/x.svg" id="2_pisds"]
+[ext_resource type="StyleBox" uid="uid://fd1nftmqox32" path="res://Scenes/Styles/TabHoverDefault.tres" id="3_kjcxk"]
+[ext_resource type="Texture2D" uid="uid://c7u7a1u1v04bx" path="res://Scenes/Styles/TabGradientDefault.tres" id="3_q3baj"]
+[ext_resource type="StyleBox" uid="uid://bx3sgro1ageff" path="res://Scenes/Styles/TabDefault.tres" id="4_ib6pj"]
+[ext_resource type="Texture2D" uid="uid://dioe63fr47oq7" path="res://Scripts/youtube.png" id="6_bdsd2"]
+[ext_resource type="StyleBox" uid="uid://dn8exdnk8tjce" path="res://Scenes/Styles/CloseButtonHover.tres" id="6_pisds"]
+[ext_resource type="StyleBox" uid="uid://dn6r16retee3l" path="res://Scenes/Styles/CloseButtonNormal.tres" id="7_1ohlo"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6bp64"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_344ge"]
+
+[node name="Tab1" type="Control"]
+custom_minimum_size = Vector2(350, 50)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_q3baj")
+
+[node name="GradientTexture" type="TextureRect" parent="."]
+z_index = 1
+layout_mode = 0
+offset_left = 278.0
+offset_top = 2.0
+offset_right = 342.0
+offset_bottom = 50.0
+texture = ExtResource("3_q3baj")
+
+[node name="Button" type="Button" parent="."]
+z_index = -2
+custom_minimum_size = Vector2(350, 50)
+layout_mode = 2
+offset_right = 350.0
+offset_bottom = 50.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/h_separation = 8
+theme_override_constants/icon_max_width = 23
+theme_override_styles/focus = SubResource("StyleBoxEmpty_6bp64")
+theme_override_styles/hover = ExtResource("3_kjcxk")
+theme_override_styles/pressed = ExtResource("3_kjcxk")
+theme_override_styles/normal = ExtResource("4_ib6pj")
+action_mode = 0
+text = "(2) YouTube - STOP PLAYING WITH ME BITCHES FR"
+icon = ExtResource("6_bdsd2")
+alignment = 0
+text_overrun_behavior = 3
+
+[node name="CloseButton" type="Button" parent="."]
+z_index = 2
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 0
+offset_left = 319.0
+offset_top = 12.0
+offset_right = 353.0
+offset_bottom = 46.0
+scale = Vector2(0.75, 0.75)
+focus_mode = 0
+mouse_filter = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/focus = SubResource("StyleBoxEmpty_344ge")
+theme_override_styles/hover = ExtResource("6_pisds")
+theme_override_styles/pressed = ExtResource("7_1ohlo")
+theme_override_styles/normal = ExtResource("7_1ohlo")
+icon = ExtResource("2_pisds")
+icon_alignment = 1
+
+[connection signal="mouse_entered" from="Button" to="." method="_on_button_mouse_entered"]
+[connection signal="mouse_exited" from="Button" to="." method="_on_button_mouse_exited"]
+[connection signal="pressed" from="Button" to="." method="_on_button_pressed"]
