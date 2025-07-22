@@ -1,11 +1,12 @@
-[gd_scene load_steps=11 format=3 uid="uid://sqhcxhcre081"]
+[gd_scene load_steps=12 format=3 uid="uid://sqhcxhcre081"]
 
 [ext_resource type="Script" uid="uid://crpnnfqm3k5xv" path="res://Scripts/Tab.gd" id="1_q3baj"]
-[ext_resource type="Texture2D" uid="uid://gq8g7t4s3ryg" path="res://Icons/x.svg" id="2_pisds"]
+[ext_resource type="Texture2D" uid="uid://gq8g7t4s3ryg" path="res://Assets/Icons/x.svg" id="2_pisds"]
 [ext_resource type="StyleBox" uid="uid://fd1nftmqox32" path="res://Scenes/Styles/TabHoverDefault.tres" id="3_kjcxk"]
 [ext_resource type="Texture2D" uid="uid://c7u7a1u1v04bx" path="res://Scenes/Styles/TabGradientDefault.tres" id="3_q3baj"]
 [ext_resource type="StyleBox" uid="uid://bx3sgro1ageff" path="res://Scenes/Styles/TabDefault.tres" id="4_ib6pj"]
-[ext_resource type="Texture2D" uid="uid://dioe63fr47oq7" path="res://Scripts/youtube.png" id="6_bdsd2"]
+[ext_resource type="Texture2D" uid="uid://dglkjumm1q4lo" path="res://Assets/Icons/23x23-empty.svg" id="5_ib6pj"]
+[ext_resource type="Texture2D" uid="uid://70k6bw18rsri" path="res://icon.svg" id="6_ib6pj"]
 [ext_resource type="StyleBox" uid="uid://dn8exdnk8tjce" path="res://Scenes/Styles/CloseButtonHover.tres" id="6_pisds"]
 [ext_resource type="StyleBox" uid="uid://dn6r16retee3l" path="res://Scenes/Styles/CloseButtonNormal.tres" id="7_1ohlo"]
 
@@ -45,9 +46,19 @@ theme_override_styles/pressed = ExtResource("3_kjcxk")
 theme_override_styles/normal = ExtResource("4_ib6pj")
 action_mode = 0
 text = "(2) YouTube - STOP PLAYING WITH ME BITCHES FR"
-icon = ExtResource("6_bdsd2")
+icon = ExtResource("5_ib6pj")
 alignment = 0
 text_overrun_behavior = 3
+
+[node name="Icon" type="TextureRect" parent="."]
+custom_minimum_size = Vector2(23, 23)
+layout_mode = 0
+offset_left = 8.0
+offset_top = 13.0
+offset_right = 31.0
+offset_bottom = 36.0
+texture = ExtResource("6_ib6pj")
+expand_mode = 1
 
 [node name="CloseButton" type="Button" parent="."]
 z_index = 2

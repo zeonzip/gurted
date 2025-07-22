@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3 uid="uid://i5otagppegeo"]
+
+[ext_resource type="Script" uid="uid://c3dnmqsnj0akr" path="res://Scripts/Tags/code.gd" id="1_g4dwp"]
+[ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_u0shw"]
+
+[node name="CODE" type="VBoxContainer"]
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+script = ExtResource("1_g4dwp")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+mouse_default_cursor_shape = 1
+theme = ExtResource("2_u0shw")
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+bbcode_enabled = true
+text = "What the sigma"
+fit_content = true
+selection_enabled = true

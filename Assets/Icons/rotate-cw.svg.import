@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dyyylow47qd0k"
-path="res://.godot/imported/arrow-right.svg-952a316afcd4823b2076bf76a665b17d.ctex"
+uid="uid://cu4hjoba6etf"
+path="res://.godot/imported/rotate-cw.svg-dc1ce1f9471720aef7c52da0114941eb.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Icons/arrow-right.svg"
-dest_files=["res://.godot/imported/arrow-right.svg-952a316afcd4823b2076bf76a665b17d.ctex"]
+source_file="res://Assets/Icons/rotate-cw.svg"
+dest_files=["res://.godot/imported/rotate-cw.svg-dc1ce1f9471720aef7c52da0114941eb.ctex"]
 
 [params]
 

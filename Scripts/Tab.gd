@@ -7,6 +7,7 @@ signal tab_closed
 @onready var gradient_texture: TextureRect = $GradientTexture
 @onready var button: Button = $Button
 @onready var close_button: Button = $CloseButton
+@onready var icon: TextureRect = $Icon
 
 const TAB_GRADIENT: GradientTexture2D = preload("res://Scenes/Styles/TabGradient.tres")
 const TAB_GRADIENT_DEFAULT: GradientTexture2D = preload("res://Scenes/Styles/TabGradientDefault.tres")
@@ -35,6 +36,13 @@ func _process(_delta):
 			close_button.add_theme_stylebox_override("normal", CLOSE_BUTTON_HOVER)
 		else:
 			close_button.add_theme_stylebox_override("normal", CLOSE_BUTTON_NORMAL)
+
+func set_title(title: String) -> void:
+	button.text = title
+
+func set_icon(new_icon: Texture) -> void:
+	icon.texture = new_icon
+	icon.rotation = 0
 
 func _on_button_mouse_entered() -> void:
 	mouse_over_tab = true

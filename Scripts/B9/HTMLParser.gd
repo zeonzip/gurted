@@ -23,6 +23,18 @@ class HTMLElement:
 	
 	func get_id() -> String:
 		return get_attribute("id")
+	
+	func get_collapsed_text() -> String:
+		# Collapse whitespace: replace multiple spaces, tabs, newlines with single space
+		var collapsed = text_content.strip_edges()
+		# Replace multiple whitespace characters with single space
+		var regex = RegEx.new()
+		regex.compile("\\s+")
+		return regex.sub(collapsed, " ", true)
+	
+	func get_preserved_text() -> String:
+		# For pre tags - preserve all whitespace
+		return text_content
 
 class ParseResult:
 	var root: HTMLElement
@@ -148,6 +160,10 @@ func get_attribute_values_by_class(tag: String, the_class_name: String, attribut
 func get_title() -> String:
 	var title_element = find_first("title")
 	return title_element.text_content if title_element != null else ""
+
+func get_icon() -> String:
+	var icon_element = find_first("icon")
+	return icon_element.get_attribute("src")
 
 func get_meta_content(name_: String) -> String:
 	var meta_elements = find_all("meta", "name")

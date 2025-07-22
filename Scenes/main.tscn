@@ -1,14 +1,14 @@
-[gd_scene load_steps=22 format=3 uid="uid://bytm7bt2s4ak8"]
+[gd_scene load_steps=23 format=3 uid="uid://bytm7bt2s4ak8"]
 
 [ext_resource type="Script" uid="uid://bg5iqnwic1rio" path="res://Scripts/main.gd" id="1_8q3xr"]
-[ext_resource type="Texture2D" uid="uid://df1m4j7uxi63v" path="res://Icons/chevron-down.svg" id="2_6bp64"]
+[ext_resource type="Texture2D" uid="uid://df1m4j7uxi63v" path="res://Assets/Icons/chevron-down.svg" id="2_6bp64"]
 [ext_resource type="Script" uid="uid://cy0c74thgjwok" path="res://Scripts/TabContainer.gd" id="2_hptm8"]
-[ext_resource type="Texture2D" uid="uid://bf0vx7qwo28k6" path="res://Icons/search.svg" id="3_8gbba"]
-[ext_resource type="Texture2D" uid="uid://bp42ccs2nmbmw" path="res://Icons/arrow-left.svg" id="3_21xkr"]
-[ext_resource type="Texture2D" uid="uid://dyyylow47qd0k" path="res://Icons/arrow-right.svg" id="4_6bp64"]
+[ext_resource type="Texture2D" uid="uid://bf0vx7qwo28k6" path="res://Assets/Icons/search.svg" id="3_8gbba"]
+[ext_resource type="Texture2D" uid="uid://bp42ccs2nmbmw" path="res://Assets/Icons/arrow-left.svg" id="3_21xkr"]
+[ext_resource type="Texture2D" uid="uid://dyyylow47qd0k" path="res://Assets/Icons/arrow-right.svg" id="4_6bp64"]
 [ext_resource type="PackedScene" uid="uid://sqhcxhcre081" path="res://Scenes/Tab.tscn" id="4_344ge"]
-[ext_resource type="Texture2D" uid="uid://cu4hjoba6etf" path="res://Icons/rotate-cw.svg" id="5_344ge"]
-[ext_resource type="Texture2D" uid="uid://cehbtwq6gq0cn" path="res://Icons/plus.svg" id="5_ynf5e"]
+[ext_resource type="Texture2D" uid="uid://cu4hjoba6etf" path="res://Assets/Icons/rotate-cw.svg" id="5_344ge"]
+[ext_resource type="Texture2D" uid="uid://cehbtwq6gq0cn" path="res://Assets/Icons/plus.svg" id="5_ynf5e"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_344ge"]
 
@@ -61,13 +61,16 @@ expand_margin_left = 40.0
 LineEdit/styles/focus = SubResource("StyleBoxEmpty_8gbba")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_8gbba")
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_white"]
+bg_color = Color(1, 1, 1, 1)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6iyac"]
 bg_color = Color(0.105882, 0.105882, 0.105882, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_21xkr"]
 bg_color = Color(0.168627, 0.168627, 0.168627, 1)
 
-[node name="Control" type="Control"]
+[node name="Main" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -187,17 +190,23 @@ stretch_mode = 5
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
-[node name="BottomContainer" type="Control" parent="VBoxContainer"]
+[node name="WebsiteContainer" type="VBoxContainer" parent="VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 22
 
-[node name="ColorRect2" type="ColorRect" parent="VBoxContainer/BottomContainer"]
+[node name="WebsiteBackground" type="Panel" parent="."]
+z_index = -1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 125.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_white")
 
 [node name="Panel" type="Panel" parent="."]
 z_index = -5
@@ -212,7 +221,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_6iyac")
 z_index = -6
 layout_mode = 2
 offset_right = 1920.0
-offset_bottom = 117.0
+offset_bottom = 125.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_21xkr")
 

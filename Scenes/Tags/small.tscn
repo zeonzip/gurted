@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3 uid="uid://btiiex1eu1krs"]
+
+[ext_resource type="Script" uid="uid://xr7n1lat501x" path="res://Scripts/Tags/small.gd" id="1_5vt6h"]
+[ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="1_yi3vu"]
+
+[node name="SMALL" type="VBoxContainer"]
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+theme = ExtResource("1_yi3vu")
+script = ExtResource("1_5vt6h")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+mouse_default_cursor_shape = 1
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+bbcode_enabled = true
+text = "What the sigma"
+fit_content = true
+selection_enabled = true

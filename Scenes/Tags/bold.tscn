@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3 uid="uid://ijrbim6j8e36"]
+
+[ext_resource type="Script" uid="uid://chdftsciuecfk" path="res://Scripts/Tags/bold.gd" id="1_04sgx"]
+[ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="1_mtsji"]
+
+[node name="BOLD" type="VBoxContainer"]
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+theme = ExtResource("1_mtsji")
+script = ExtResource("1_04sgx")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+mouse_default_cursor_shape = 1
+theme = ExtResource("1_mtsji")
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+bbcode_enabled = true
+text = "What the sigma"
+fit_content = true
+selection_enabled = true

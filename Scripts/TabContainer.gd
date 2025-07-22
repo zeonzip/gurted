@@ -1,7 +1,10 @@
+class_name TabManager
 extends HFlowContainer
 
 var tabs: Array[Tab] = []
 var active_tab := 0
+
+@onready var main: Main = $"../.."
 
 const TAB = preload("res://Scenes/Tab.tscn")
 
@@ -79,6 +82,9 @@ func create_tab() -> void:
 	h_box_container.add_child(tab)
 	
 	set_active_tab(index)
+	
+	# WARNING: temporary
+	main.render()
 
 func _input(event: InputEvent) -> void:
 	if Input.is_action_just_pressed("NewTab"):

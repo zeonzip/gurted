@@ -1,0 +1,32 @@
+[gd_resource type="Theme" load_steps=7 format=3 uid="uid://bn6rbmdy60lhr"]
+
+[sub_resource type="SystemFont" id="SystemFont_jecr6"]
+font_names = PackedStringArray("Serif")
+font_weight = 700
+
+[sub_resource type="SystemFont" id="SystemFont_75mhk"]
+font_names = PackedStringArray("Serif")
+font_italic = true
+font_weight = 700
+
+[sub_resource type="SystemFont" id="SystemFont_3k2jb"]
+font_names = PackedStringArray("Serif")
+font_italic = true
+
+[sub_resource type="SystemFont" id="SystemFont_u0shw"]
+font_names = PackedStringArray("Monospace")
+
+[sub_resource type="SystemFont" id="SystemFont_g4dwp"]
+font_names = PackedStringArray("Serif")
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_jecr6"]
+
+[resource]
+RichTextLabel/colors/font_selected_color = Color(1, 1, 1, 1)
+RichTextLabel/colors/selection_color = Color(0.313726, 0.403922, 0.8, 1)
+RichTextLabel/fonts/bold_font = SubResource("SystemFont_jecr6")
+RichTextLabel/fonts/bold_italics_font = SubResource("SystemFont_75mhk")
+RichTextLabel/fonts/italics_font = SubResource("SystemFont_3k2jb")
+RichTextLabel/fonts/mono_font = SubResource("SystemFont_u0shw")
+RichTextLabel/fonts/normal_font = SubResource("SystemFont_g4dwp")
+RichTextLabel/styles/focus = SubResource("StyleBoxEmpty_jecr6")
