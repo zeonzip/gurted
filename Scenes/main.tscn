@@ -196,6 +196,9 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 22
 
+[node name="Control" type="Control" parent="VBoxContainer/WebsiteContainer"]
+layout_mode = 2
+
 [node name="WebsiteBackground" type="Panel" parent="."]
 z_index = -1
 layout_mode = 1

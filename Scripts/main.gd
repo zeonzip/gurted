@@ -39,6 +39,10 @@ func render():
 	<mark>this is marked</mark>
 	<code>this is code<span> THIS IS A SPAN AND SHOULDNT BE ANY DIFFERENT</span></code>
 	
+	<p>
+	<a href=\"https://youtube.com\">Hello gang</a>
+	</p>
+
 	<pre>
 Text in a pre element
 is displayed in a fixed-width
@@ -69,8 +73,7 @@ line breaks
 	
 	var icon = parser.get_icon()
 	set_loading_icon(tab)
-	tab.set_icon(await Network.fetch_image(icon))
-	stop_loading_icon()
+	call_deferred("update_tab_icon", tab, icon)
 	
 	var body = parser.find_first("body")
 	var i = 0
@@ -80,8 +83,11 @@ line breaks
 		if element.is_inline_element():
 			# Collect consecutive inline elements and flatten nested ones
 			var inline_elements: Array[HTMLParser.HTMLElement] = []
+			var has_hyperlink = false
 			while i < body.children.size() and body.children[i].is_inline_element():
 				inline_elements.append(body.children[i])
+				if contains_hyperlink(body.children[i]):
+					has_hyperlink = true
 				i += 1
 			
 			var inline_container = P.instantiate()
@@ -90,7 +96,12 @@ line breaks
 			temp_parent.tag_name = "p"
 			temp_parent.children = inline_elements
 			inline_container.init(temp_parent)
+			
 			website_container.add_child(inline_container)
+			
+			if has_hyperlink:
+				inline_container.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+			
 			continue
 		
 		match element.tag_name:
@@ -98,6 +109,8 @@ line breaks
 				var p = P.instantiate()
 				p.init(element)
 				website_container.add_child(p)
+				if contains_hyperlink(element):
+					p.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
 			"pre":
 				var pre = PRE.instantiate()
 				pre.init(element)
@@ -137,3 +150,17 @@ func stop_loading_icon() -> void:
 	if loading_tween:
 		loading_tween.kill()
 		loading_tween = null
+
+func update_tab_icon(tab: Tab, icon: String) -> void:
+	tab.set_icon(await Network.fetch_image(icon))
+	stop_loading_icon()
+
+func contains_hyperlink(element: HTMLParser.HTMLElement) -> bool:
+	if element.tag_name == "a":
+		return true
+	
+	for child in element.children:
+		if contains_hyperlink(child):
+			return true
+	
+	return false

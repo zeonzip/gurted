@@ -59,6 +59,12 @@ class HTMLElement:
 					child_content = "[font_size=20][code]" + child.get_bbcode_formatted_text() + "[/code][/font_size]"
 				"span":
 					child_content = child.get_bbcode_formatted_text()
+				"a":
+					var href = child.get_attribute("href")
+					if href.length() > 0:
+						child_content = "[color=#1a0dab][url=%s]%s[/url][/color]" % [href, child.get_bbcode_formatted_text()]
+					else:
+						child_content = child.get_bbcode_formatted_text()
 				_:
 					child_content = child.get_bbcode_formatted_text()
 
@@ -73,7 +79,7 @@ class HTMLElement:
 		return result
 	
 	func is_inline_element() -> bool:
-		return tag_name in ["b", "i", "u", "small", "mark", "code", "span"]
+		return tag_name in ["b", "i", "u", "small", "mark", "code", "span", "a"]
 
 class ParseResult:
 	var root: HTMLElement
