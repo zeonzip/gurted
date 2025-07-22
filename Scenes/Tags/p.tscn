@@ -17,6 +17,5 @@ mouse_default_cursor_shape = 1
 theme = ExtResource("2_1glvj")
 theme_override_colors/default_color = Color(0, 0, 0, 1)
 bbcode_enabled = true
-text = "What the sigma"
 fit_content = true
 selection_enabled = true

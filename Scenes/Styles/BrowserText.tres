@@ -14,7 +14,8 @@ font_names = PackedStringArray("Serif")
 font_italic = true
 
 [sub_resource type="SystemFont" id="SystemFont_u0shw"]
-font_names = PackedStringArray("Monospace")
+font_names = PackedStringArray("Consolas")
+oversampling = 2.0
 
 [sub_resource type="SystemFont" id="SystemFont_g4dwp"]
 font_names = PackedStringArray("Serif")

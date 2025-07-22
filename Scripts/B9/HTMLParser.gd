@@ -25,7 +25,6 @@ class HTMLElement:
 		return get_attribute("id")
 	
 	func get_collapsed_text() -> String:
-		# Collapse whitespace: replace multiple spaces, tabs, newlines with single space
 		var collapsed = text_content.strip_edges()
 		# Replace multiple whitespace characters with single space
 		var regex = RegEx.new()
@@ -33,8 +32,48 @@ class HTMLElement:
 		return regex.sub(collapsed, " ", true)
 	
 	func get_preserved_text() -> String:
-		# For pre tags - preserve all whitespace
 		return text_content
+	
+	func get_bbcode_formatted_text() -> String:
+		var result = ""
+		var has_previous_content = false
+		
+		if text_content.length() > 0:
+			result += get_collapsed_text()
+			has_previous_content = true
+		
+		for child in children:
+			var child_content = ""
+			match child.tag_name:
+				"b":
+					child_content = "[b]" + child.get_bbcode_formatted_text() + "[/b]"
+				"i":
+					child_content = "[i]" + child.get_bbcode_formatted_text() + "[/i]"
+				"u":
+					child_content = "[u]" + child.get_bbcode_formatted_text() + "[/u]"
+				"small":
+					child_content = "[font_size=20]" + child.get_bbcode_formatted_text() + "[/font_size]"
+				"mark":
+					child_content = "[bgcolor=#FFFF00]" + child.get_bbcode_formatted_text() + "[/bgcolor]"
+				"code":
+					child_content = "[font_size=20][code]" + child.get_bbcode_formatted_text() + "[/code][/font_size]"
+				"span":
+					child_content = child.get_bbcode_formatted_text()
+				_:
+					child_content = child.get_bbcode_formatted_text()
+
+			if has_previous_content and child_content.length() > 0:
+				result += " "
+			
+			result += child_content
+			
+			if child_content.length() > 0:
+				has_previous_content = true
+		
+		return result
+	
+	func is_inline_element() -> bool:
+		return tag_name in ["b", "i", "u", "small", "mark", "code", "span"]
 
 class ParseResult:
 	var root: HTMLElement

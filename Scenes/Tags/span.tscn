@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3 uid="uid://bkj3x5y2m8qrl"]
+
+[ext_resource type="Script" uid="uid://cjk4x6y8m9wts" path="res://Scripts/Tags/span.gd" id="1_span"]
+[ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_theme"]
+
+[node name="SPAN" type="VBoxContainer"]
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+script = ExtResource("1_span")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+mouse_default_cursor_shape = 1
+theme = ExtResource("2_theme")
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+bbcode_enabled = true
+fit_content = true
+selection_enabled = true
