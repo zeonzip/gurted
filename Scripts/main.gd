@@ -19,6 +19,16 @@ const H3 = preload("res://Scenes/Tags/h3.tscn")
 const H4 = preload("res://Scenes/Tags/h4.tscn")
 const H5 = preload("res://Scenes/Tags/h5.tscn")
 const H6 = preload("res://Scenes/Tags/h6.tscn")
+const FORM = preload("res://Scenes/Tags/form.tscn")
+const INPUT = preload("res://Scenes/Tags/input.tscn")
+const BUTTON = preload("res://Scenes/Tags/button.tscn")
+
+const MIN_SIZE = Vector2i(750, 200)
+
+func _ready():
+	ProjectSettings.set_setting("display/window/size/min_width", MIN_SIZE.x)
+	ProjectSettings.set_setting("display/window/size/min_height", MIN_SIZE.y)
+	DisplayServer.window_set_min_size(MIN_SIZE)
 
 func render():
 	# Clear existing content
@@ -63,6 +73,17 @@ font, and it preserves
 both      spaces and
 line breaks
 </pre>
+
+<form>
+  <span>Name:</span>
+  <input type=\"text\" placeholder=\"First name\" value=\"John\" />
+  <span>Surname:</span>
+  <input type=\"text\" placeholder=\"Last name\" value=\"Doe\" />
+  <span>Smart:</span>
+  <input type=\"checkbox\" />
+  <input type=\"checkbox\" value=\"true\" />
+  <button>Submit</button>
+</form>
 
 	<separator direction=\"horizontal\" />
 	<img src=\"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMNUPIKabszX0Js_c0kfa4cz_JQYKfGTuBUA&s\" />
@@ -176,6 +197,24 @@ line breaks
 				var separator = SEPARATOR.instantiate()
 				separator.init(element)
 				website_container.add_child(separator)
+			"form":
+				var form = FORM.instantiate()
+				form.init(element)
+				website_container.add_child(form)
+				
+				# Render form children
+				for child_element in element.children:
+					var child_node = create_element_node(child_element)
+					if child_node:
+						form.add_child(child_node)
+			"input":
+				var input = INPUT.instantiate()
+				input.init(element)
+				website_container.add_child(input)
+			"button":
+				var button = BUTTON.instantiate()
+				button.init(element)
+				website_container.add_child(button)
 			"span":
 				var span = SPAN.instantiate()
 				span.init(element)
@@ -213,3 +252,20 @@ func contains_hyperlink(element: HTMLParser.HTMLElement) -> bool:
 			return true
 	
 	return false
+
+func create_element_node(element: HTMLParser.HTMLElement) -> Control:
+	match element.tag_name:
+		"input":
+			var input = INPUT.instantiate()
+			input.init(element)
+			return input
+		"button":
+			var button = BUTTON.instantiate()
+			button.init(element)
+			return button
+		"span":
+			var span = SPAN.instantiate()
+			span.init(element)
+			return span
+		_:
+			return null

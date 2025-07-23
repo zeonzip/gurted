@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://dhqqt4hg21w8d"]
+
+[ext_resource type="Script" uid="uid://cks35eudcm1wj" path="res://Scripts/Tags/button.gd" id="1_button"]
+[ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_theme"]
+
+[node name="Button" type="Control"]
+custom_minimum_size = Vector2(100, 30)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_button")
+
+[node name="ButtonNode" type="Button" parent="."]
+layout_mode = 1
+offset_right = 100.0
+offset_bottom = 30.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_default_cursor_shape = 2
+theme = ExtResource("2_theme")
+text = "Button"

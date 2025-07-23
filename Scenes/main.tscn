@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://bytm7bt2s4ak8"]
+[gd_scene load_steps=27 format=3 uid="uid://bytm7bt2s4ak8"]
 
 [ext_resource type="Script" uid="uid://bg5iqnwic1rio" path="res://Scripts/main.gd" id="1_8q3xr"]
 [ext_resource type="Texture2D" uid="uid://df1m4j7uxi63v" path="res://Assets/Icons/chevron-down.svg" id="2_6bp64"]
@@ -9,6 +9,8 @@
 [ext_resource type="PackedScene" uid="uid://sqhcxhcre081" path="res://Scenes/Tab.tscn" id="4_344ge"]
 [ext_resource type="Texture2D" uid="uid://cu4hjoba6etf" path="res://Assets/Icons/rotate-cw.svg" id="5_344ge"]
 [ext_resource type="Texture2D" uid="uid://cehbtwq6gq0cn" path="res://Assets/Icons/plus.svg" id="5_ynf5e"]
+[ext_resource type="Script" uid="uid://bgqglerkcylxx" path="res://addons/SmoothScroll/SmoothScrollContainer.gd" id="10_d1ilt"]
+[ext_resource type="Script" uid="uid://b7h0k2h2qwlqv" path="res://addons/SmoothScroll/scroll_damper/expo_scroll_damper.gd" id="11_6iyac"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_344ge"]
 
@@ -60,6 +62,18 @@ expand_margin_left = 40.0
 [sub_resource type="Theme" id="Theme_jjvhh"]
 LineEdit/styles/focus = SubResource("StyleBoxEmpty_8gbba")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_8gbba")
+
+[sub_resource type="Resource" id="Resource_fdnlq"]
+script = ExtResource("11_6iyac")
+friction = 4.0
+minimum_velocity = 0.4
+rebound_strength = 7.0
+
+[sub_resource type="Resource" id="Resource_jkdf5"]
+script = ExtResource("11_6iyac")
+friction = 4.0
+minimum_velocity = 0.4
+rebound_strength = 7.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_white"]
 bg_color = Color(1, 1, 1, 1)
@@ -190,14 +204,22 @@ stretch_mode = 5
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
-[node name="WebsiteContainer" type="VBoxContainer" parent="VBoxContainer"]
-unique_name_in_owner = true
+[node name="SmoothScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 22
+script = ExtResource("10_d1ilt")
+wheel_scroll_damper = SubResource("Resource_fdnlq")
+dragging_scroll_damper = SubResource("Resource_jkdf5")
+drag_with_mouse = false
+allow_overdragging = false
+metadata/_custom_type_script = "uid://bgqglerkcylxx"
 
-[node name="Control" type="Control" parent="VBoxContainer/WebsiteContainer"]
+[node name="WebsiteContainer" type="VBoxContainer" parent="VBoxContainer/SmoothScrollContainer"]
+unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 22
 
 [node name="WebsiteBackground" type="Panel" parent="."]
 z_index = -1
@@ -213,18 +235,24 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_white")
 
 [node name="Panel" type="Panel" parent="."]
 z_index = -5
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 offset_top = 58.0
-offset_right = 1920.0
-offset_bottom = 125.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_6iyac")
 
 [node name="Panel2" type="Panel" parent="."]
 z_index = -6
-layout_mode = 2
-offset_right = 1920.0
-offset_bottom = 125.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_21xkr")
 

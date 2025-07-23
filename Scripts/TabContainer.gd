@@ -86,7 +86,7 @@ func create_tab() -> void:
 	# WARNING: temporary
 	main.render()
 
-func _input(event: InputEvent) -> void:
+func _input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("NewTab"):
 		create_tab()
 	if Input.is_action_just_pressed("CloseTab"):

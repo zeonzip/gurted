@@ -1,4 +1,53 @@
-[gd_resource type="Theme" load_steps=7 format=3 uid="uid://bn6rbmdy60lhr"]
+[gd_resource type="Theme" load_steps=17 format=3 uid="uid://bn6rbmdy60lhr"]
+
+[ext_resource type="Texture2D" uid="uid://dn4dxn8hkrd64" path="res://Assets/Icons/checkbox.svg" id="1_75mhk"]
+[ext_resource type="Texture2D" uid="uid://b6ucuyluuw43" path="res://Assets/Icons/checkbox_pressed_grayscale.svg" id="2_2abar"]
+[ext_resource type="Texture2D" uid="uid://c5scqw224r2e5" path="res://Assets/Icons/checkbox_pressed.svg" id="2_3k2jb"]
+[ext_resource type="Texture2D" uid="uid://bap17ryrkcyey" path="res://Assets/Icons/checkbox_disabled.svg" id="4_c32on"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_c32on"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7g0pl"]
+bg_color = Color(0.168627, 0.168627, 0.168627, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_c32on"]
+bg_color = Color(0.105882, 0.105882, 0.105882, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_75mhk"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jecr6"]
+content_margin_left = 5.0
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_75mhk"]
+content_margin_left = 5.0
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="SystemFont" id="SystemFont_jecr6"]
 font_names = PackedStringArray("Serif")
@@ -23,6 +72,20 @@ font_names = PackedStringArray("Serif")
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_jecr6"]
 
 [resource]
+Button/styles/focus = SubResource("StyleBoxEmpty_c32on")
+Button/styles/hover = SubResource("StyleBoxFlat_7g0pl")
+Button/styles/normal = SubResource("StyleBoxFlat_c32on")
+CheckBox/icons/checked = ExtResource("2_3k2jb")
+CheckBox/icons/checked_disabled = ExtResource("2_2abar")
+CheckBox/icons/unchecked = ExtResource("1_75mhk")
+CheckBox/icons/unchecked_disabled = ExtResource("4_c32on")
+CheckBox/styles/focus = SubResource("StyleBoxEmpty_75mhk")
+LineEdit/colors/caret_color = Color(0, 0, 0, 1)
+LineEdit/colors/font_color = Color(0, 0, 0, 1)
+LineEdit/colors/font_placeholder_color = Color(0, 0, 0, 0.6)
+LineEdit/styles/focus = SubResource("StyleBoxFlat_jecr6")
+LineEdit/styles/normal = SubResource("StyleBoxFlat_75mhk")
+LineEdit/styles/read_only = null
 RichTextLabel/colors/font_selected_color = Color(1, 1, 1, 1)
 RichTextLabel/colors/selection_color = Color(0.313726, 0.403922, 0.8, 1)
 RichTextLabel/fonts/bold_font = SubResource("SystemFont_jecr6")

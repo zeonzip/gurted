@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://bkj3x5y2m8qrl"]
 
-[ext_resource type="Script" uid="uid://cjk4x6y8m9wts" path="res://Scripts/Tags/span.gd" id="1_span"]
+[ext_resource type="Script" uid="uid://4pbphta3r67k" path="res://Scripts/Tags/span.gd" id="1_span"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_theme"]
 
 [node name="SPAN" type="VBoxContainer"]
@@ -17,5 +17,6 @@ mouse_default_cursor_shape = 1
 theme = ExtResource("2_theme")
 theme_override_colors/default_color = Color(0, 0, 0, 1)
 bbcode_enabled = true
+text = "Placeholder"
 fit_content = true
 selection_enabled = true

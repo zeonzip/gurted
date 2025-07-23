@@ -80,9 +80,6 @@ class HTMLElement:
 	
 	func is_inline_element() -> bool:
 		return tag_name in ["b", "i", "u", "small", "mark", "code", "span", "a"]
-	
-	func is_heading_element() -> bool:
-		return tag_name in ["h1", "h2", "h3", "h4", "h5", "h6"]
 
 class ParseResult:
 	var root: HTMLElement
