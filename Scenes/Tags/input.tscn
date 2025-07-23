@@ -2,15 +2,18 @@
 
 [ext_resource type="Script" uid="uid://kv6ebscarj2e" path="res://Scripts/Tags/input.gd" id="1_input"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_theme"]
-[ext_resource type="ButtonGroup" uid="uid://dgvdef1uht5ht" path="res://Scenes/Tags/new_button_group.tres" id="3_a88g6"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_06us3"]
 
 [node name="Input" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = 400.0
-offset_bottom = 31.0
+offset_left = -102.0
+offset_top = -24.0
+offset_right = -1893.0
+offset_bottom = -1020.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
@@ -32,7 +35,6 @@ layout_mode = 0
 offset_right = 31.0
 offset_bottom = 31.0
 theme = ExtResource("2_theme")
-theme_override_constants/icon_max_width = 24
 flat = true
 
 [node name="RadioButton" type="CheckBox" parent="."]
@@ -42,5 +44,13 @@ offset_right = 31.0
 offset_bottom = 31.0
 theme = ExtResource("2_theme")
 theme_override_constants/icon_max_width = 24
-button_group = ExtResource("3_a88g6")
+button_group = SubResource("ButtonGroup_06us3")
 flat = true
+
+[node name="ColorPickerButton" type="ColorPickerButton" parent="."]
+layout_mode = 0
+offset_right = 83.0
+offset_bottom = 35.0
+toggle_mode = false
+
+[connection signal="popup_closed" from="ColorPickerButton" to="." method="_on_color_picker_popup_closed"]

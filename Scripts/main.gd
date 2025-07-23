@@ -91,7 +91,10 @@ line breaks
   <span>Berry</span>
   <input type=\"radio\" group=\"food\" />
   <span>Gary</span>
-  
+
+  <h2>Color</h2>
+  <input type=\"color\" value=\"#ff0000\" />
+
   <input type=\"password\" placeholder=\"your password...\" />
   <button type=\"submit\">Submit</button>
 

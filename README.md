@@ -10,4 +10,8 @@ TODO:
 9. **Required** attribute for inputs
 
 Issues:
-1. **< br />** counts as 1 element in **WebsiteContainer**, therefore despite being (0,0) in size, it counts as double in spacing.
+1. **< br />** counts as 1 element in **WebsiteContainer**, therefore despite being (0,0) in size, it counts as double in spacing
+
+Notes:
+- **<input />** is sort-of inline in normal web. We render it as a block element (new-line).
+- A single `RichTextLabel` for inline text tags should stop, we should use invididual ones so it's easier to style and achieve separation through a `vboxcontainer`.
