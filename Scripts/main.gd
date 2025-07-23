@@ -13,6 +13,12 @@ const SEPARATOR = preload("res://Scenes/Tags/separator.tscn")
 const PRE = preload("res://Scenes/Tags/pre.tscn")
 const BR = preload("res://Scenes/Tags/br.tscn")
 const SPAN = preload("res://Scenes/Tags/span.tscn")
+const H1 = preload("res://Scenes/Tags/h1.tscn")
+const H2 = preload("res://Scenes/Tags/h2.tscn")
+const H3 = preload("res://Scenes/Tags/h3.tscn")
+const H4 = preload("res://Scenes/Tags/h4.tscn")
+const H5 = preload("res://Scenes/Tags/h5.tscn")
+const H6 = preload("res://Scenes/Tags/h6.tscn")
 
 func render():
 	# Clear existing content
@@ -31,6 +37,13 @@ func render():
 </head>
 
 <body>
+	<h1>Header 1</h1>
+	<h2>Header 2</h2>
+	<h3>Header 3</h3>
+	<h4>Header 4</h4>
+	<h5>Header 5</h5>
+	<h6>Header 6</h6>
+	
 	<p>Hey there!       this is a        test</p>
 	<b>This is bold</b>
 	<i>This is italic <mark>actually, and it's pretty <u>cool</u></mark></i>
@@ -111,6 +124,42 @@ line breaks
 				website_container.add_child(p)
 				if contains_hyperlink(element):
 					p.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+			"h1":
+				var h1 = H1.instantiate()
+				h1.init(element)
+				website_container.add_child(h1)
+				if contains_hyperlink(element):
+					h1.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+			"h2":
+				var h2 = H2.instantiate()
+				h2.init(element)
+				website_container.add_child(h2)
+				if contains_hyperlink(element):
+					h2.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+			"h3":
+				var h3 = H3.instantiate()
+				h3.init(element)
+				website_container.add_child(h3)
+				if contains_hyperlink(element):
+					h3.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+			"h4":
+				var h4 = H4.instantiate()
+				h4.init(element)
+				website_container.add_child(h4)
+				if contains_hyperlink(element):
+					h4.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+			"h5":
+				var h5 = H5.instantiate()
+				h5.init(element)
+				website_container.add_child(h5)
+				if contains_hyperlink(element):
+					h5.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+			"h6":
+				var h6 = H6.instantiate()
+				h6.init(element)
+				website_container.add_child(h6)
+				if contains_hyperlink(element):
+					h6.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
 			"pre":
 				var pre = PRE.instantiate()
 				pre.init(element)
