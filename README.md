@@ -6,7 +6,8 @@ TODO:
 5. **Store** tab containers so switching tabs won't erase previous tab.
 6. **GIF** support
 7. **Video** support via [GDE GoZen](https://github.com/VoylinsGamedevJourney/gde_gozen)
-8. **More input types** (password, email, number, etc.)
+8. **More input types** (url, tel, date, time, etc.)
+9. **Required** attribute for inputs
 
 Issues:
 1. **< br />** counts as 1 element in **WebsiteContainer**, therefore despite being (0,0) in size, it counts as double in spacing.

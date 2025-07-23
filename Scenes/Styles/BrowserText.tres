@@ -1,9 +1,13 @@
-[gd_resource type="Theme" load_steps=17 format=3 uid="uid://bn6rbmdy60lhr"]
+[gd_resource type="Theme" load_steps=21 format=3 uid="uid://bn6rbmdy60lhr"]
 
 [ext_resource type="Texture2D" uid="uid://dn4dxn8hkrd64" path="res://Assets/Icons/checkbox.svg" id="1_75mhk"]
 [ext_resource type="Texture2D" uid="uid://b6ucuyluuw43" path="res://Assets/Icons/checkbox_pressed_grayscale.svg" id="2_2abar"]
 [ext_resource type="Texture2D" uid="uid://c5scqw224r2e5" path="res://Assets/Icons/checkbox_pressed.svg" id="2_3k2jb"]
+[ext_resource type="Texture2D" uid="uid://b2v8ee23580c3" path="res://Assets/Icons/radio.svg" id="3_3weog"]
 [ext_resource type="Texture2D" uid="uid://bap17ryrkcyey" path="res://Assets/Icons/checkbox_disabled.svg" id="4_c32on"]
+[ext_resource type="Texture2D" uid="uid://y1xqfcd8ro5t" path="res://Assets/Icons/radio_checked_grayscale.svg" id="4_n77xs"]
+[ext_resource type="Texture2D" uid="uid://bj7bpovnm25ml" path="res://Assets/Icons/radio_checked.svg" id="4_sesrd"]
+[ext_resource type="Texture2D" uid="uid://bs414mrvwdmcn" path="res://Assets/Icons/radio_disabled.svg" id="6_r011l"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_c32on"]
 
@@ -77,6 +81,10 @@ Button/styles/hover = SubResource("StyleBoxFlat_7g0pl")
 Button/styles/normal = SubResource("StyleBoxFlat_c32on")
 CheckBox/icons/checked = ExtResource("2_3k2jb")
 CheckBox/icons/checked_disabled = ExtResource("2_2abar")
+CheckBox/icons/radio_checked = ExtResource("4_sesrd")
+CheckBox/icons/radio_checked_disabled = ExtResource("4_n77xs")
+CheckBox/icons/radio_unchecked = ExtResource("3_3weog")
+CheckBox/icons/radio_unchecked_disabled = ExtResource("6_r011l")
 CheckBox/icons/unchecked = ExtResource("1_75mhk")
 CheckBox/icons/unchecked_disabled = ExtResource("4_c32on")
 CheckBox/styles/focus = SubResource("StyleBoxEmpty_75mhk")

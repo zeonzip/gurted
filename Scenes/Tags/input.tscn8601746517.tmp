@@ -18,11 +18,11 @@ size_flags_vertical = 0
 script = ExtResource("1_input")
 
 [node name="LineEdit" type="LineEdit" parent="."]
+visible = false
 layout_mode = 1
 offset_right = 400.0
 offset_bottom = 35.0
 theme = ExtResource("2_theme")
-text = "test"
 placeholder_text = "Enter text..."
 caret_blink = true
 
@@ -36,7 +36,6 @@ theme_override_constants/icon_max_width = 24
 flat = true
 
 [node name="RadioButton" type="CheckBox" parent="."]
-visible = false
 layout_mode = 0
 offset_right = 31.0
 offset_bottom = 31.0

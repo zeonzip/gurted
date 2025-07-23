@@ -74,15 +74,28 @@ both      spaces and
 line breaks
 </pre>
 
-<form>
+<!-- action, method, and type=submit are for when we implement Lua -->
+<form action=\"/submit\" method=\"POST\">
   <span>Name:</span>
-  <input type=\"text\" placeholder=\"First name\" value=\"John\" />
-  <span>Surname:</span>
-  <input type=\"text\" placeholder=\"Last name\" value=\"Doe\" />
+  <input type=\"text\" placeholder=\"First name\" value=\"John\" maxlength=\"20\" minlength=\"3\" />
+  <span>Email regex:</span>
+  <input type=\"text\" placeholder=\"Last name\" value=\"Doe\" pattern=\"^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$\" />
   <span>Smart:</span>
   <input type=\"checkbox\" />
   <input type=\"checkbox\" value=\"true\" />
-  <button>Submit</button>
+
+  <p>favorite food</p>
+  <input type=\"radio\" group=\"food\" />
+  <span>Pizza</span>
+  <input type=\"radio\" group=\"food\" />
+  <span>Berry</span>
+  <input type=\"radio\" group=\"food\" />
+  <span>Gary</span>
+  
+  <input type=\"password\" placeholder=\"your password...\" />
+  <button type=\"submit\">Submit</button>
+
+
 </form>
 
 	<separator direction=\"horizontal\" />
@@ -138,89 +151,14 @@ line breaks
 			
 			continue
 		
-		match element.tag_name:
-			"p":
-				var p = P.instantiate()
-				p.init(element)
-				website_container.add_child(p)
-				if contains_hyperlink(element):
-					p.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
-			"h1":
-				var h1 = H1.instantiate()
-				h1.init(element)
-				website_container.add_child(h1)
-				if contains_hyperlink(element):
-					h1.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
-			"h2":
-				var h2 = H2.instantiate()
-				h2.init(element)
-				website_container.add_child(h2)
-				if contains_hyperlink(element):
-					h2.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
-			"h3":
-				var h3 = H3.instantiate()
-				h3.init(element)
-				website_container.add_child(h3)
-				if contains_hyperlink(element):
-					h3.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
-			"h4":
-				var h4 = H4.instantiate()
-				h4.init(element)
-				website_container.add_child(h4)
-				if contains_hyperlink(element):
-					h4.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
-			"h5":
-				var h5 = H5.instantiate()
-				h5.init(element)
-				website_container.add_child(h5)
-				if contains_hyperlink(element):
-					h5.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
-			"h6":
-				var h6 = H6.instantiate()
-				h6.init(element)
-				website_container.add_child(h6)
-				if contains_hyperlink(element):
-					h6.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
-			"pre":
-				var pre = PRE.instantiate()
-				pre.init(element)
-				website_container.add_child(pre)
-			"br":
-				var br = BR.instantiate()
-				br.init(element)
-				website_container.add_child(br)
-			"img":
-				var img = IMG.instantiate()
-				img.init(element)
-				website_container.add_child(img)
-			"separator":
-				var separator = SEPARATOR.instantiate()
-				separator.init(element)
-				website_container.add_child(separator)
-			"form":
-				var form = FORM.instantiate()
-				form.init(element)
-				website_container.add_child(form)
-				
-				# Render form children
-				for child_element in element.children:
-					var child_node = create_element_node(child_element)
-					if child_node:
-						form.add_child(child_node)
-			"input":
-				var input = INPUT.instantiate()
-				input.init(element)
-				website_container.add_child(input)
-			"button":
-				var button = BUTTON.instantiate()
-				button.init(element)
-				website_container.add_child(button)
-			"span":
-				var span = SPAN.instantiate()
-				span.init(element)
-				website_container.add_child(span)
-			_:
-				print("Couldn't parse unsupported HTML tag \"%s\"" % element.tag_name)
+		var element_node = create_element_node(element)
+		if element_node:
+			website_container.add_child(element_node)
+			# Handle hyperlinks for all elements
+			if contains_hyperlink(element) and element_node.has_method("get") and element_node.get("rich_text_label"):
+				element_node.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+		else:
+			print("Couldn't parse unsupported HTML tag \"%s\"" % element.tag_name)
 		
 		i += 1
 
@@ -254,18 +192,60 @@ func contains_hyperlink(element: HTMLParser.HTMLElement) -> bool:
 	return false
 
 func create_element_node(element: HTMLParser.HTMLElement) -> Control:
+	var node: Control = null
+	
 	match element.tag_name:
+		"p":
+			node = P.instantiate()
+			node.init(element)
+		"h1":
+			node = H1.instantiate()
+			node.init(element)
+		"h2":
+			node = H2.instantiate()
+			node.init(element)
+		"h3":
+			node = H3.instantiate()
+			node.init(element)
+		"h4":
+			node = H4.instantiate()
+			node.init(element)
+		"h5":
+			node = H5.instantiate()
+			node.init(element)
+		"h6":
+			node = H6.instantiate()
+			node.init(element)
+		"pre":
+			node = PRE.instantiate()
+			node.init(element)
+		"br":
+			node = BR.instantiate()
+			node.init(element)
+		"img":
+			node = IMG.instantiate()
+			node.init(element)
+		"separator":
+			node = SEPARATOR.instantiate()
+			node.init(element)
+		"form":
+			node = FORM.instantiate()
+			node.init(element)
+
+			for child_element in element.children:
+				var child_node = create_element_node(child_element)
+				if child_node:
+					node.add_child(child_node)
 		"input":
-			var input = INPUT.instantiate()
-			input.init(element)
-			return input
+			node = INPUT.instantiate()
+			node.init(element)
 		"button":
-			var button = BUTTON.instantiate()
-			button.init(element)
-			return button
+			node = BUTTON.instantiate()
+			node.init(element)
 		"span":
-			var span = SPAN.instantiate()
-			span.init(element)
-			return span
+			node = SPAN.instantiate()
+			node.init(element)
 		_:
 			return null
+	
+	return node
