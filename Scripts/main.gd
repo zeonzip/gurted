@@ -5,8 +5,6 @@ extends Control
 @onready var tab_container: TabManager = $VBoxContainer/TabContainer
 const LOADER_CIRCLE = preload("res://Assets/Icons/loader-circle.svg")
 
-var loading_tween: Tween
-
 const P = preload("res://Scenes/Tags/p.tscn")
 const IMG = preload("res://Scenes/Tags/img.tscn")
 const SEPARATOR = preload("res://Scenes/Tags/separator.tscn")
@@ -122,8 +120,7 @@ line breaks
 	tab.set_title(title)
 	
 	var icon = parser.get_icon()
-	set_loading_icon(tab)
-	call_deferred("update_tab_icon", tab, icon)
+	tab.update_icon_from_url(icon)
 	
 	var body = parser.find_first("body")
 	var i = 0
@@ -164,25 +161,6 @@ line breaks
 			print("Couldn't parse unsupported HTML tag \"%s\"" % element.tag_name)
 		
 		i += 1
-
-func set_loading_icon(tab: Tab) -> void:
-	tab.set_icon(LOADER_CIRCLE)
-	
-	loading_tween = create_tween()
-	loading_tween.set_loops()
-	
-	var icon = tab.icon
-	icon.pivot_offset = Vector2(11.5, 11.5)
-	loading_tween.tween_method(func(angle): icon.rotation = angle, 0.0, TAU, 1.0)
-
-func stop_loading_icon() -> void:
-	if loading_tween:
-		loading_tween.kill()
-		loading_tween = null
-
-func update_tab_icon(tab: Tab, icon: String) -> void:
-	tab.set_icon(await Network.fetch_image(icon))
-	stop_loading_icon()
 
 func contains_hyperlink(element: HTMLParser.HTMLElement) -> bool:
 	if element.tag_name == "a":

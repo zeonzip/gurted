@@ -79,8 +79,10 @@ func create_tab() -> void:
 	tabs.append(tab)
 	tab.tab_pressed.connect(_tab_pressed.bind(index))
 	tab.tab_closed.connect(_tab_closed.bind(index))
-	h_box_container.add_child(tab)
 	
+	h_box_container.add_child(tab)
+	tab.animation.play("appear")
+
 	set_active_tab(index)
 	
 	# WARNING: temporary

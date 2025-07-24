@@ -8,6 +8,7 @@ TODO:
 7. **Video** support via [GDE GoZen](https://github.com/VoylinsGamedevJourney/gde_gozen)
 8. **More input types** (url, tel, date, time, etc.)
 9. **Required** attribute for inputs
+10. Installer should register **gurt://** as a valid protocol thru the registry.
 
 Issues:
 1. **< br />** counts as 1 element in **WebsiteContainer**, therefore despite being (0,0) in size, it counts as double in spacing
