@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://c7yay102a3b4c"]
+[gd_scene load_steps=5 format=3 uid="uid://c7yay102a3b4c"]
 
 [ext_resource type="Script" uid="uid://kv6ebscarj2e" path="res://Scripts/Tags/input.gd" id="1_input"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_theme"]
+[ext_resource type="PackedScene" uid="uid://b6c1twaog7hui" path="res://addons/DatePicker/DateButton.tscn" id="3_a88g6"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_06us3"]
 
@@ -21,6 +22,7 @@ size_flags_vertical = 0
 script = ExtResource("1_input")
 
 [node name="LineEdit" type="LineEdit" parent="."]
+visible = false
 layout_mode = 1
 offset_right = 400.0
 offset_bottom = 35.0
@@ -48,9 +50,13 @@ button_group = SubResource("ButtonGroup_06us3")
 flat = true
 
 [node name="ColorPickerButton" type="ColorPickerButton" parent="."]
+visible = false
 layout_mode = 0
 offset_right = 83.0
 offset_bottom = 35.0
 toggle_mode = false
+
+[node name="DateButton" parent="." instance=ExtResource("3_a88g6")]
+layout_mode = 0
 
 [connection signal="popup_closed" from="ColorPickerButton" to="." method="_on_color_picker_popup_closed"]

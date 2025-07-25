@@ -6,9 +6,6 @@ const BROWSER_TEXT: Theme = preload("res://Scenes/Styles/BrowserText.tres")
 var custom_hex_input: LineEdit
 
 func init(element: HTMLParser.HTMLElement) -> void:
-	var line_edit: LineEdit = $LineEdit
-	var check_box: CheckBox = $CheckBox
-	var radio_button: CheckBox = $RadioButton
 	var color_picker_button: ColorPickerButton = $ColorPickerButton
 	var picker: ColorPicker = color_picker_button.get_picker()
 
@@ -54,55 +51,66 @@ func init(element: HTMLParser.HTMLElement) -> void:
 	var maxlength = element.get_attribute("maxlength")
 	var pattern = element.get_attribute("pattern")
 
-	if input_type == "checkbox":
-		if is_instance_valid(line_edit): line_edit.queue_free()
-		if is_instance_valid(radio_button): radio_button.queue_free()
-		if is_instance_valid(color_picker_button): color_picker_button.queue_free()
-		check_box.visible = true
-		if value and value == "true": check_box.button_pressed = true
-		custom_minimum_size = check_box.size
+	# Define which child should be active for each input type
+	var active_child_map = {
+		"checkbox": "CheckBox",
+		"radio": "RadioButton", 
+		"color": "ColorPickerButton",
+		"password": "LineEdit",
+		"date": "DateButton"
+	}
+	
+	var active_child_name = active_child_map.get(input_type, "LineEdit")
+	remove_unused_children(active_child_name)
+	
+	var active_child = get_node(active_child_name)
+	active_child.visible = true
+	custom_minimum_size = active_child.size
 
-	elif input_type == "radio":
-		if is_instance_valid(line_edit): line_edit.queue_free()
-		if is_instance_valid(check_box): check_box.queue_free()
-		if is_instance_valid(color_picker_button): color_picker_button.queue_free()
-		radio_button.visible = true
-		radio_button.toggle_mode = true
-		if value and value == "true": radio_button.button_pressed = true
-		custom_minimum_size = radio_button.size
+	match input_type:
+		"checkbox":
+			var checkbox = active_child as CheckBox
+			if value and value == "true": 
+				checkbox.button_pressed = true
+				
+		"radio":
+			var radio = active_child as CheckBox
+			radio.toggle_mode = true
+			if value and value == "true": 
+				radio.button_pressed = true
+			
+			if group.length() > 0:
+				if not button_groups.has(group):
+					button_groups[group] = ButtonGroup.new()
+				radio.button_group = button_groups[group]
+				
+		"color":
+			var color_button = active_child as ColorPickerButton
+			if value and value.length() > 0:
+				var color = Color.from_string(value, Color.WHITE)
+				color_button.color = color
+				
+		"password":
+			var line_edit = active_child as LineEdit
+			line_edit.secret = true
+			setup_text_input(line_edit, placeholder, value, minlength, maxlength, pattern)
+			
+		"date":
+			var date_button = active_child as DateButton
+			if value and value.length() > 0:
+				date_button.init_with_date(value)
+			else:
+				date_button.init()
+			
+		_: # Default case (text input)
+			var line_edit = active_child as LineEdit
+			line_edit.secret = false
+			setup_text_input(line_edit, placeholder, value, minlength, maxlength, pattern)
 
-		if group.length() > 0:
-			if not button_groups.has(group):
-				button_groups[group] = ButtonGroup.new()
-			radio_button.button_group = button_groups[group]
-
-	elif input_type == "color":
-		if is_instance_valid(line_edit): line_edit.queue_free()
-		if is_instance_valid(check_box): check_box.queue_free()
-		if is_instance_valid(radio_button): radio_button.queue_free()
-		color_picker_button.visible = true
-		if value and value.length() > 0:
-			var color = Color.from_string(value, Color.WHITE)
-			color_picker_button.color = color
-		custom_minimum_size = color_picker_button.size
-
-	elif input_type == "password":
-		if is_instance_valid(check_box): check_box.queue_free()
-		if is_instance_valid(radio_button): radio_button.queue_free()
-		if is_instance_valid(color_picker_button): color_picker_button.queue_free()
-		line_edit.visible = true
-		line_edit.secret = true
-		custom_minimum_size = line_edit.size
-		setup_text_input(line_edit, placeholder, value, minlength, maxlength, pattern)
-
-	else:
-		if is_instance_valid(check_box): check_box.queue_free()
-		if is_instance_valid(radio_button): radio_button.queue_free()
-		if is_instance_valid(color_picker_button): color_picker_button.queue_free()
-		line_edit.visible = true
-		line_edit.secret = false
-		custom_minimum_size = line_edit.size
-		setup_text_input(line_edit, placeholder, value, minlength, maxlength, pattern)
+func remove_unused_children(keep_child_name: String) -> void:
+	for child in get_children():
+		if child.name != keep_child_name:
+			child.queue_free()
 
 func setup_text_input(line_edit: LineEdit, placeholder: String, value: String, minlength: String, maxlength: String, pattern: String) -> void:
 	if placeholder: line_edit.placeholder_text = placeholder

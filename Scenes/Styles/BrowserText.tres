@@ -20,8 +20,8 @@
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_c32on"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7g0pl"]
-bg_color = Color(0.168627, 0.168627, 0.168627, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0v877"]
+bg_color = Color(0.105882, 0.105882, 0.105882, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
@@ -142,7 +142,7 @@ corner_radius_bottom_left = 4
 
 [resource]
 Button/styles/focus = SubResource("StyleBoxEmpty_c32on")
-Button/styles/hover = SubResource("StyleBoxFlat_7g0pl")
+Button/styles/hover = SubResource("StyleBoxFlat_0v877")
 Button/styles/normal = SubResource("StyleBoxFlat_c32on")
 CheckBox/constants/icon_max_width = 24
 CheckBox/icons/checked = ExtResource("2_3k2jb")

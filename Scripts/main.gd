@@ -92,6 +92,8 @@ line breaks
 
   <h2>Color</h2>
   <input type=\"color\" value=\"#ff0000\" />
+  <h2>Date</h2>
+  <input type=\"date\" value=\"2018-07-22\" />
 
   <input type=\"password\" placeholder=\"your password...\" />
   <button type=\"submit\">Submit</button>
@@ -104,7 +106,6 @@ line breaks
 	<separator direction=\"vertical\" />
 </body>".to_utf8_buffer()
 	
-	# Create parser and parse
 	var parser: HTMLParser = HTMLParser.new(html_bytes)
 	var parse_result = parser.parse()
 	
@@ -113,7 +114,6 @@ line breaks
 	if parse_result.errors.size() > 0:
 		print("Parse errors: " + str(parse_result.errors))
 	
-	# TODO: render the shit on the screen
 	var tab = tab_container.tabs[tab_container.active_tab]
 	
 	var title = parser.get_title()

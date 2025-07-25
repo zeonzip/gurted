@@ -88,6 +88,9 @@ func _exit_tree():
 		loading_tween = null
 	remove_from_group("tabs")
 
+func _enter_tree() -> void:
+	$AnimationPlayer.play("appear")
+
 func _on_button_pressed() -> void:
 	# Check if click was on close button area
 	var mouse_pos = get_global_mouse_position()

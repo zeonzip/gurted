@@ -9,10 +9,11 @@ TODO:
 8. **More input types** (url, tel, date, time, etc.)
 9. **Required** attribute for inputs
 10. Installer should register **gurt://** as a valid protocol thru the registry.
+11. < input type=**datetime** />, essentially a type "date" but with a vertical separator, then `mm | ss | FORMAT` layout for time.
 
 Issues:
 1. **< br />** counts as 1 element in **WebsiteContainer**, therefore despite being (0,0) in size, it counts as double in spacing
 
 Notes:
-- **<input />** is sort-of inline in normal web. We render it as a block element (new-line).
+- **< input />** is sort-of inline in normal web. We render it as a block element (new-line).
 - A single `RichTextLabel` for inline text tags should stop, we should use invididual ones so it's easier to style and achieve separation through a `vboxcontainer`.

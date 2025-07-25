@@ -81,7 +81,6 @@ func create_tab() -> void:
 	tab.tab_closed.connect(_tab_closed.bind(index))
 	
 	h_box_container.add_child(tab)
-	tab.animation.play("appear")
 
 	set_active_tab(index)
 	
