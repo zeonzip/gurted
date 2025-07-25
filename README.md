@@ -1,3 +1,6 @@
+gurted (verb)
+> “to do something smart, but also dangerous”
+
 TODO:
 1. Write a new **selection system**. Godot's built-in `RichTextLabel` selection is limited by the node's boundaries. In normal web, holding click and dragging your mouse across the screen will select text across multiple nodes. Godot doesn't have a "set_selected_text" property, despite having one for "get_selected_text".
 2. **Right-click Dropdown** for basic text operations (Copy, Paste, Cut). Download options for images
