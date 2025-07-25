@@ -20,6 +20,9 @@ const H6 = preload("res://Scenes/Tags/h6.tscn")
 const FORM = preload("res://Scenes/Tags/form.tscn")
 const INPUT = preload("res://Scenes/Tags/input.tscn")
 const BUTTON = preload("res://Scenes/Tags/button.tscn")
+const UL = preload("res://Scenes/Tags/ul.tscn")
+const OL = preload("res://Scenes/Tags/ol.tscn")
+const LI = preload("res://Scenes/Tags/li.tscn")
 
 const MIN_SIZE = Vector2i(750, 200)
 
@@ -106,11 +109,220 @@ line breaks
 
   <input type=\"password\" placeholder=\"your password...\" />
   <button type=\"submit\">Submit</button>
-
-
 </form>
 
 	<separator direction=\"horizontal\" />
+# Ordered list
+<ol>
+<li>hello gang</li>
+<li>this</li>
+<li>is</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+<li>a test</li>
+</ol>
+
+<ol type=\"zero-lead\">
+<li>hello gang</li>
+<li>this</li>
+<li>is</li>
+<li>a test</li>
+</ol>
+
+<ol type=\"lower-alpha\">
+<li>hello gang</li>
+<li>this</li>
+<li>is</li>
+<li>a test</li>
+</ol>
+
+<ol type=\"upper-alpha\">
+<li>hello gang</li>
+<li>this</li>
+<li>is</li>
+<li>a test</li>
+</ol>
+
+
+<ol type=\"lower-roman\">
+<li>hello gang</li>
+<li>this</li>
+<li>is</li>
+<li>a test</li>
+</ol>
+
+<ol type=\"upper-roman\">
+<li>hello gang</li>
+<li>this</li>
+<li>is</li>
+<li>a test</li>
+</ol>
+
+<ul>
+<li>hello gang</li>
+<li>this</li>
+<li>is</li>
+<li>a test</li>
+</ul>
+
+<ul type=\"circle\">
+<li>hello gang</li>
+<li>this</li>
+<li>is</li>
+<li>a test</li>
+</ul>
+<ul type=\"none\">
+<li>hello gang</li>
+<li>this</li>
+<li>is</li>
+<li>a test</li>
+</ul>
+<ul type=\"square\">
+<li>hello gang</li>
+<li>this</li>
+<li>is</li>
+<li>a test</li>
+</ul>
 	<img src=\"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMNUPIKabszX0Js_c0kfa4cz_JQYKfGTuBUA&s\" />
 	<separator direction=\"vertical\" />
 </body>".to_utf8_buffer()
@@ -160,9 +372,12 @@ line breaks
 			
 			continue
 		
-		var element_node = create_element_node(element)
+		var element_node = await create_element_node(element)
 		if element_node:
-			website_container.add_child(element_node)
+			# ul/ol handle their own adding
+			if element.tag_name != "ul" and element.tag_name != "ol":
+				website_container.add_child(element_node)
+			
 			# Handle hyperlinks for all elements
 			if contains_hyperlink(element) and element_node.has_method("get") and element_node.get("rich_text_label"):
 				element_node.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
@@ -223,7 +438,7 @@ func create_element_node(element: HTMLParser.HTMLElement) -> Control:
 			node.init(element)
 
 			for child_element in element.children:
-				var child_node = create_element_node(child_element)
+				var child_node = await create_element_node(child_element)
 				if child_node:
 					node.add_child(child_node)
 		"input":
@@ -234,6 +449,19 @@ func create_element_node(element: HTMLParser.HTMLElement) -> Control:
 			node.init(element)
 		"span":
 			node = SPAN.instantiate()
+			node.init(element)
+		"ul":
+			node = UL.instantiate()
+			website_container.add_child(node)  # Add to scene tree first
+			await node.init(element)
+			return node  # Return early since we already added it
+		"ol":
+			node = OL.instantiate()
+			website_container.add_child(node)  # Add to scene tree first
+			await node.init(element)
+			return node  # Return early since we already added it
+		"li":
+			node = LI.instantiate()
 			node.init(element)
 		_:
 			return null
