@@ -23,6 +23,8 @@ const BUTTON = preload("res://Scenes/Tags/button.tscn")
 const UL = preload("res://Scenes/Tags/ul.tscn")
 const OL = preload("res://Scenes/Tags/ol.tscn")
 const LI = preload("res://Scenes/Tags/li.tscn")
+const SELECT = preload("res://Scenes/Tags/select.tscn")
+const OPTION = preload("res://Scenes/Tags/option.tscn")
 
 const MIN_SIZE = Vector2i(750, 200)
 
@@ -74,6 +76,14 @@ font, and it preserves
 both      spaces and
 line breaks
 </pre>
+
+<select>
+<option value=\"test1\">Test 1</option>
+<option value=\"test2\" selected=\"true\">Test 2</option>
+<option value=\"test3\">Test 3</option>
+<option value=\"test4\" disabled=\"true\">Test 4</option>
+<option value=\"test5\">Test 5</option>
+</select>
 
 <!-- action, method, and type=submit are for when we implement Lua -->
 <form action=\"/submit\" method=\"POST\">
@@ -462,6 +472,12 @@ func create_element_node(element: HTMLParser.HTMLElement) -> Control:
 			return node  # Return early since we already added it
 		"li":
 			node = LI.instantiate()
+			node.init(element)
+		"select":
+			node = SELECT.instantiate()
+			node.init(element)
+		"option":
+			node = OPTION.instantiate()
 			node.init(element)
 		_:
 			return null

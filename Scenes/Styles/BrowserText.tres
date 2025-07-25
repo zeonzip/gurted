@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=42 format=3 uid="uid://bn6rbmdy60lhr"]
+[gd_resource type="Theme" load_steps=44 format=3 uid="uid://bn6rbmdy60lhr"]
 
 [ext_resource type="Texture2D" uid="uid://dn4dxn8hkrd64" path="res://Assets/Icons/checkbox.svg" id="1_75mhk"]
 [ext_resource type="Texture2D" uid="uid://b6ucuyluuw43" path="res://Assets/Icons/checkbox_pressed_grayscale.svg" id="2_2abar"]
@@ -79,6 +79,21 @@ corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_75mhk"]
+content_margin_left = 5.0
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hcg1v"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_imqxn"]
 content_margin_left = 5.0
 bg_color = Color(0.6, 0.6, 0.6, 0)
 border_width_left = 1
@@ -196,9 +211,20 @@ LineEdit/colors/font_placeholder_color = Color(0, 0, 0, 0.6)
 LineEdit/styles/focus = SubResource("StyleBoxFlat_jecr6")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_75mhk")
 LineEdit/styles/read_only = null
+OptionButton/colors/font_color = Color(0, 0, 0, 1)
+OptionButton/colors/font_focus_color = Color(0, 0, 0, 1)
+OptionButton/colors/font_hover_color = Color(0, 0, 0, 1)
+OptionButton/colors/font_hover_pressed_color = Color(0, 0, 0, 1)
+OptionButton/colors/font_pressed_color = Color(0, 0, 0, 1)
+OptionButton/styles/focus = SubResource("StyleBoxEmpty_hcg1v")
+OptionButton/styles/hover = SubResource("StyleBoxFlat_imqxn")
+OptionButton/styles/normal = SubResource("StyleBoxFlat_75mhk")
+OptionButton/styles/pressed = SubResource("StyleBoxFlat_jecr6")
 PopupMenu/colors/font_color = Color(1, 1, 1, 1)
-PopupMenu/colors/font_hover_color = Color(0.817522, 0.817521, 0.817521, 1)
+PopupMenu/colors/font_hover_color = Color(1, 1, 1, 1)
+PopupMenu/constants/h_separation = 8
 PopupMenu/constants/icon_max_width = 24
+PopupMenu/constants/item_start_padding = 4
 PopupMenu/icons/checked = ExtResource("10_luhv8")
 PopupMenu/icons/checked_disabled = ExtResource("11_i42bf")
 PopupMenu/icons/radio_checked = ExtResource("12_4akvr")

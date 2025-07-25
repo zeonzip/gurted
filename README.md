@@ -10,6 +10,7 @@ TODO:
 9. **Required** attribute for inputs
 10. Installer should register **gurt://** as a valid protocol thru the registry.
 11. < input type=**datetime** />, essentially a type "date" but with a vertical separator, then `mm | ss | FORMAT` layout for time.
+12. **< table >** component. [🔗 Related Godot proposal](https://github.com/godotengine/godot-proposals/issues/97)
 
 Issues:
 1. **< br />** counts as 1 element in **WebsiteContainer**, therefore despite being (0,0) in size, it counts as double in spacing
