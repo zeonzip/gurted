@@ -25,6 +25,7 @@ const OL = preload("res://Scenes/Tags/ol.tscn")
 const LI = preload("res://Scenes/Tags/li.tscn")
 const SELECT = preload("res://Scenes/Tags/select.tscn")
 const OPTION = preload("res://Scenes/Tags/option.tscn")
+const TEXTAREA = preload("res://Scenes/Tags/textarea.tscn")
 
 const MIN_SIZE = Vector2i(750, 200)
 
@@ -84,6 +85,14 @@ line breaks
 <option value=\"test4\" disabled=\"true\">Test 4</option>
 <option value=\"test5\">Test 5</option>
 </select>
+
+<textarea />
+<textarea cols=\"30\" />
+<textarea rows=\"2\" />
+<textarea maxlength=\"20\" />
+<textarea readonly=\"true\">le skibidi le toilet</textarea>
+<textarea disabled=\"true\" value=\"DISABLED\" />
+<textarea placeholder=\"this is a placeholder...\" />
 
 <!-- action, method, and type=submit are for when we implement Lua -->
 <form action=\"/submit\" method=\"POST\">
@@ -478,6 +487,9 @@ func create_element_node(element: HTMLParser.HTMLElement) -> Control:
 			node.init(element)
 		"option":
 			node = OPTION.instantiate()
+			node.init(element)
+		"textarea":
+			node = TEXTAREA.instantiate()
 			node.init(element)
 		_:
 			return null

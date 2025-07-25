@@ -35,5 +35,4 @@ func init(element: HTMLParser.HTMLElement) -> void:
 	if selected_index >= 0:
 		option_button.selected = selected_index
 	
-	add_child(option_button)
 	custom_minimum_size = option_button.size

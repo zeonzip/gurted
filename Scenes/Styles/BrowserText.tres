@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=44 format=3 uid="uid://bn6rbmdy60lhr"]
+[gd_resource type="Theme" load_steps=47 format=3 uid="uid://bn6rbmdy60lhr"]
 
 [ext_resource type="Texture2D" uid="uid://dn4dxn8hkrd64" path="res://Assets/Icons/checkbox.svg" id="1_75mhk"]
 [ext_resource type="Texture2D" uid="uid://b6ucuyluuw43" path="res://Assets/Icons/checkbox_pressed_grayscale.svg" id="2_2abar"]
@@ -184,6 +184,45 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n33pi"]
+content_margin_left = 5.0
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rmpy5"]
+content_margin_left = 5.0
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8uupr"]
+content_margin_left = 5.0
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [resource]
 Button/styles/focus = SubResource("StyleBoxEmpty_c32on")
 Button/styles/hover = SubResource("StyleBoxFlat_0v877")
@@ -248,3 +287,12 @@ RichTextLabel/styles/focus = SubResource("StyleBoxEmpty_jecr6")
 TabContainer/styles/tab_hovered = SubResource("StyleBoxFlat_1vd2l")
 TabContainer/styles/tab_selected = SubResource("StyleBoxFlat_4akvr")
 TabContainer/styles/tab_unselected = SubResource("StyleBoxFlat_r011l")
+TextEdit/colors/caret_color = Color(0, 0, 0, 1)
+TextEdit/colors/font_color = Color(0, 0, 0, 1)
+TextEdit/colors/font_placeholder_color = Color(0, 0, 0, 0.6)
+TextEdit/colors/font_readonly_color = Color(0.196078, 0.196078, 0.196078, 1)
+TextEdit/colors/font_selected_color = Color(1, 1, 1, 1)
+TextEdit/colors/selection_color = Color(0.313726, 0.403922, 0.8, 1)
+TextEdit/styles/focus = SubResource("StyleBoxFlat_n33pi")
+TextEdit/styles/normal = SubResource("StyleBoxFlat_rmpy5")
+TextEdit/styles/read_only = SubResource("StyleBoxFlat_8uupr")
