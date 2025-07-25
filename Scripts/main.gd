@@ -95,6 +95,15 @@ line breaks
   <h2>Date</h2>
   <input type=\"date\" value=\"2018-07-22\" />
 
+  <h2>Range Slider</h2>
+  <input type=\"range\" min=\"0\" max=\"100\" step=\"5\" value=\"50\" />
+  
+  <h2>Number Input</h2>
+  <input type=\"number\" min=\"1\" max=\"10\" step=\"0.5\" value=\"5\" placeholder=\"Enter number\" />
+  
+  <h2>File Upload</h2>
+  <input type=\"file\" accept=\".txt,.pdf,image/*\" />
+
   <input type=\"password\" placeholder=\"your password...\" />
   <button type=\"submit\">Submit</button>
 
