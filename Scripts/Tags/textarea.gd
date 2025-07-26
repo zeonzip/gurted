@@ -36,7 +36,6 @@ func init(element: HTMLParser.HTMLElement) -> void:
 	
 	# Sync Control size with TextEdit
 	custom_minimum_size = text_edit.custom_minimum_size
-	size = text_edit.size
 	
 	# Set readonly state
 	if readonly.length() > 0:

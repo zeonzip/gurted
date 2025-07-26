@@ -2,7 +2,7 @@ extends VBoxContainer
 
 const BROWSER_TEXT = preload("res://Scenes/Styles/BrowserText.tres")
 
-func init(element: HTMLParser.HTMLElement) -> void:
+func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
 	var list_type = element.get_attribute("type").to_lower()
 	if list_type == "": list_type = "disc"  # Default
 	
@@ -10,7 +10,7 @@ func init(element: HTMLParser.HTMLElement) -> void:
 	
 	for child_element in element.children:
 		if child_element.tag_name == "li":
-			var li_node = create_li_node(child_element, list_type, marker_min_width)
+			var li_node = create_li_node(child_element, list_type, marker_min_width, parser)
 			if li_node:
 				add_child(li_node)
 
@@ -34,7 +34,7 @@ func calculate_marker_width(list_type: String) -> float:
 	
 	return max(width, 20)  # Minimum pixels
 
-func create_li_node(element: HTMLParser.HTMLElement, list_type: String, marker_width: float = 20) -> Control:
+func create_li_node(element: HTMLParser.HTMLElement, list_type: String, marker_width: float = 20, parser: HTMLParser = null) -> Control:
 	var li_container = HBoxContainer.new()
 	
 	# Create bullet point
@@ -59,7 +59,7 @@ func create_li_node(element: HTMLParser.HTMLElement, list_type: String, marker_w
 	content_label.fit_content = true
 	content_label.theme = BROWSER_TEXT
 	content_label.scroll_active = false
-	content_label.text = "[font_size=24]%s[/font_size]" % element.get_bbcode_formatted_text()
+	content_label.text = "[font_size=24]%s[/font_size]" % element.get_bbcode_formatted_text(parser)
 	
 	li_container.add_theme_constant_override("separation", 0)
 	li_container.add_child(bullet_label)

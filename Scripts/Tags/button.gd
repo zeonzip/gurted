@@ -1,11 +1,11 @@
 extends Control
 
-func init(element: HTMLParser.HTMLElement) -> void:
+func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
 	var button_node: Button = $ButtonNode
 	
 	var button_text = element.text_content.strip_edges()
 	if button_text.length() == 0:
-		button_text = element.get_bbcode_formatted_text()
+		button_text = element.get_bbcode_formatted_text(parser)
 	
 	if button_text.length() > 0:
 		button_node.text = button_text

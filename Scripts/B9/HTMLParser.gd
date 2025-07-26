@@ -34,49 +34,8 @@ class HTMLElement:
 	func get_preserved_text() -> String:
 		return text_content
 	
-	func get_bbcode_formatted_text() -> String:
-		var result = ""
-		var has_previous_content = false
-		
-		if text_content.length() > 0:
-			result += get_collapsed_text()
-			has_previous_content = true
-		
-		for child in children:
-			var child_content = ""
-			match child.tag_name:
-				"b":
-					child_content = "[b]" + child.get_bbcode_formatted_text() + "[/b]"
-				"i":
-					child_content = "[i]" + child.get_bbcode_formatted_text() + "[/i]"
-				"u":
-					child_content = "[u]" + child.get_bbcode_formatted_text() + "[/u]"
-				"small":
-					child_content = "[font_size=20]" + child.get_bbcode_formatted_text() + "[/font_size]"
-				"mark":
-					child_content = "[bgcolor=#FFFF00]" + child.get_bbcode_formatted_text() + "[/bgcolor]"
-				"code":
-					child_content = "[font_size=20][code]" + child.get_bbcode_formatted_text() + "[/code][/font_size]"
-				"span":
-					child_content = child.get_bbcode_formatted_text()
-				"a":
-					var href = child.get_attribute("href")
-					if href.length() > 0:
-						child_content = "[color=#1a0dab][url=%s]%s[/url][/color]" % [href, child.get_bbcode_formatted_text()]
-					else:
-						child_content = child.get_bbcode_formatted_text()
-				_:
-					child_content = child.get_bbcode_formatted_text()
-
-			if has_previous_content and child_content.length() > 0:
-				result += " "
-			
-			result += child_content
-			
-			if child_content.length() > 0:
-				has_previous_content = true
-		
-		return result
+	func get_bbcode_formatted_text(parser: HTMLParser = null) -> String:
+		return HTMLParser.get_bbcode_with_styles(self, {}, parser)  # Pass empty dict for default
 	
 	func is_inline_element() -> bool:
 		return tag_name in ["b", "i", "u", "small", "mark", "code", "span", "a", "input"]
@@ -85,6 +44,8 @@ class ParseResult:
 	var root: HTMLElement
 	var all_elements: Array[HTMLElement] = []
 	var errors: Array[String] = []
+	var css_parser: CSSParser = null
+	var inline_styles: Dictionary = {}
 	
 	func _init():
 		root = HTMLElement.new("document")
@@ -93,6 +54,21 @@ class ParseResult:
 var xml_parser: XMLParser
 var bitcode: PackedByteArray
 var parse_result: ParseResult
+
+var DEFAULT_CSS := """
+h1 { text-5xl font-bold }
+h2 { text-4xl font-bold }
+h3 { text-3xl font-bold }
+h4 { text-2xl font-bold }
+h5 { text-xl font-bold }
+b { font-bold }
+i { font-italic }
+u { underline }
+small { text-xl }
+mark { bg-[#FFFF00] }
+code { text-xl font-mono }
+a { text-[#1a0dab] }
+"""
 
 func _init(data: PackedByteArray):
 	bitcode = data
@@ -103,7 +79,7 @@ func _init(data: PackedByteArray):
 func parse() -> ParseResult:
 	xml_parser.open_buffer(bitcode)
 	var element_stack: Array[HTMLElement] = [parse_result.root]
-	
+
 	while xml_parser.read() != ERR_FILE_EOF:
 		match xml_parser.get_node_type():
 			XMLParser.NODE_ELEMENT:
@@ -112,6 +88,9 @@ func parse() -> ParseResult:
 				element.parent = current_parent
 				current_parent.children.append(element)
 				parse_result.all_elements.append(element)
+				
+				if element.tag_name == "style":
+					handle_style_element(element)
 				
 				if not element.is_self_closing:
 					element_stack.append(element)
@@ -126,6 +105,53 @@ func parse() -> ParseResult:
 					element_stack.back().text_content += text
 	
 	return parse_result
+
+func handle_style_element(style_element: HTMLElement) -> void:
+	# Check if it's an external stylesheet
+	var src = style_element.get_attribute("src")
+	if src.length() > 0:
+		# TODO: Handle external CSS loading when Network module is available
+		print("External CSS not yet supported: " + src)
+		return
+	
+	# Handle inline CSS - we'll get the text content when parsing is complete
+	# For now, create a parser that will be populated later
+	if not parse_result.css_parser:
+		parse_result.css_parser = CSSParser.new()
+		parse_result.css_parser.init()
+
+func process_styles() -> void:
+	if not parse_result.css_parser:
+		return
+	
+	# Collect all style element content
+	var css_content = DEFAULT_CSS
+	var style_elements = find_all("style")
+	for style_element in style_elements:
+		if style_element.get_attribute("src").is_empty():
+			css_content += style_element.text_content + "\n"
+	print("Processing CSS: ", css_content)
+	# Parse CSS if we have any
+	if css_content.length() > 0:
+		parse_result.css_parser.css_text = css_content
+		parse_result.css_parser.parse()
+		for child: CSSParser.CSSRule in parse_result.css_parser.stylesheet.rules:
+			print("INFO: for selector \"%s\" we have props: %s" % [child.selector, child.properties])
+
+func get_element_styles(element: HTMLElement, event: String = "") -> Dictionary:
+	var styles = {}
+	
+	# Apply CSS rules
+	if parse_result.css_parser:
+		styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event))
+	
+	# Apply inline styles (higher priority)
+	var inline_style = element.get_attribute("style")
+	if inline_style.length() > 0:
+		var inline_parsed = CSSParser.parse_inline_style(inline_style)
+		styles.merge(inline_parsed)
+	
+	return styles
 
 # Creates element from CURRENT xml parser node
 func create_element() -> HTMLElement:
@@ -228,3 +254,64 @@ func get_all_scripts() -> Array[String]:
 
 func get_all_stylesheets() -> Array[String]:
 	return get_attribute_values("style", "src")
+
+func apply_element_styles(node: Control, element: HTMLElement, parser: HTMLParser) -> void:
+	var styles = parser.get_element_styles(element)
+	if node.get("rich_text_label"):
+		var label = node.rich_text_label
+		var text = HTMLParser.get_bbcode_with_styles(element, styles, parser)
+		label.text = text
+
+static func get_bbcode_with_styles(element: HTMLElement, styles: Dictionary, parser: HTMLParser) -> String:
+	var text = ""
+	if element.text_content.length() > 0:
+		text += element.get_collapsed_text()
+
+	for child in element.children:
+		var child_styles = styles
+		if parser != null:
+			child_styles = parser.get_element_styles(child)
+		var child_content = HTMLParser.get_bbcode_with_styles(child, child_styles, parser)
+		match child.tag_name:
+			"b":
+				if child_styles.has("font-bold") and child_styles["font-bold"]:
+					child_content = "[b]" + child_content + "[/b]"
+			"i":
+				if child_styles.has("font-italic") and child_styles["font-italic"]:
+					child_content = "[i]" + child_content + "[/i]"
+			"u":
+				if child_styles.has("underline") and child_styles["underline"]:
+					child_content = "[u]" + child_content + "[/u]"
+			"small":
+				if child_styles.has("font-size"):
+					child_content = "[font_size=%d]%s[/font_size]" % [child_styles["font-size"], child_content]
+				else:
+					child_content = "[font_size=20]%s[/font_size]" % child_content
+			"mark":
+				if child_styles.has("bg"):
+					var color = child_styles["bg"]
+					if typeof(color) == TYPE_COLOR:
+						color = color.to_html(false)
+					child_content = "[bgcolor=#%s]%s[/bgcolor]" % [color, child_content]
+				else:
+					child_content = "[bgcolor=#FFFF00]%s[/bgcolor]" % child_content
+			"code":
+				if child_styles.has("font-size"):
+					child_content = "[font_size=%d][code]%s[/code][/font_size]" % [child_styles["font-size"], child_content]
+				else:
+					child_content = "[font_size=20][code]%s[/code][/font_size]" % child_content
+			"a":
+				var href = child.get_attribute("href")
+				var color = "#1a0dab"
+				if child_styles.has("color"):
+					var c = child_styles["color"]
+					if typeof(c) == TYPE_COLOR:
+						color = "#" + c.to_html(false)
+					else:
+						color = str(c)
+				if href.length() > 0:
+					child_content = "[color=%s][url=%s]%s[/url][/color]" % [color, href, child_content]
+			_:
+				pass
+		text += child_content
+	return text

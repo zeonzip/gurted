@@ -46,7 +46,11 @@ func render():
 	<meta name=\"theme-color\" content=\"#000000\">
 	<meta name=\"description\" content=\"My cool web\">
 
-	<style href=\"styles.css\">
+	<style>
+		h1 { text-[#ff0000] font-italic hover:text-[#00ff00] }
+		p { text-[#333333] text-2xl }
+	</style>
+	<style src=\"styles.css\">
 	<script src=\"script.lua\" />
 </head>
 
@@ -206,6 +210,8 @@ line breaks
 	var parser: HTMLParser = HTMLParser.new(html_bytes)
 	var parse_result = parser.parse()
 	
+	parser.process_styles()
+	
 	print("Total elements found: " + str(parse_result.all_elements.size()))
 	
 	if parse_result.errors.size() > 0:
@@ -225,30 +231,27 @@ line breaks
 		var element: HTMLParser.HTMLElement = body.children[i]
 		
 		if element.is_inline_element():
-			# Collect consecutive inline elements and flatten nested ones
+			# Create an HBoxContainer for consecutive inline elements
 			var inline_elements: Array[HTMLParser.HTMLElement] = []
-			var has_hyperlink = false
+
 			while i < body.children.size() and body.children[i].is_inline_element():
 				inline_elements.append(body.children[i])
-				if contains_hyperlink(body.children[i]):
-					has_hyperlink = true
 				i += 1
-			
-			var inline_container = P.instantiate()
 
-			var temp_parent = HTMLParser.HTMLElement.new()
-			temp_parent.tag_name = "p"
-			temp_parent.children = inline_elements
-			inline_container.init(temp_parent)
-			
-			website_container.add_child(inline_container)
-			
-			if has_hyperlink:
-				inline_container.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
-			
+			var hbox = HBoxContainer.new()
+			hbox.add_theme_constant_override("separation", 4)
+
+			for inline_element in inline_elements:
+				var inline_node = await create_element_node(inline_element, parser)
+				if inline_node:
+					hbox.add_child(inline_node)
+					# Handle hyperlinks for all inline elements
+					if contains_hyperlink(inline_element) and inline_node.rich_text_label:
+						inline_node.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+			website_container.add_child(hbox)
 			continue
 		
-		var element_node = await create_element_node(element)
+		var element_node = await create_element_node(element, parser)
 		if element_node:
 			# ul/ol handle their own adding
 			if element.tag_name != "ul" and element.tag_name != "ol":
@@ -262,6 +265,86 @@ line breaks
 		
 		i += 1
 
+func apply_element_styles(node: Control, element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
+	var styles = parser.get_element_styles(element)
+	var label = node if node is RichTextLabel else node.get_node_or_null("RichTextLabel")
+	
+	if label:
+		apply_styles_to_label(label, styles, element, parser)
+
+func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, element: HTMLParser.HTMLElement, parser) -> void:
+	var text = element.get_bbcode_formatted_text(parser) # pass parser
+	var font_size = 24  # default
+	print("applying styles to: ", text)
+	print("applying styles to label: ", label.text, " | styles: ")
+	for child in styles:
+		print(child)
+	
+	# Apply font size
+	if styles.has("font-size"):
+		font_size = int(styles["font-size"])
+	
+	# Apply color
+	var color_tag = ""
+	if styles.has("color"):
+		var color = styles["color"] as Color
+		color_tag = "[color=#%s]" % color.to_html(false)
+	
+	# Apply background color
+	var bg_color_tag = ""
+	var bg_color_close = ""
+	if styles.has("background-color"):
+		var bg_color = styles["background-color"] as Color
+		bg_color_tag = "[bgcolor=#%s]" % bg_color.to_html(false)
+		bg_color_close = "[/bgcolor]"
+	
+	# Apply bold
+	var bold_open = ""
+	var bold_close = ""
+	if styles.has("font-bold") and styles["font-bold"]:
+		bold_open = "[b]"
+		bold_close = "[/b]"
+	
+	# Apply italic
+	var italic_open = ""
+	var italic_close = ""
+	if styles.has("font-italic") and styles["font-italic"]:
+		italic_open = "[i]"
+		italic_close = "[/i]"
+	# Apply underline
+	var underline_open = ""
+	var underline_close = ""
+	if styles.has("underline") and styles["underline"]:
+		underline_open = "[u]"
+		underline_close = "[/u]"
+
+	# Apply monospace font
+	var mono_open = ""
+	var mono_close = ""
+	if styles.has("font-mono") and styles["font-mono"]:
+		mono_open = "[code]"
+		mono_close = "[/code]"
+
+	# Construct final text
+	var styled_text = "[font_size=%d]%s%s%s%s%s%s%s%s%s%s%s%s%s[/font_size]" % [
+		font_size,
+		bg_color_tag,
+		color_tag,
+		bold_open,
+		italic_open,
+		underline_open,
+		mono_open,
+		text,
+		mono_close,
+		underline_close,
+		italic_close,
+		bold_close,
+		"[/color]" if color_tag.length() > 0 else "",
+		bg_color_close
+	]
+	
+	label.text = styled_text
+
 func contains_hyperlink(element: HTMLParser.HTMLElement) -> bool:
 	if element.tag_name == "a":
 		return true
@@ -272,25 +355,35 @@ func contains_hyperlink(element: HTMLParser.HTMLElement) -> bool:
 	
 	return false
 
-func create_element_node(element: HTMLParser.HTMLElement) -> Control:
+func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> Control:
 	var node: Control = null
 	
 	match element.tag_name:
 		"p":
 			node = P.instantiate()
 			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
 		"h1":
 			node = H1.instantiate()
 			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
 		"h2":
 			node = H2.instantiate()
 			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
 		"h3":
 			node = H3.instantiate()
 			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
 		"h4":
 			node = H4.instantiate()
 			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
 		"h5":
 			node = H5.instantiate()
 			node.init(element)
@@ -326,6 +419,43 @@ func create_element_node(element: HTMLParser.HTMLElement) -> Control:
 		"span":
 			node = SPAN.instantiate()
 			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
+		"b":
+			node = SPAN.instantiate()
+			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
+		"i":
+			node = SPAN.instantiate()
+			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
+		"u":
+			node = SPAN.instantiate()
+			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
+		"small":
+			node = SPAN.instantiate()
+			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
+		"mark":
+			node = SPAN.instantiate()
+			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
+		"code":
+			node = SPAN.instantiate()
+			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
+		"a":
+			node = SPAN.instantiate()
+			node.init(element)
+			if parser:
+				apply_element_styles(node, element, parser)
 		"ul":
 			node = UL.instantiate()
 			website_container.add_child(node)  # Add to scene tree first
