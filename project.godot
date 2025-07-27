@@ -10,10 +10,10 @@ config_version=5
 
 [application]
 
-config/name="gurted"
+config/name="Gurted"
 run/main_scene="uid://bytm7bt2s4ak8"
 config/features=PackedStringArray("4.4", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="uid://ctpe0lbehepen"
 
 [autoload]
 
@@ -28,7 +28,7 @@ window/stretch/aspect="ignore"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/DatePicker/plugin.cfg", "res://addons/SmoothScroll/plugin.cfg")
+enabled=PackedStringArray("res://addons/DatePicker/plugin.cfg", "res://addons/MaxSizeContainer/plugin.cfg", "res://addons/SmoothScroll/plugin.cfg")
 
 [file_customization]
 

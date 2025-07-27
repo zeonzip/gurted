@@ -162,6 +162,32 @@ func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
 		rule.properties["background-color"] = color
 		return
 
+	# e.g. max-w-[123px], w-[50%], h-[2rem]
+	if utility_name.match("^max-w-\\[.*\\]$"):
+		var val = extract_bracket_content(utility_name, 6)
+		rule.properties["max-width"] = val
+		return
+	if utility_name.match("^max-h-\\[.*\\]$"):
+		var val = extract_bracket_content(utility_name, 6)
+		rule.properties["max-height"] = val
+		return
+	if utility_name.match("^min-w-\\[.*\\]$"):
+		var val = extract_bracket_content(utility_name, 6)
+		rule.properties["min-width"] = val
+		return
+	if utility_name.match("^min-h-\\[.*\\]$"):
+		var val = extract_bracket_content(utility_name, 6)
+		rule.properties["min-height"] = val
+		return
+	if utility_name.match("^w-\\[.*\\]$"):
+		var val = extract_bracket_content(utility_name, 2)
+		rule.properties["width"] = val
+		return
+	if utility_name.match("^h-\\[.*\\]$"):
+		var val = extract_bracket_content(utility_name, 2)
+		rule.properties["height"] = val
+		return
+
 	# Handle font weight
 	if utility_name == "font-bold":
 		rule.properties["font-bold"] = true
@@ -194,19 +220,76 @@ func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
 		"text-4xl": rule.properties["font-size"] = 36
 		"text-5xl": rule.properties["font-size"] = 48
 		"text-6xl": rule.properties["font-size"] = 60
+		
+		# Handle text alignment classes
+		"text-left": rule.properties["text-align"] = "left"
+		"text-center": rule.properties["text-align"] = "center"
+		"text-right": rule.properties["text-align"] = "right"
+		"text-justify": rule.properties["text-align"] = "justify"
 	
+	# Width
+	if utility_name.begins_with("w-"):
+		var val = utility_name.substr(2)
+		rule.properties["width"] = parse_size(val)
+		return
+	# Height
+	if utility_name.begins_with("h-"):
+		var val = utility_name.substr(2)
+		rule.properties["height"] = parse_size(val)
+		return
+	# Min width
+	if utility_name.begins_with("min-w-"):
+		var val = utility_name.substr(6)
+		rule.properties["min-width"] = parse_size(val)
+		return
+	# Min height
+	if utility_name.begins_with("min-h-"):
+		var val = utility_name.substr(6)
+		rule.properties["min-height"] = parse_size(val)
+		return
+	# Max width
+	if utility_name.begins_with("max-w-"):
+		var val = utility_name.substr(6)
+		rule.properties["max-width"] = parse_size(val)
+		return
+	# Max height
+	if utility_name.begins_with("max-h-"):
+		var val = utility_name.substr(6)
+		rule.properties["max-height"] = parse_size(val)
+		return
+
 	# Handle more utility classes as needed
 	# Add more cases here for other utilities
 
+func parse_size(val: String) -> String:
+	var named = {
+		"0": "0px", "1": "4px", "2": "8px", "3": "12px", "4": "16px", "5": "20px", "6": "24px", "8": "32px", "10": "40px",
+		"12": "48px", "16": "64px", "20": "80px", "24": "96px", "28": "112px", "32": "128px", "36": "144px", "40": "160px",
+		"44": "176px", "48": "192px", "52": "208px", "56": "224px", "60": "240px", "64": "256px", "72": "288px", "80": "320px", "96": "384px",
+		"3xs": "256px", "2xs": "288px", "xs": "320px", "sm": "384px", "md": "448px", "lg": "512px",
+		"xl": "576px", "2xl": "672px", "3xl": "768px", "4xl": "896px", "5xl": "1024px", "6xl": "1152px", "7xl": "1280px"
+	}
+	if named.has(val):
+		return named[val]
+	# Fractional (e.g. 1/2, 1/3)
+	if val.find("/") != -1:
+		var parts = val.split("/")
+		if parts.size() == 2 and parts[1].is_valid_int() and parts[0].is_valid_int():
+			var frac = float(parts[0]) / float(parts[1])
+			return str(frac * 100.0) + "%"
+	if val.is_valid_int():
+		return str(int(val) * 16) + "px"
+	return val
+
 # Helper to extract content inside first matching brackets after a given index
-func extract_bracket_content(str: String, start_idx: int) -> String:
-	var open_idx = str.find("[", start_idx)
+func extract_bracket_content(string: String, start_idx: int) -> String:
+	var open_idx = string.find("[", start_idx)
 	if open_idx == -1:
 		return ""
-	var close_idx = str.find("]", open_idx)
+	var close_idx = string.find("]", open_idx)
 	if close_idx == -1:
 		return ""
-	return str.substr(open_idx + 1, close_idx - open_idx - 1)
+	return string.substr(open_idx + 1, close_idx - open_idx - 1)
 
 func parse_color(color_string: String) -> Color:
 	print("DEBUG: parsing color: ", color_string)

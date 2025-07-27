@@ -6,7 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://c7u7a1u1v04bx" path="res://Scenes/Styles/TabGradientDefault.tres" id="3_q3baj"]
 [ext_resource type="StyleBox" uid="uid://bx3sgro1ageff" path="res://Scenes/Styles/TabDefault.tres" id="4_ib6pj"]
 [ext_resource type="Texture2D" uid="uid://dglkjumm1q4lo" path="res://Assets/Icons/23x23-empty.svg" id="5_ib6pj"]
-[ext_resource type="Texture2D" uid="uid://bslojb4cmwnvn" path="res://icon.svg" id="6_ib6pj"]
+[ext_resource type="Texture2D" uid="uid://bqpx2lgo0yecb" path="res://Assets/Icons/globe.svg" id="6_ib6pj"]
 [ext_resource type="StyleBox" uid="uid://dn8exdnk8tjce" path="res://Scenes/Styles/CloseButtonHover.tres" id="6_pisds"]
 [ext_resource type="StyleBox" uid="uid://dn6r16retee3l" path="res://Scenes/Styles/CloseButtonNormal.tres" id="7_1ohlo"]
 

@@ -82,7 +82,11 @@ both      spaces and
 line breaks
 </pre>
 
-<select>
+<p style=\"text-center w-32 h-32\">
+So
+</p>
+
+<select style=\"text-center max-w-5 max-h-32\">
 <option value=\"test1\">Test 1</option>
 <option value=\"test2\" selected=\"true\">Test 2</option>
 <option value=\"test3\">Test 3</option>
@@ -122,7 +126,7 @@ line breaks
   <input type=\"date\" value=\"2018-07-22\" />
 
   <h2>Range Slider</h2>
-  <input type=\"range\" min=\"0\" max=\"100\" step=\"5\" value=\"50\" />
+  <input style=\"max-w-2 max-h-2\" type=\"range\" min=\"0\" max=\"100\" step=\"5\" value=\"50\" />
   
   <h2>Number Input</h2>
   <input type=\"number\" min=\"1\" max=\"10\" step=\"0.5\" value=\"5\" placeholder=\"Enter number\" />
@@ -203,7 +207,7 @@ line breaks
 <li>is</li>
 <li>a test</li>
 </ul>
-	<img src=\"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMNUPIKabszX0Js_c0kfa4cz_JQYKfGTuBUA&s\" />
+	<img style=\"text-center max-w-24 max-h-24\" src=\"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMNUPIKabszX0Js_c0kfa4cz_JQYKfGTuBUA&s\" />
 	<separator direction=\"vertical\" />
 </body>".to_utf8_buffer()
 	
@@ -244,19 +248,20 @@ line breaks
 			for inline_element in inline_elements:
 				var inline_node = await create_element_node(inline_element, parser)
 				if inline_node:
-					hbox.add_child(inline_node)
+					safe_add_child(hbox, inline_node)
 					# Handle hyperlinks for all inline elements
 					if contains_hyperlink(inline_element) and inline_node.rich_text_label:
 						inline_node.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
-			website_container.add_child(hbox)
+
+			safe_add_child(website_container, hbox)
 			continue
 		
 		var element_node = await create_element_node(element, parser)
 		if element_node:
 			# ul/ol handle their own adding
 			if element.tag_name != "ul" and element.tag_name != "ol":
-				website_container.add_child(element_node)
-			
+				safe_add_child(website_container, element_node)
+
 			# Handle hyperlinks for all elements
 			if contains_hyperlink(element) and element_node.has_method("get") and element_node.get("rich_text_label"):
 				element_node.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
@@ -265,12 +270,87 @@ line breaks
 		
 		i += 1
 
-func apply_element_styles(node: Control, element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
+func safe_add_child(parent: Node, child: Node) -> void:
+	if child.get_parent():
+		child.get_parent().remove_child(child)
+	parent.add_child(child)
+
+func parse_size(val):
+	if typeof(val) == TYPE_INT or typeof(val) == TYPE_FLOAT:
+		return float(val)
+	if val.ends_with("px"):
+		return float(val.replace("px", ""))
+	if val.ends_with("rem"):
+		return float(val.replace("rem", "")) * 16.0
+	if val.ends_with("%"):
+		# Not supported directly, skip
+		return null
+	return float(val)
+
+func apply_element_styles(node: Control, element: HTMLParser.HTMLElement, parser: HTMLParser) -> Control:
 	var styles = parser.get_element_styles(element)
 	var label = node if node is RichTextLabel else node.get_node_or_null("RichTextLabel")
 	
+	var max_width = null
+	var max_height = null
+	var min_width = null
+	var min_height = null
+	var width = null
+	var height = null
+
+	# Handle width/height/min/max
+	if styles.has("width"):
+		width = parse_size(styles["width"])
+	if styles.has("height"):
+		height = parse_size(styles["height"])
+	if styles.has("min-width"):
+		min_width = parse_size(styles["min-width"])
+	if styles.has("min-height"):
+		min_height = parse_size(styles["min-height"])
+	if styles.has("max-width"):
+		max_width = parse_size(styles["max-width"])
+	if styles.has("max-height"):
+		max_height = parse_size(styles["max-height"])
+
+	# Apply min size
+	if min_width != null or min_height != null:
+		node.custom_minimum_size = Vector2(
+			min_width if min_width != null else node.custom_minimum_size.x,
+			min_height if min_height != null else node.custom_minimum_size.y
+		)
+	# Apply w/h size
+	if width != null or height != null:
+		node.custom_minimum_size = Vector2(
+			width if width != null else node.custom_minimum_size.x,
+			height if height != null else node.custom_minimum_size.y
+		)
+		
+		# Set size flags to shrink (without center) so it doesn't expand beyond minimum
+		if width != null:
+			node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		if height != null:
+			node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+
+		if label and label != node:  # If label is a child of node
+			label.anchors_preset = Control.PRESET_FULL_RECT
+			label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	# Apply max constraints via MaxSizeContainer
+	var result_node = node
+	if max_width != null or max_height != null:
+		var max_container = MaxSizeControl.new()
+		max_container.max_size = Vector2(
+			max_width if max_width != null else -1,
+			max_height if max_height != null else -1
+		)
+
+		safe_add_child(website_container, max_container)
+		result_node = max_container
+
 	if label:
 		apply_styles_to_label(label, styles, element, parser)
+	return result_node
 
 func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, element: HTMLParser.HTMLElement, parser) -> void:
 	var text = element.get_bbcode_formatted_text(parser) # pass parser
@@ -325,6 +405,16 @@ func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, element: HT
 		mono_open = "[code]"
 		mono_close = "[/code]"
 
+	if styles.has("text-align"):
+		match styles["text-align"]:
+			"left":
+				label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+			"center":
+				label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			"right":
+				label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			"justify":
+				label.horizontal_alignment = HORIZONTAL_ALIGNMENT_FILL
 	# Construct final text
 	var styled_text = "[font_size=%d]%s%s%s%s%s%s%s%s%s%s%s%s%s[/font_size]" % [
 		font_size,
@@ -363,27 +453,27 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser = n
 			node = P.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"h1":
 			node = H1.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"h2":
 			node = H2.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"h3":
 			node = H3.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"h4":
 			node = H4.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"h5":
 			node = H5.instantiate()
 			node.init(element)
@@ -399,6 +489,8 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser = n
 		"img":
 			node = IMG.instantiate()
 			node.init(element)
+			if parser:
+				node = apply_element_styles(node, element, parser)
 		"separator":
 			node = SEPARATOR.instantiate()
 			node.init(element)
@@ -413,49 +505,53 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser = n
 		"input":
 			node = INPUT.instantiate()
 			node.init(element)
+			if parser:
+				node = apply_element_styles(node, element, parser)
 		"button":
 			node = BUTTON.instantiate()
 			node.init(element)
+			if parser:
+				node = apply_element_styles(node, element, parser)
 		"span":
 			node = SPAN.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"b":
 			node = SPAN.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"i":
 			node = SPAN.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"u":
 			node = SPAN.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"small":
 			node = SPAN.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"mark":
 			node = SPAN.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"code":
 			node = SPAN.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"a":
 			node = SPAN.instantiate()
 			node.init(element)
 			if parser:
-				apply_element_styles(node, element, parser)
+				node = apply_element_styles(node, element, parser)
 		"ul":
 			node = UL.instantiate()
 			website_container.add_child(node)  # Add to scene tree first
@@ -469,15 +565,23 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser = n
 		"li":
 			node = LI.instantiate()
 			node.init(element)
+			if parser:
+				node = apply_element_styles(node, element, parser)
 		"select":
 			node = SELECT.instantiate()
 			node.init(element)
+			if parser:
+				node = apply_element_styles(node, element, parser)
 		"option":
 			node = OPTION.instantiate()
 			node.init(element)
+			if parser:
+				node = apply_element_styles(node, element, parser)
 		"textarea":
 			node = TEXTAREA.instantiate()
 			node.init(element)
+			if parser:
+				node = apply_element_styles(node, element, parser)
 		_:
 			return null
 	
