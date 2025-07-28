@@ -12,10 +12,12 @@ static func parse_size(val):
 	if val.ends_with("%"):
 		# Not supported directly, skip
 		return null
+	if val == "full":
+		return null
 	return float(val)
 
 static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement, parser: HTMLParser) -> Control:
-	var styles = parser.get_element_styles(element)
+	var styles = parser.get_element_styles_with_inheritance(element, "", [])
 	var label = null
 	
 	if not (node is FlexContainer):
@@ -47,7 +49,6 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 	if styles.has("background-color"):
 		var target_node_for_bg = node if node is FlexContainer else label
 		if target_node_for_bg:
-			print("SETTING BACKGROUND FOR ", target_node_for_bg, " TO COLOR: ", styles)
 			target_node_for_bg.set_meta("custom_css_background_color", styles["background-color"])
 			if target_node_for_bg.has_method("add_background_rect"):
 				target_node_for_bg.call_deferred("add_background_rect")

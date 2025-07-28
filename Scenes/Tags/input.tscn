@@ -71,10 +71,8 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -102.0
-offset_top = -24.0
-offset_right = -1893.0
-offset_bottom = -1020.0
+offset_right = -1791.0
+offset_bottom = -996.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
@@ -84,7 +82,7 @@ script = ExtResource("1_input")
 [node name="LineEdit" type="LineEdit" parent="."]
 visible = false
 layout_mode = 1
-offset_right = 400.0
+offset_right = 200.0
 offset_bottom = 35.0
 theme = ExtResource("2_theme")
 text = "test"
@@ -110,7 +108,6 @@ button_group = SubResource("ButtonGroup_06us3")
 flat = true
 
 [node name="ColorPickerButton" type="ColorPickerButton" parent="."]
-visible = false
 layout_mode = 0
 offset_right = 83.0
 offset_bottom = 35.0
@@ -121,6 +118,7 @@ visible = false
 layout_mode = 0
 
 [node name="HSlider" type="HSlider" parent="."]
+visible = false
 layout_mode = 0
 offset_right = 200.0
 offset_bottom = 35.0

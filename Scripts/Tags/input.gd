@@ -7,7 +7,7 @@ var custom_hex_input: LineEdit
 var _file_text_content: String = ""
 var _file_binary_content: PackedByteArray = PackedByteArray()
 
-func init(element: HTMLParser.HTMLElement) -> void:
+func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
 	var color_picker_button: ColorPickerButton = $ColorPickerButton
 	var picker: ColorPicker = color_picker_button.get_picker()
 
@@ -74,7 +74,6 @@ func init(element: HTMLParser.HTMLElement) -> void:
 	
 	var active_child = get_node(active_child_name)
 	active_child.visible = true
-	custom_minimum_size = active_child.size
 
 	match input_type:
 		"checkbox":
@@ -127,11 +126,16 @@ func init(element: HTMLParser.HTMLElement) -> void:
 			var line_edit = active_child as LineEdit
 			line_edit.secret = false
 			setup_text_input(line_edit, placeholder, value, minlength, maxlength, pattern)
+	
+	apply_input_styles(element, parser)
 
 func remove_unused_children(keep_child_name: String) -> void:
 	for child in get_children():
 		if child.name != keep_child_name:
+			child.visible = false
 			child.queue_free()
+		else:
+			child.visible = true
 
 func setup_text_input(line_edit: LineEdit, placeholder: String, value: String, minlength: String, maxlength: String, pattern: String) -> void:
 	if placeholder: line_edit.placeholder_text = placeholder
@@ -289,3 +293,54 @@ func _on_file_selected(path: String) -> void:
 		file.close()
 		
 		# TODO: when adding Lua, make these actually usable
+
+func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
+	if not element or not parser:
+		return
+	
+	StyleManager.apply_element_styles(self, element, parser)
+	
+	var styles = parser.get_element_styles_with_inheritance(element, "", [])
+	
+	var width = null
+	var height = null
+	
+	if styles.has("width"):
+		if styles["width"] == "full":
+			var parent_styles = parser.get_element_styles_with_inheritance(element.parent, "", []) if element.parent else {}
+			if parent_styles.has("width"):
+				var parent_width = StyleManager.parse_size(parent_styles["width"])
+				if parent_width != null:
+					width = parent_width
+		else:
+			width = StyleManager.parse_size(styles["width"])
+	if styles.has("height"):
+		height = StyleManager.parse_size(styles["height"])
+	
+	var active_child = null
+	for child in get_children():
+		if child.visible:
+			active_child = child
+			break
+	
+	if active_child and (width != null or height != null):
+		var new_child_size = Vector2(
+			width if width != null else active_child.custom_minimum_size.x,
+			height if height != null else max(active_child.custom_minimum_size.y, active_child.size.y)
+		)
+		
+		active_child.custom_minimum_size = new_child_size
+		
+		if width != null:
+			active_child.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		if height != null:
+			active_child.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		
+		if active_child.size.x < new_child_size.x or (new_child_size.y > 0 and active_child.size.y < new_child_size.y):
+			active_child.size = new_child_size
+		
+		custom_minimum_size = new_child_size
+		
+		if active_child.name == "DateButton":
+			active_child.anchors_preset = Control.PRESET_TOP_LEFT
+			active_child.position = Vector2.ZERO

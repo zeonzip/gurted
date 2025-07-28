@@ -123,18 +123,50 @@ func process_styles() -> void:
 		for child: CSSParser.CSSRule in parse_result.css_parser.stylesheet.rules:
 			print("INFO: for selector \"%s\" we have props: %s" % [child.selector, child.properties])
 
-func get_element_styles(element: HTMLElement, event: String = "") -> Dictionary:
+func get_element_styles_with_inheritance(element: HTMLElement, event: String = "", visited_elements: Array = []) -> Dictionary:
+	# Prevent infinite recursion
+	if element in visited_elements:
+		return {}
+
+	visited_elements.append(element)
+	
+	var styles = {}
+	
+	styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event))
+	
+	# Apply inline styles (higher priority) - force override CSS rules
+	var inline_style = element.get_attribute("style")
+	if inline_style.length() > 0:
+		var inline_parsed = CSSParser.parse_inline_style(inline_style)
+		for property in inline_parsed:
+			styles[property] = inline_parsed[property]
+	
+	# Inherit certain properties from parent elements
+	var inheritable_properties = ["width", "height", "font-size", "color", "font-family"]
+	var parent_element = element.parent
+	while parent_element and parent_element.tag_name != "body":
+		var parent_styles = get_element_styles_internal(parent_element, event)
+		for property in inheritable_properties:
+			# Only inherit if child doesn't already have this property
+			if not styles.has(property) and parent_styles.has(property):
+				styles[property] = parent_styles[property]
+		parent_element = parent_element.parent
+	
+	return styles
+
+func get_element_styles_internal(element: HTMLElement, event: String = "") -> Dictionary:
 	var styles = {}
 	
 	# Apply CSS rules
 	if parse_result.css_parser:
 		styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event))
 	
-	# Apply inline styles (higher priority)
+	# Apply inline styles (higher priority) - force override CSS rules
 	var inline_style = element.get_attribute("style")
 	if inline_style.length() > 0:
 		var inline_parsed = CSSParser.parse_inline_style(inline_style)
-		styles.merge(inline_parsed)
+		for property in inline_parsed:
+			styles[property] = inline_parsed[property]  # Force override
 	
 	return styles
 
@@ -241,7 +273,7 @@ func get_all_stylesheets() -> Array[String]:
 	return get_attribute_values("style", "src")
 
 func apply_element_styles(node: Control, element: HTMLElement, parser: HTMLParser) -> void:
-	var styles = parser.get_element_styles(element)
+	var styles = parser.get_element_styles_with_inheritance(element, "", [])
 	if node.get("rich_text_label"):
 		var label = node.rich_text_label
 		var text = HTMLParser.get_bbcode_with_styles(element, styles, parser)
@@ -255,7 +287,7 @@ static func get_bbcode_with_styles(element: HTMLElement, styles: Dictionary, par
 	for child in element.children:
 		var child_styles = styles
 		if parser != null:
-			child_styles = parser.get_element_styles(child)
+			child_styles = parser.get_element_styles_with_inheritance(child, "", [])
 		var child_content = HTMLParser.get_bbcode_with_styles(child, child_styles, parser)
 		match child.tag_name:
 			"b":

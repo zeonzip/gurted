@@ -120,7 +120,7 @@ func contains_hyperlink(element: HTMLParser.HTMLElement) -> bool:
 	return false
 
 func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) -> Control:
-	var styles = parser.get_element_styles(element)
+	var styles = parser.get_element_styles_with_inheritance(element, "", [])
 	var is_flex_container = styles.has("display") and ("flex" in styles["display"])
 
 	var final_node: Control
@@ -214,10 +214,10 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 				safe_add_child(node, child_node)
 		"input":
 			node = INPUT.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"button":
 			node = BUTTON.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"span", "b", "i", "u", "small", "mark", "code", "a":
 			node = SPAN.instantiate()
 			node.init(element)
