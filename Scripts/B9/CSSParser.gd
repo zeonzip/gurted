@@ -258,6 +258,96 @@ func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
 		rule.properties["max-height"] = parse_size(val)
 		return
 
+	# Flex container
+	if utility_name == "flex":
+		rule.properties["display"] = "flex"
+		return
+	if utility_name == "inline-flex":
+		rule.properties["display"] = "inline-flex"
+		return
+
+	# Flex direction
+	match utility_name:
+		"flex-row": rule.properties["flex-direction"] = "row"; return
+		"flex-row-reverse": rule.properties["flex-direction"] = "row-reverse"; return
+		"flex-col": rule.properties["flex-direction"] = "column"; return
+		"flex-col-reverse": rule.properties["flex-direction"] = "column-reverse"; return
+
+	# Flex wrap
+	match utility_name:
+		"flex-nowrap": rule.properties["flex-wrap"] = "nowrap"; return
+		"flex-wrap": rule.properties["flex-wrap"] = "wrap"; return
+		"flex-wrap-reverse": rule.properties["flex-wrap"] = "wrap-reverse"; return
+
+	# Justify content
+	match utility_name:
+		"justify-start": rule.properties["justify-content"] = "flex-start"; return
+		"justify-end": rule.properties["justify-content"] = "flex-end"; return
+		"justify-center": rule.properties["justify-content"] = "center"; return
+		"justify-between": rule.properties["justify-content"] = "space-between"; return
+		"justify-around": rule.properties["justify-content"] = "space-around"; return
+		"justify-evenly": rule.properties["justify-content"] = "space-evenly"; return
+
+	# Align items
+	match utility_name:
+		"items-start": rule.properties["align-items"] = "flex-start"; return
+		"items-end": rule.properties["align-items"] = "flex-end"; return
+		"items-center": rule.properties["align-items"] = "center"; return
+		"items-baseline": rule.properties["align-items"] = "baseline"; return
+		"items-stretch": rule.properties["align-items"] = "stretch"; return
+
+	# Align content
+	match utility_name:
+		"content-start": rule.properties["align-content"] = "flex-start"; return
+		"content-end": rule.properties["align-content"] = "flex-end"; return
+		"content-center": rule.properties["align-content"] = "center"; return
+		"content-between": rule.properties["align-content"] = "space-between"; return
+		"content-around": rule.properties["align-content"] = "space-around"; return
+		"content-stretch": rule.properties["align-content"] = "stretch"; return
+
+	# Gap
+	if utility_name.begins_with("gap-"):
+		var val = utility_name.substr(4)
+		rule.properties["gap"] = parse_size(val)
+		return
+	if utility_name.begins_with("row-gap-"):
+		var val = utility_name.substr(8)
+		rule.properties["row-gap"] = parse_size(val)
+		return
+	if utility_name.begins_with("col-gap-"):
+		var val = utility_name.substr(8)
+		rule.properties["column-gap"] = parse_size(val)
+		return
+
+	# FLEX ITEM PROPERTIES
+	if utility_name.begins_with("flex-grow-"):
+		var val = utility_name.substr(10)
+		rule.properties["flex-grow"] = val.to_float()
+		return
+	if utility_name.begins_with("flex-shrink-"):
+		var val = utility_name.substr(12)
+		rule.properties["flex-shrink"] = val.to_float()
+		return
+	if utility_name.begins_with("basis-"):
+		var val = utility_name.substr(6)
+		rule.properties["flex-basis"] = parse_size(val)
+		return
+
+	# Align self
+	match utility_name:
+		"self-auto": rule.properties["align-self"] = "auto"; return
+		"self-start": rule.properties["align-self"] = "flex-start"; return
+		"self-end": rule.properties["align-self"] = "flex-end"; return
+		"self-center": rule.properties["align-self"] = "center"; return
+		"self-stretch": rule.properties["align-self"] = "stretch"; return
+		"self-baseline": rule.properties["align-self"] = "baseline"; return
+
+	# Order
+	if utility_name.begins_with("order-"):
+		var val = utility_name.substr(6)
+		rule.properties["order"] = val.to_int()
+		return
+
 	# Handle more utility classes as needed
 	# Add more cases here for other utilities
 
@@ -292,7 +382,6 @@ func extract_bracket_content(string: String, start_idx: int) -> String:
 	return string.substr(open_idx + 1, close_idx - open_idx - 1)
 
 func parse_color(color_string: String) -> Color:
-	print("DEBUG: parsing color: ", color_string)
 	color_string = color_string.strip_edges()
 	
 	# Handle hex colors

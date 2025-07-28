@@ -28,7 +28,7 @@ window/stretch/aspect="ignore"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/DatePicker/plugin.cfg", "res://addons/MaxSizeContainer/plugin.cfg", "res://addons/SmoothScroll/plugin.cfg")
+enabled=PackedStringArray("res://addons/DatePicker/plugin.cfg", "res://addons/Flexbox/plugin.cfg", "res://addons/SmoothScroll/plugin.cfg", "res://addons/godot-flexbox/plugin.cfg")
 
 [file_customization]
 

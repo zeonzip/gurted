@@ -55,21 +55,6 @@ var xml_parser: XMLParser
 var bitcode: PackedByteArray
 var parse_result: ParseResult
 
-var DEFAULT_CSS := """
-h1 { text-5xl font-bold }
-h2 { text-4xl font-bold }
-h3 { text-3xl font-bold }
-h4 { text-2xl font-bold }
-h5 { text-xl font-bold }
-b { font-bold }
-i { font-italic }
-u { underline }
-small { text-xl }
-mark { bg-[#FFFF00] }
-code { text-xl font-mono }
-a { text-[#1a0dab] }
-"""
-
 func _init(data: PackedByteArray):
 	bitcode = data
 	xml_parser = XMLParser.new()
@@ -125,7 +110,7 @@ func process_styles() -> void:
 		return
 	
 	# Collect all style element content
-	var css_content = DEFAULT_CSS
+	var css_content = Constants.DEFAULT_CSS
 	var style_elements = find_all("style")
 	for style_element in style_elements:
 		if style_element.get_attribute("src").is_empty():
