@@ -252,7 +252,7 @@ var HTML_CONTENT = """<head>
 	<p>Keep track of your to-do list</p>
 
 	<!-- Task List -->
-	<div style="flex flex-col gap-2 w-64 bg-[#f8fafc] items-center justify-center">
+	<div style="flex flex-col gap-2 w-80 bg-[#f8fafc] items-center justify-center">
 		<span style="flex justify-between items-center bg-[#e2e8f0] w-full h-8">
 			<span>✅ Finish homework</span>
 			<button>Delete</button>

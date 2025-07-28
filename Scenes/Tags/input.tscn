@@ -135,7 +135,6 @@ min_value = -99999.0
 max_value = 99999.0
 
 [node name="FileContainer" type="HBoxContainer" parent="."]
-visible = false
 layout_mode = 0
 offset_right = 300.0
 offset_bottom = 35.0

@@ -172,9 +172,19 @@ static func apply_flex_container_properties(node: FlexContainer, styles: Diction
 		node._root.set_gap(0, parse_flex_value(styles["column-gap"]))
 	
 	if styles.has("width"):
-		node.set_meta("custom_css_width", parse_size(styles["width"]))
+		var width_val = styles["width"]
+		if width_val == "full":
+			# For flex containers, w-full should expand to fill parent
+			node.set_meta("should_fill_horizontal", true)
+		else:
+			node.set_meta("custom_css_width", parse_size(width_val))
 	if styles.has("height"):
-		node.set_meta("custom_css_height", parse_size(styles["height"]))
+		var height_val = styles["height"]
+		if height_val == "full":
+			# For flex containers, h-full should expand to fill parent
+			node.set_meta("should_fill_vertical", true)
+		else:
+			node.set_meta("custom_css_height", parse_size(height_val))
 	if styles.has("background-color"):
 		node.set_meta("custom_css_background_color", styles["background-color"])
 	node.update_layout()
