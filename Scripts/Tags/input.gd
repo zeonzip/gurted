@@ -310,7 +310,7 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 			var parent_styles = parser.get_element_styles_with_inheritance(element.parent, "", []) if element.parent else {}
 			if parent_styles.has("width"):
 				var parent_width = StyleManager.parse_size(parent_styles["width"])
-				if parent_width != null:
+				if parent_width:
 					width = parent_width
 		else:
 			width = StyleManager.parse_size(styles["width"])
@@ -323,23 +323,44 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 			active_child = child
 			break
 	
-	if active_child and (width != null or height != null):
-		var new_child_size = Vector2(
-			width if width != null else active_child.custom_minimum_size.x,
-			height if height != null else max(active_child.custom_minimum_size.y, active_child.size.y)
-		)
-		
-		active_child.custom_minimum_size = new_child_size
-		
-		if width != null:
-			active_child.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		if height != null:
-			active_child.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		
-		if active_child.size.x < new_child_size.x or (new_child_size.y > 0 and active_child.size.y < new_child_size.y):
-			active_child.size = new_child_size
-		
-		custom_minimum_size = new_child_size
+	if active_child:
+		if width or height:
+			# Explicit sizing from CSS
+			var new_child_size = Vector2(
+				width if width else active_child.custom_minimum_size.x,
+				height if height else max(active_child.custom_minimum_size.y, active_child.size.y)
+			)
+			
+			active_child.custom_minimum_size = new_child_size
+			
+			if width:
+				active_child.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			if height:
+				active_child.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+			
+			if active_child.size.x < new_child_size.x or (new_child_size.y > 0 and active_child.size.y < new_child_size.y):
+				active_child.size = new_child_size
+			
+			custom_minimum_size = new_child_size
+			
+			# Root Control adjusts size flags to match child
+			if width:
+				size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			else:
+				size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			if height:
+				size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+			else:
+				size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		else:
+			# No explicit CSS sizing - sync root Control with child's natural size
+			var child_natural_size = active_child.get_combined_minimum_size()
+			if child_natural_size == Vector2.ZERO:
+				child_natural_size = active_child.size
+			
+			custom_minimum_size = child_natural_size
+			size_flags_horizontal = Control.SIZE_SHRINK_BEGIN  
+			size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		
 		if active_child.name == "DateButton":
 			active_child.anchors_preset = Control.PRESET_TOP_LEFT

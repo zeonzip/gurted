@@ -1,6 +1,11 @@
 extends Control
 
+var current_element: HTMLParser.HTMLElement
+var current_parser: HTMLParser
+
 func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
+	current_element = element
+	current_parser = parser
 	var button_node: Button = $ButtonNode
 	
 	var button_text = element.text_content.strip_edges()
@@ -34,9 +39,30 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser, na
 		return
 
 	var styles = parser.get_element_styles_internal(element, "")
+	var hover_styles = parser.get_element_styles_internal(element, "hover")
+	var active_styles = parser.get_element_styles_internal(element, "active")
+	var button_node = $ButtonNode
 	
+	# Apply text color with state-dependent colors
+	apply_button_text_color(button_node, styles, hover_styles, active_styles)
+	
+	# Apply background color (hover: + active:)
 	if styles.has("background-color"):
-		set_meta("custom_css_background_color", styles["background-color"])
+		var normal_color = styles["background-color"] as Color
+		var hover_color: Color = Color()
+		var active_color: Color = Color()
+		
+		if hover_styles.has("background-color"):
+			hover_color = hover_styles["background-color"] as Color
+		if active_styles.has("background-color"):
+			active_color = active_styles["background-color"] as Color
+			
+		apply_button_color_with_states(button_node, normal_color, hover_color, active_color)
+	
+	# Apply corner radius
+	if styles.has("border-radius"):
+		var radius = StyleManager.parse_radius(styles["border-radius"])
+		apply_button_radius(button_node, radius)
 
 	var width = null
 	var height = null
@@ -45,8 +71,6 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser, na
 		width = StyleManager.parse_size(styles["width"])
 	if styles.has("height"):
 		height = StyleManager.parse_size(styles["height"])
-
-	var button_node = $ButtonNode
 
 	# Only apply size flags if there's explicit sizing
 	if width != null or height != null:
@@ -58,6 +82,65 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser, na
 		# Also ensure the ButtonNode doesn't override our size
 		button_node.custom_minimum_size = Vector2.ZERO
 		button_node.anchors_preset = Control.PRESET_FULL_RECT
+
+func apply_button_text_color(button: Button, normal_styles: Dictionary, hover_styles: Dictionary, active_styles: Dictionary) -> void:
+	var normal_color = normal_styles.get("color", Color.WHITE)
+	var hover_color = hover_styles.get("color", normal_color)
+	var active_color = active_styles.get("color", hover_color)
+	
+	button.add_theme_color_override("font_color", normal_color)
+	button.add_theme_color_override("font_hover_color", hover_color)
+	button.add_theme_color_override("font_pressed_color", active_color)
+	button.add_theme_color_override("font_focus_color", normal_color)
+
+func apply_button_color_with_states(button: Button, normal_color: Color, hover_color: Color, active_color: Color) -> void:
+	var existing_normal: StyleBoxFlat = button.get_theme_stylebox("normal") if button.has_theme_stylebox_override("normal") else null
+
+	var style_normal = StyleBoxFlat.new()
+	var style_hover = StyleBoxFlat.new()
+	var style_pressed = StyleBoxFlat.new()
+	
+	var radius: int = existing_normal.corner_radius_top_left if existing_normal else 0
+	
+	style_normal.set_corner_radius_all(radius)
+	style_hover.set_corner_radius_all(radius)
+	style_pressed.set_corner_radius_all(radius)
+
+	# Set normal color
+	style_normal.bg_color = normal_color
+
+	# Set hover: color
+	# If hover isn't default, use it
+	if hover_color != Color():
+		style_hover.bg_color = hover_color
+	else:
+		# If no hover, fallback to normal color
+		style_hover.bg_color = normal_color
+	
+	# Set active: color
+	if active_color != Color():
+		style_pressed.bg_color = active_color
+	elif hover_color != Color():
+		style_pressed.bg_color = hover_color # Fallback to hover if defined
+	else:
+		style_pressed.bg_color = normal_color # Final fallback to normal
+	
+	button.add_theme_stylebox_override("normal", style_normal)
+	button.add_theme_stylebox_override("hover", style_hover)
+	button.add_theme_stylebox_override("pressed", style_pressed)
+	
+func apply_button_radius(button: Button, radius: int) -> void:
+	var style_normal = button.get_theme_stylebox("normal")
+	var style_hover = button.get_theme_stylebox("hover")
+	var style_pressed = button.get_theme_stylebox("pressed")
+
+	style_normal.set_corner_radius_all(radius)
+	style_hover.set_corner_radius_all(radius)
+	style_pressed.set_corner_radius_all(radius)
+
+	button.add_theme_stylebox_override("normal", style_normal)
+	button.add_theme_stylebox_override("hover", style_hover)
+	button.add_theme_stylebox_override("pressed", style_pressed)
 
 func apply_size_and_flags(ctrl: Control, width: Variant, height: Variant, reset_layout := false) -> void:
 	if width != null or height != null:

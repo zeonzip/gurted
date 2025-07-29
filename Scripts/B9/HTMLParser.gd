@@ -164,11 +164,39 @@ func get_element_styles_internal(element: HTMLElement, event: String = "") -> Di
 	# Apply inline styles (higher priority) - force override CSS rules
 	var inline_style = element.get_attribute("style")
 	if inline_style.length() > 0:
-		var inline_parsed = CSSParser.parse_inline_style(inline_style)
+		var inline_parsed = parse_inline_style_with_event(inline_style, event)
 		for property in inline_parsed:
 			styles[property] = inline_parsed[property]  # Force override
 	
 	return styles
+
+func parse_inline_style_with_event(style_string: String, event: String = "") -> Dictionary:
+	var properties = {}
+	
+	# Split style string into individual utility classes
+	var utility_classes = style_string.split(" ") # e.g. ["bg-red-500, "text-lg", "hover:bg-blue-500"]
+
+	for utility_name in utility_classes:
+		utility_name = utility_name.strip_edges() # e.g. "bg-red-500"
+		if utility_name.is_empty():
+			continue
+		
+		# Check if this utility is for the requested event
+		if event.length() > 0:
+			if utility_name.begins_with(event + ":"): # e.g. "hover:bg-blue-500"
+				var actual_utility = utility_name.substr(event.length() + 1)  # bg-blue-500
+				var rule = CSSParser.CSSRule.new()
+				CSSParser.parse_utility_class(rule, actual_utility)
+				for property in rule.properties:
+					properties[property] = rule.properties[property]
+		else:
+			if not utility_name.contains(":"):
+				var rule = CSSParser.CSSRule.new()
+				CSSParser.parse_utility_class(rule, utility_name)
+				for property in rule.properties:
+					properties[property] = rule.properties[property]
+	
+	return properties
 
 # Creates element from CURRENT xml parser node
 func create_element() -> HTMLElement:

@@ -148,7 +148,9 @@ func parse_rule(rule_data: Dictionary) -> CSSRule:
 	
 	return rule
 
-func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
+# Parses a utility class (e.g. "text-red-500") and adds properties to the rule (e.g. "color: red")
+# Used as a translation layer for Tailwind-like utility classes, as it becomes easier to manage these programmatically
+static func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
 	# Handle color classes like text-[#ff0000]
 	if utility_name.begins_with("text-[") and utility_name.ends_with("]"):
 		var color_value = extract_bracket_content(utility_name, 5)  # after 'text-'
@@ -348,10 +350,45 @@ func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
 		rule.properties["order"] = val.to_int()
 		return
 
+	# Handle border radius classes like rounded, rounded-lg, rounded-[12px]
+	if utility_name == "rounded":
+		rule.properties["border-radius"] = "4px"
+		return
+	if utility_name == "rounded-none":
+		rule.properties["border-radius"] = "0px"
+		return
+	if utility_name == "rounded-sm":
+		rule.properties["border-radius"] = "2px"
+		return
+	if utility_name == "rounded-md":
+		rule.properties["border-radius"] = "6px"
+		return
+	if utility_name == "rounded-lg":
+		rule.properties["border-radius"] = "8px"
+		return
+	if utility_name == "rounded-xl":
+		rule.properties["border-radius"] = "12px"
+		return
+	if utility_name == "rounded-2xl":
+		rule.properties["border-radius"] = "16px"
+		return
+	if utility_name == "rounded-3xl":
+		rule.properties["border-radius"] = "24px"
+		return
+	if utility_name == "rounded-full":
+		rule.properties["border-radius"] = "9999px"
+		return
+	
+	# Handle custom border radius like rounded-[12px]
+	if utility_name.begins_with("rounded-[") and utility_name.ends_with("]"):
+		var radius_value = extract_bracket_content(utility_name, 8)  # after 'rounded-'
+		rule.properties["border-radius"] = radius_value
+		return
+
 	# Handle more utility classes as needed
 	# Add more cases here for other utilities
 
-func parse_size(val: String) -> String:
+static func parse_size(val: String) -> String:
 	var named = {
 		"0": "0px", "1": "4px", "2": "8px", "3": "12px", "4": "16px", "5": "20px", "6": "24px", "8": "32px", "10": "40px",
 		"12": "48px", "16": "64px", "20": "80px", "24": "96px", "28": "112px", "32": "128px", "36": "144px", "40": "160px",
@@ -372,7 +409,7 @@ func parse_size(val: String) -> String:
 	return val
 
 # Helper to extract content inside first matching brackets after a given index
-func extract_bracket_content(string: String, start_idx: int) -> String:
+static func extract_bracket_content(string: String, start_idx: int) -> String:
 	var open_idx = string.find("[", start_idx)
 	if open_idx == -1:
 		return ""
@@ -381,7 +418,7 @@ func extract_bracket_content(string: String, start_idx: int) -> String:
 		return ""
 	return string.substr(open_idx + 1, close_idx - open_idx - 1)
 
-func parse_color(color_string: String) -> Color:
+static  func parse_color(color_string: String) -> Color:
 	color_string = color_string.strip_edges()
 	
 	# Handle hex colors

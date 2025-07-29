@@ -272,3 +272,13 @@ static func should_skip_sizing(node: Control, element: HTMLParser.HTMLElement, p
 		return true
 	
 	return false
+
+static func parse_radius(radius_str: String) -> int:
+	if radius_str.ends_with("px"):
+		return int(radius_str.replace("px", ""))
+	elif radius_str.ends_with("rem"):
+		return int(radius_str.replace("rem", "")) * 16
+	elif radius_str.is_valid_float():
+		return int(radius_str)
+	else:
+		return 0

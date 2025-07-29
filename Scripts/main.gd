@@ -164,8 +164,15 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 	# Apply flex ITEM properties
 	StyleManager.apply_flex_item_properties(final_node, styles)
 
-	# Add child elements (but NOT for ul/ol which handle their own children)
-	if element.tag_name != "ul" and element.tag_name != "ol":
+	# Skip ul/ol and non-flex forms, they handle their own children
+	var skip_general_processing = false
+
+	if element.tag_name == "ul" or element.tag_name == "ol":
+		skip_general_processing = true
+	elif element.tag_name == "form":
+		skip_general_processing = not is_flex_container
+	
+	if not skip_general_processing:
 		for child_element in element.children:
 			# Only add child nodes if the child is NOT an inline element
 			# UNLESS the parent is a flex container (inline elements become flex items)
@@ -205,13 +212,21 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			node = SEPARATOR.instantiate()
 			node.init(element)
 		"form":
-			node = FORM.instantiate()
-			node.init(element)
+			var form_styles = parser.get_element_styles_with_inheritance(element, "", [])
+			var is_flex_form = form_styles.has("display") and ("flex" in form_styles["display"])
 			
-			# Forms need to manually process their children
-			for child_element in element.children:
-				var child_node = await create_element_node(child_element, parser)
-				safe_add_child(node, child_node)
+			if is_flex_form:
+				# Don't create a form node here - return null so general processing takes over
+				return null
+			else:
+				node = FORM.instantiate()
+				node.init(element)
+				
+				# Manually process children for non-flex forms
+				for child_element in element.children:
+					var child_node = await create_element_node(child_element, parser)
+					if child_node:
+						safe_add_child(node, child_node)
 		"input":
 			node = INPUT.instantiate()
 			node.init(element, parser)
