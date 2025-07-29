@@ -48,14 +48,30 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser, na
 	
 	# Apply background color (hover: + active:)
 	if styles.has("background-color"):
-		var normal_color = styles["background-color"] as Color
-		var hover_color: Color = Color()
-		var active_color: Color = Color()
+		var normal_color: Color = styles["background-color"]
+		var hover_color = normal_color  # Default to normal color
+		var active_color = normal_color  # Default to normal color
 		
-		if hover_styles.has("background-color"):
-			hover_color = hover_styles["background-color"] as Color
-		if active_styles.has("background-color"):
-			active_color = active_styles["background-color"] as Color
+		# Check if background color comes from inline styles
+		var inline_style = element.get_attribute("style")
+		var inline_normal_styles = parser.parse_inline_style_with_event(inline_style, "")
+		var has_inline_bg = inline_normal_styles.has("background-color")
+		
+		if has_inline_bg:
+			# If user set inline bg, only use inline hover/active, ignore global ones
+			var inline_hover_styles = parser.parse_inline_style_with_event(inline_style, "hover")
+			var inline_active_styles = parser.parse_inline_style_with_event(inline_style, "active")
+			
+			if inline_hover_styles.has("background-color"):
+				hover_color = inline_hover_styles["background-color"]
+			if inline_active_styles.has("background-color"):
+				active_color = inline_active_styles["background-color"]
+		else:
+			# No inline bg, use global CSS hover/active if available
+			if hover_styles.has("background-color"):
+				hover_color = hover_styles["background-color"]
+			if active_styles.has("background-color"):
+				active_color = active_styles["background-color"]
 			
 		apply_button_color_with_states(button_node, normal_color, hover_color, active_color)
 	
