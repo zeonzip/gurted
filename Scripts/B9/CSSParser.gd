@@ -16,8 +16,8 @@ class CSSRule:
 		if selector.contains(":"):
 			var parts = selector.split(":", false, 1)
 			if parts.size() == 2:
-				event_prefix = parts[0]
-				selector = parts[1]
+				selector = parts[0]
+				event_prefix = parts[1]
 	
 	func calculate_specificity():
 		specificity = 1
@@ -148,9 +148,26 @@ func parse_rule(rule_data: Dictionary) -> CSSRule:
 	
 	return rule
 
+func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
+	var pseudo_classes = ["hover", "active"]
+
+	for pseudo in pseudo_classes:
+		var prefix = pseudo + ":"
+		if utility_name.begins_with(prefix):
+			var actual_utility = utility_name.substr(prefix.length())
+			var pseudo_rule = CSSRule.new()
+			pseudo_rule.selector = rule.selector + ":" + pseudo
+			pseudo_rule.init(pseudo_rule.selector)
+			parse_utility_class_internal(pseudo_rule, actual_utility)
+			stylesheet.add_rule(pseudo_rule)
+			return
+
+	# Fallback to normal parsing
+	parse_utility_class_internal(rule, utility_name)
+
 # Parses a utility class (e.g. "text-red-500") and adds properties to the rule (e.g. "color: red")
 # Used as a translation layer for Tailwind-like utility classes, as it becomes easier to manage these programmatically
-static func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
+static func parse_utility_class_internal(rule: CSSRule, utility_name: String) -> void:
 	# Handle color classes like text-[#ff0000]
 	if utility_name.begins_with("text-[") and utility_name.ends_with("]"):
 		var color_value = extract_bracket_content(utility_name, 5)  # after 'text-'
@@ -455,10 +472,15 @@ static  func parse_color(color_string: String) -> Color:
 		_: return Color.from_string(color_string, Color.WHITE)
 
 static func parse_inline_style(style_string: String) -> Dictionary:
-	var parser = CSSParser.new()
-	var rule_data = {
-		"selector": "",
-		"properties": style_string
-	}
-	var rule = parser.parse_rule(rule_data)
-	return rule.properties if rule else {}
+	var rule = CSSRule.new()
+	rule.selector = ""
+	rule.init(rule.selector)
+	
+	var utility_classes = style_string.split(" ")
+	for utility_name in utility_classes:
+		utility_name = utility_name.strip_edges()
+		if utility_name.is_empty():
+			continue
+		parse_utility_class_internal(rule, utility_name)
+	
+	return rule.properties

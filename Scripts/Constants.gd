@@ -19,6 +19,8 @@ mark { bg-[#FFFF00] }
 code { text-xl font-mono }
 a { text-[#1a0dab] }
 pre { text-xl font-mono }
+
+button { bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] }
 """
 
 var HTML_CONTENT2 = "<head>

@@ -186,13 +186,13 @@ func parse_inline_style_with_event(style_string: String, event: String = "") -> 
 			if utility_name.begins_with(event + ":"): # e.g. "hover:bg-blue-500"
 				var actual_utility = utility_name.substr(event.length() + 1)  # bg-blue-500
 				var rule = CSSParser.CSSRule.new()
-				CSSParser.parse_utility_class(rule, actual_utility)
+				CSSParser.parse_utility_class_internal(rule, actual_utility)
 				for property in rule.properties:
 					properties[property] = rule.properties[property]
 		else:
 			if not utility_name.contains(":"):
 				var rule = CSSParser.CSSRule.new()
-				CSSParser.parse_utility_class(rule, utility_name)
+				CSSParser.parse_utility_class_internal(rule, utility_name)
 				for property in rule.properties:
 					properties[property] = rule.properties[property]
 	

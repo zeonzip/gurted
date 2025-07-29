@@ -94,13 +94,11 @@ func apply_button_text_color(button: Button, normal_styles: Dictionary, hover_st
 	button.add_theme_color_override("font_focus_color", normal_color)
 
 func apply_button_color_with_states(button: Button, normal_color: Color, hover_color: Color, active_color: Color) -> void:
-	var existing_normal: StyleBoxFlat = button.get_theme_stylebox("normal") if button.has_theme_stylebox_override("normal") else null
-
 	var style_normal = StyleBoxFlat.new()
 	var style_hover = StyleBoxFlat.new()
 	var style_pressed = StyleBoxFlat.new()
 	
-	var radius: int = existing_normal.corner_radius_top_left if existing_normal else 0
+	var radius: int = 0
 	
 	style_normal.set_corner_radius_all(radius)
 	style_hover.set_corner_radius_all(radius)
