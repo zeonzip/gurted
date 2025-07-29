@@ -66,12 +66,18 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser, na
 				hover_color = inline_hover_styles["background-color"]
 			if inline_active_styles.has("background-color"):
 				active_color = inline_active_styles["background-color"]
+			elif inline_hover_styles.has("background-color"):
+				# Fallback: if hover is defined but active isn't, use hover for active
+				active_color = hover_color
 		else:
 			# No inline bg, use global CSS hover/active if available
 			if hover_styles.has("background-color"):
 				hover_color = hover_styles["background-color"]
 			if active_styles.has("background-color"):
 				active_color = active_styles["background-color"]
+			elif hover_styles.has("background-color"):
+				# Fallback: if hover is defined but active isn't, use hover for active
+				active_color = hover_color
 			
 		apply_button_color_with_states(button_node, normal_color, hover_color, active_color)
 	
