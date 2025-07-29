@@ -31,8 +31,10 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 	if styles.has("height"):
 		height = parse_size(styles["height"])
 
-	# Apply size directly to the node given.
-	if width != null or height != null:
+	# Skip width/height inheritance for buttons when inheriting from auto-sized containers
+	var skip_sizing = should_skip_sizing(node, element, parser)
+	
+	if (width != null or height != null) and not skip_sizing:
 		node.custom_minimum_size = Vector2(
 			width if width != null else node.custom_minimum_size.x,
 			height if height != null else node.custom_minimum_size.y
@@ -120,14 +122,16 @@ static func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, elem
 		]
 		label.text = styled_text
 
-static func apply_flex_container_properties(node: FlexContainer, styles: Dictionary) -> void:
-	# Flex direction
+static func apply_flex_container_properties(node: FlexContainer, styles: Dictionary, element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
+	# Flex direction - default to row if not specified
 	if styles.has("flex-direction"):
 		match styles["flex-direction"]:
 			"row": node.flex_direction = FlexContainer.FlexDirection.Row
 			"row-reverse": node.flex_direction = FlexContainer.FlexDirection.RowReverse
 			"column": node.flex_direction = FlexContainer.FlexDirection.Column
 			"column-reverse": node.flex_direction = FlexContainer.FlexDirection.ColumnReverse
+	else:
+		node.flex_direction = FlexContainer.FlexDirection.Row
 	# Flex wrap
 	if styles.has("flex-wrap"):
 		match styles["flex-wrap"]:
@@ -240,3 +244,31 @@ static func parse_flex_value(val):
 			return "auto"
 
 	return null
+
+static func should_skip_sizing(node: Control, element: HTMLParser.HTMLElement, parser: HTMLParser) -> bool:
+	# Cache style lookups to avoid repeated calls
+	var element_styles = parser.get_element_styles_internal(element, "")
+	
+	# Button sizing rules: Skip sizing only when button has no explicit size 
+	# AND parent doesn't have explicit width (auto-inherited sizing)
+	if node.get_script() and node.get_script().get_path().ends_with("button.gd"):
+		# If button has explicit size, don't skip sizing
+		if element_styles.has("width") or element_styles.has("height"):
+			return false
+		
+		# Check if width is being inherited from parent with explicit size
+		var parent_element = element.parent
+		if parent_element:
+			var parent_styles = parser.get_element_styles_internal(parent_element, "")
+			var parent_has_explicit_width = parent_styles.has("width")
+			# Skip only if parent doesn't have explicit width (auto-inherited)
+			return not parent_has_explicit_width
+		
+		return true
+	
+	# Span sizing rules: Always skip sizing for spans since they're inline elements
+	# (flex containers use AutoSizingFlexContainer, not span.gd)
+	elif node.get_script() and node.get_script().get_path().ends_with("span.gd"):
+		return true
+	
+	return false

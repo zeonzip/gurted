@@ -234,34 +234,35 @@ So
 var HTML_CONTENT = """<head>
 	<title>Task Manager</title>
 	<icon src="https://cdn-icons-png.flaticon.com/512/126/126472.png">
+
 	<meta name="theme-color" content="#1e1e2f">
 	<meta name="description" content="Manage your tasks easily.">
 
 	<style>
-		h1 { text-[#4ade80] text-2xl font-bold text-center }
-		p { text-[#94a3b8] text-lg text-center }
-		button { bg-[#4ade80] text-[#ffffff] hover:bg-[#22c55e] }
-		input { bg-[#f0f0f0] text-[#111111] w-full }
+		h1 { text-[#4ade80] text-3xl font-bold }
+		p { text-[#94a3b8] text-lg }
+		button { bg-[#4ade80] text-[#ffffff] hover:bg-[#22c55e]  }
+		input { border border-[#cbd5e1] px-2 py-1 rounded }
 	</style>
 
 	<script src="logic.lua" />
 </head>
 
 <body>
-	<h1>📝 My Task Manager</h1>
-	<p>Keep track of your to-do list</p>
+	<h1 style="text-center">📝 My Task Manager</h1>
+	<p style="text-center mb-4">Keep track of your to-do list</p>
 
 	<!-- Task List -->
-	<div style="flex flex-col gap-2 w-80 bg-[#f8fafc] items-center justify-center">
-		<span style="flex justify-between items-center bg-[#e2e8f0] w-full h-8">
+	<div style="flex flex-col gap-2 w-80 mx-auto bg-[#f8fafc] p-4 rounded">
+		<span style="flex justify-between items-center bg-[#e2e8f0] px-2 py-1 rounded">
 			<span>✅ Finish homework</span>
 			<button>Delete</button>
 		</span>
-		<span style="flex justify-between items-center bg-[#e2e8f0] w-full h-8">
+		<span style="flex justify-between items-center bg-[#e2e8f0] px-2 py-1 rounded">
 			<span>✍️ Write blog post</span>
 			<button>Delete</button>
 		</span>
-		<span style="flex justify-between items-center bg-[#e2e8f0] w-full h-8">
+		<span style="flex justify-between items-center bg-[#e2e8f0] px-2 py-1 rounded">
 			<span>💪 Gym workout</span>
 			<button>Delete</button>
 		</span>
@@ -269,29 +270,21 @@ var HTML_CONTENT = """<head>
 
 	<separator direction="horizontal" />
 
-	<!-- Add Task Form -->
-	<h2 style="text-center">Add a New Task</h2>
-	<form action="/add-task" method="POST" style="flex flex-col gap-2 items-center justify-center w-xl">
-		<input type="text" placeholder="Enter text..." />
-		<input type="password" placeholder="Enter password..." />
+	<!-- Add New Task -->
+	<h2 style="text-center mt-4">Add a New Task</h2>
+	<form action="/add-task" method="POST" style="flex flex-col gap-2 w-80 mx-auto">
+		<input type="text" placeholder="Enter task..." minlength="3" required="true" />
 		<input type="date" />
-		<input type="color" />
-		<input type="number" min="0" max="100" />
-		<input type="range" min="0" max="100" />
-		<input type="checkbox" />
-		<input type="radio" name="test" />
-		<input type="file" />
 		<button type="submit">Add Task</button>
 	</form>
 
 	<separator direction="horizontal" />
 
-	<!-- Categories Section -->
 	<h2 style="text-center">Task Categories</h2>
-	<div style="flex flex-row gap-2 justify-center items-center w-64">
-		<span style="bg-[#fef3c7] w-32 h-8 flex items-center justify-center">📚 Study</span>
-		<span style="bg-[#d1fae5] w-32 h-8 flex items-center justify-center">💼 Work</span>
-		<span style="bg-[#e0e7ff] w-32 h-8 flex items-center justify-center">🏋️ Health</span>
+	<div style="flex flex-row gap-2 justify-center items-center w-full">
+		<span style="bg-[#fef3c7] px-4 py-2 rounded">📚 Study</span>
+		<span style="bg-[#d1fae5] px-4 py-2 rounded">💼 Work</span>
+		<span style="bg-[#e0e7ff] px-4 py-2 rounded">🏋️ Health</span>
 	</div>
 </body>
 """.to_utf8_buffer()
