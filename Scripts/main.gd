@@ -164,7 +164,7 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 
 	# Apply flex CONTAINER properties if it's a flex container
 	if is_flex_container:
-		StyleManager.apply_flex_container_properties(final_node, styles, element, parser)
+		StyleManager.apply_flex_container_properties(final_node, styles)
 
 	# Apply flex ITEM properties
 	StyleManager.apply_flex_item_properties(final_node, styles)

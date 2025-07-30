@@ -158,7 +158,6 @@ func _resort() -> void:
 	emit_signal("flex_resized")
 
 func calculate_available_dimension(is_width: bool) -> float:
-	var dimension_key = "custom_css_width" if is_width else "custom_css_height"
 	var percentage_key = "custom_css_width_percentage" if is_width else "custom_css_height_percentage"
 	var fill_key = "should_fill_horizontal" if is_width else "should_fill_vertical"
 	

@@ -206,7 +206,7 @@ func extract_class_names_from_style(element: HTMLElement) -> Array[String]:
 		var style_tokens = style_attr.split(" ")
 		for token in style_tokens:
 			token = token.strip_edges()
-			if token.length() > 0 and not CSSParser.is_utility_class(token):
+			if token.length() > 0 and not UtilityClassValidator.is_utility_class(token):
 				class_names.append(token)
 	return class_names
 

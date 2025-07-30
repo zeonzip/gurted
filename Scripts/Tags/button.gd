@@ -90,9 +90,9 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser, na
 	var height = null
 
 	if styles.has("width"):
-		width = StyleManager.parse_size(styles["width"])
+		width = SizingUtils.parse_size_value(styles["width"])
 	if styles.has("height"):
-		height = StyleManager.parse_size(styles["height"])
+		height = SizingUtils.parse_size_value(styles["height"])
 
 	# Only apply size flags if there's explicit sizing
 	if width != null or height != null:

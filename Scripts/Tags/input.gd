@@ -309,13 +309,13 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 		if styles["width"] == "full":
 			var parent_styles = parser.get_element_styles_with_inheritance(element.parent, "", []) if element.parent else {}
 			if parent_styles.has("width"):
-				var parent_width = StyleManager.parse_size(parent_styles["width"])
+				var parent_width = SizingUtils.parse_size_value(parent_styles["width"])
 				if parent_width:
 					width = parent_width
 		else:
-			width = StyleManager.parse_size(styles["width"])
+			width = SizingUtils.parse_size_value(styles["width"])
 	if styles.has("height"):
-		height = StyleManager.parse_size(styles["height"])
+		height = SizingUtils.parse_size_value(styles["height"])
 	
 	var active_child = null
 	for child in get_children():

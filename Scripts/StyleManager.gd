@@ -34,7 +34,7 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 		height = parse_size(styles["height"])
 
 	# Skip width/height inheritance for buttons when inheriting from auto-sized containers
-	var skip_sizing = should_skip_sizing(node, element, parser)
+	var skip_sizing = SizingUtils.should_skip_sizing(node, element, parser)
 	
 	if (width != null or height != null) and not skip_sizing:
 		# FlexContainers handle percentage sizing differently than regular controls
@@ -45,10 +45,10 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 				node.custom_minimum_size.y = height
 		elif node is VBoxContainer or node is HBoxContainer or node is Container:
 			# Hcontainer nodes (like ul, ol)
-			apply_container_dimension_sizing(node, width, height)
+			SizingUtils.apply_container_dimension_sizing(node, width, height)
 		else:
 			# regular controls
-			apply_regular_control_sizing(node, width, height)
+			SizingUtils.apply_regular_control_sizing(node, width, height)
 
 		if label and label != node:
 			label.anchors_preset = Control.PRESET_FULL_RECT
@@ -136,240 +136,14 @@ static func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, elem
 		
 		label.text = styled_text
 
-static func apply_flex_container_properties(node: FlexContainer, styles: Dictionary, element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
-	# Flex direction - default to row if not specified
-	if styles.has("flex-direction"):
-		match styles["flex-direction"]:
-			"row": node.flex_direction = FlexContainer.FlexDirection.Row
-			"row-reverse": node.flex_direction = FlexContainer.FlexDirection.RowReverse
-			"column": node.flex_direction = FlexContainer.FlexDirection.Column
-			"column-reverse": node.flex_direction = FlexContainer.FlexDirection.ColumnReverse
-	else:
-		node.flex_direction = FlexContainer.FlexDirection.Row
-	# Flex wrap
-	if styles.has("flex-wrap"):
-		match styles["flex-wrap"]:
-			"nowrap": node.flex_wrap = FlexContainer.FlexWrap.NoWrap
-			"wrap": node.flex_wrap = FlexContainer.FlexWrap.Wrap
-			"wrap-reverse": node.flex_wrap = FlexContainer.FlexWrap.WrapReverse
-	# Justify content
-	if styles.has("justify-content"):
-		match styles["justify-content"]:
-			"flex-start": node.justify_content = FlexContainer.JustifyContent.FlexStart
-			"flex-end": node.justify_content = FlexContainer.JustifyContent.FlexEnd
-			"center": node.justify_content = FlexContainer.JustifyContent.Center
-			"space-between": node.justify_content = FlexContainer.JustifyContent.SpaceBetween
-			"space-around": node.justify_content = FlexContainer.JustifyContent.SpaceAround
-			"space-evenly": node.justify_content = FlexContainer.JustifyContent.SpaceEvenly
-	# Align items
-	if styles.has("align-items"):
-		match styles["align-items"]:
-			"flex-start": node.align_items = FlexContainer.AlignItems.FlexStart
-			"flex-end": node.align_items = FlexContainer.AlignItems.FlexEnd
-			"center": node.align_items = FlexContainer.AlignItems.Center
-			"stretch": node.align_items = FlexContainer.AlignItems.Stretch
-			"baseline": node.align_items = FlexContainer.AlignItems.Baseline
-	# Align content
-	if styles.has("align-content"):
-		match styles["align-content"]:
-			"flex-start": node.align_content = FlexContainer.AlignContent.FlexStart
-			"flex-end": node.align_content = FlexContainer.AlignContent.FlexEnd
-			"center": node.align_content = FlexContainer.AlignContent.Center
-			"stretch": node.align_content = FlexContainer.AlignContent.Stretch
-			"space-between": node.align_content = FlexContainer.AlignContent.SpaceBetween
-			"space-around": node.align_content = FlexContainer.AlignContent.SpaceAround
-	# Gap
-	if styles.has("gap"):
-		# YGGutterAll = 2
-		node._root.set_gap(2, parse_flex_value(styles["gap"]))
-	if styles.has("row-gap"):
-		# YGGutterRow = 1
-		node._root.set_gap(1, parse_flex_value(styles["row-gap"]))
-	if styles.has("column-gap"):
-		# YGGutterColumn = 0
-		node._root.set_gap(0, parse_flex_value(styles["column-gap"]))
-	
-	if styles.has("width"):
-		var width_val = styles["width"]
-		if width_val == "full":
-			# For flex containers, w-full should expand to fill parent
-			node.set_meta("should_fill_horizontal", true)
-		elif typeof(width_val) == TYPE_STRING and width_val.ends_with("%"):
-			node.set_meta("custom_css_width_percentage", width_val)
-		else:
-			node.set_meta("custom_css_width", parse_size(width_val))
-	if styles.has("height"):
-		var height_val = styles["height"]
-		if height_val == "full":
-			# For flex containers, h-full should expand to fill parent
-			node.set_meta("should_fill_vertical", true)
-		elif typeof(height_val) == TYPE_STRING and height_val.ends_with("%"):
-			node.set_meta("custom_css_height_percentage", height_val)
-		else:
-			node.set_meta("custom_css_height", parse_size(height_val))
-	if styles.has("background-color"):
-		node.set_meta("custom_css_background_color", styles["background-color"])
-	node.update_layout()
+static func apply_flex_container_properties(node: FlexContainer, styles: Dictionary) -> void:
+	FlexUtils.apply_flex_container_properties(node, styles)
 
 static func apply_flex_item_properties(node: Control, styles: Dictionary) -> void:
-	var properties: Dictionary = node.get_meta("flex_metas", {}).duplicate(true)
-	var changed = false
-
-	if styles.has("flex-grow"):
-		properties["grow"] = float(styles["flex-grow"])
-		changed = true
-	if styles.has("flex-shrink"):
-		properties["shrink"] = float(styles["flex-shrink"])
-		changed = true
-	if styles.has("flex-basis"):
-		properties["basis"] = parse_flex_value(styles["flex-basis"])
-		changed = true
-	if styles.has("align-self"):
-		var align_self_value = -1
-		match styles["align-self"]:
-			"auto": align_self_value = FlexContainer.AlignItems.Auto
-			"flex-start": align_self_value = FlexContainer.AlignItems.FlexStart
-			"flex-end": align_self_value = FlexContainer.AlignItems.FlexEnd
-			"center": align_self_value = FlexContainer.AlignItems.Center
-			"stretch": align_self_value = FlexContainer.AlignItems.Stretch
-			"baseline": align_self_value = FlexContainer.AlignItems.Baseline
-		
-		if align_self_value != -1:
-			properties["align_self"] = align_self_value
-			changed = true
-
-	if changed:
-		node.set_meta("flex_metas", properties)
-		# The parent FlexContainer must be notified to update its layout.
-		var parent = node.get_parent()
-		if parent is FlexContainer:
-			parent.update_layout()
+	FlexUtils.apply_flex_item_properties(node, styles)
 
 static func parse_flex_value(val):
-	if val is float or val is int:
-		return float(val)
-
-	if val is String:
-		var s_val = val.strip_edges()
-		if s_val.is_valid_float():
-			return s_val.to_float()
-		if s_val.ends_with("%"):
-			# NOTE: Flex-basis percentages not supported by flexbox
-			return s_val.trim_suffix("%").to_float() / 100.0
-		if s_val.ends_with("px"):
-			return s_val.trim_suffix("px").to_float()
-		if s_val == "auto":
-			return "auto"
-
-	return null
-
-static func should_skip_sizing(node: Control, element: HTMLParser.HTMLElement, parser: HTMLParser) -> bool:
-	# Cache style lookups to avoid repeated calls
-	var element_styles = parser.get_element_styles_internal(element, "")
-	
-	# Button sizing rules: Skip sizing only when button has no explicit size 
-	# AND parent doesn't have explicit width (auto-inherited sizing)
-	if node.get_script() and node.get_script().get_path().ends_with("button.gd"):
-		# If button has explicit size, don't skip sizing
-		if element_styles.has("width") or element_styles.has("height"):
-			return false
-		
-		# Check if width is being inherited from parent with explicit size
-		var parent_element = element.parent
-		if parent_element:
-			var parent_styles = parser.get_element_styles_internal(parent_element, "")
-			var parent_has_explicit_width = parent_styles.has("width")
-			# Skip only if parent doesn't have explicit width (auto-inherited)
-			return not parent_has_explicit_width
-		
-		return true
-	
-	# Span sizing rules: Always skip sizing for spans since they're inline elements
-	# (flex containers use AutoSizingFlexContainer, not span.gd)
-	elif node.get_script() and node.get_script().get_path().ends_with("span.gd"):
-		return true
-	
-	return false
-
-static func apply_container_dimension_sizing(node: Control, width, height) -> void:
-	if width != null:
-		if is_percentage(width):
-			node.set_meta("container_percentage_width", width)
-			node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			apply_container_percentage_sizing(node)
-		else:
-			node.custom_minimum_size.x = width
-			node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	
-	if height != null:
-		if is_percentage(height):
-			node.set_meta("container_percentage_height", height)
-			node.size_flags_vertical = Control.SIZE_EXPAND_FILL
-			apply_container_percentage_sizing(node)
-		else:
-			node.custom_minimum_size.y = height
-			node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-
-static func apply_regular_control_sizing(node: Control, width, height) -> void:
-	if width != null:
-		if is_percentage(width):
-			var estimated_width = calculate_percentage_size(width, 800.0)
-			node.custom_minimum_size.x = estimated_width
-			node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		else:
-			node.custom_minimum_size.x = width
-			node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	
-	if height != null:
-		if is_percentage(height):
-			var estimated_height = calculate_percentage_size(height, 600.0)
-			node.custom_minimum_size.y = estimated_height
-			node.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		else:
-			node.custom_minimum_size.y = height
-			node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-
-static func is_percentage(value) -> bool:
-	return typeof(value) == TYPE_STRING and value.ends_with("%")
-
-static func calculate_percentage_size(percentage_str: String, fallback_size: float) -> float:
-	var clean_percentage = percentage_str.replace("%", "")
-	var percentage = float(clean_percentage) / 100.0
-	return fallback_size * percentage
-
-static func apply_container_percentage_sizing(node: Control) -> void:
-	var parent = node.get_parent()
-	if not parent:
-		return
-
-	var new_min_size = node.custom_minimum_size
-	
-	if node.has_meta("container_percentage_width"):
-		var percentage_str = node.get_meta("container_percentage_width")
-		var parent_width = get_parent_dimension(parent, true, 800.0)
-		new_min_size.x = calculate_percentage_size(percentage_str, parent_width)
-	
-	if node.has_meta("container_percentage_height"):
-		var percentage_str = node.get_meta("container_percentage_height")
-		var parent_height = get_parent_dimension(parent, false, 600.0)
-		new_min_size.y = calculate_percentage_size(percentage_str, parent_height)
-	
-	node.custom_minimum_size = new_min_size
-
-static func get_parent_dimension(parent: Control, is_width: bool, fallback: float) -> float:
-	var size_value = parent.size.x if is_width else parent.size.y
-	if size_value > 0:
-		return size_value
-	
-	var rect_size = parent.get_rect().size.x if is_width else parent.get_rect().size.y
-	if rect_size > 0:
-		return rect_size
-	
-	var min_size = parent.custom_minimum_size.x if is_width else parent.custom_minimum_size.y
-	if min_size > 0:
-		return min_size
-	
-	return fallback
+	return FlexUtils.parse_flex_value(val)
 
 static func apply_body_styles(body: HTMLParser.HTMLElement, parser: HTMLParser, website_container: Control, website_background: Control) -> void:
 	var styles = parser.get_element_styles_with_inheritance(body, "", [])
@@ -425,11 +199,4 @@ static func apply_body_styles(body: HTMLParser.HTMLElement, parser: HTMLParser, 
 				margin_container.add_theme_constant_override(margin_key, margin_val2)
 
 static func parse_radius(radius_str: String) -> int:
-	if radius_str.ends_with("px"):
-		return int(radius_str.replace("px", ""))
-	elif radius_str.ends_with("rem"):
-		return int(radius_str.replace("rem", "")) * 16
-	elif radius_str.is_valid_float():
-		return int(radius_str)
-	else:
-		return 0
+	return SizeUtils.parse_radius(radius_str)

@@ -1,5 +1,5 @@
 class_name Pre
 extends VBoxContainer
 
-func init(element: HTMLParser.HTMLElement) -> void:
+func init(_element: HTMLParser.HTMLElement) -> void:
 	pass

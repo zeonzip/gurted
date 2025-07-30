@@ -1,0 +1,42 @@
+class_name UtilityClassValidator
+extends RefCounted
+
+static var compiled_patterns: Array = []
+
+static func init_patterns():
+	if compiled_patterns.size() == 0:
+		var utility_patterns = [
+			"^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl)$",  # font sizes
+			"^text-(left|center|right|justify)$",  # text alignment
+			"^text-\\[.*\\]$",  # custom text colors
+			"^text-(white|black|transparent|slate-\\d+|gray-\\d+|red-\\d+|green-\\d+|blue-\\d+|yellow-\\d+)$",  # text colors
+			"^bg-\\[.*\\]$",  # custom bg colors
+			"^bg-(white|black|transparent|slate-\\d+|gray-\\d+|red-\\d+|green-\\d+|blue-\\d+|yellow-\\d+)$",  # bg colors
+			"^(w|h|min-w|min-h|max-w|max-h)-",  # sizing
+			"^font-(bold|mono|italic)$",  # font styles
+			"^underline$",
+			"^flex",  # flex utilities
+			"^items-",  # align items
+			"^justify-",  # justify content
+			"^content-",  # align content
+			"^self-",  # align self
+			"^order-",  # order
+			"^gap-",  # gap
+			"^(p|px|py|pt|pr|pb|pl)-",  # padding
+			"^rounded",  # border radius
+			"^basis-",  # flex basis
+			"^(hover|active):",  # pseudo classes
+		]
+		for pattern in utility_patterns:
+			var regex = RegEx.new()
+			regex.compile(pattern)
+			compiled_patterns.append(regex)
+
+static func is_utility_class(cls: String) -> bool:
+	# once
+	init_patterns()
+
+	for regex in compiled_patterns:
+		if regex.search(cls):
+			return true
+	return false
