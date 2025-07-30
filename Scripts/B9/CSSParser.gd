@@ -175,7 +175,8 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		return
 	
 	# Handle standard text color classes like text-white, text-black, etc.
-	if utility_name.begins_with("text-"):
+	# But exclude text alignment classes
+	if utility_name.begins_with("text-") and not utility_name in ["text-left", "text-center", "text-right", "text-justify"]:
 		var color_name = utility_name.substr(5)  # after 'text-'
 		var color = get_color(color_name)
 		if color != null:
