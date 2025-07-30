@@ -66,8 +66,8 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 
 	return node
 
-static func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, element: HTMLParser.HTMLElement, parser) -> void:
-		var text =  element.get_preserved_text() if element.tag_name == "pre" else element.get_bbcode_formatted_text(parser)
+static func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, element: HTMLParser.HTMLElement, parser, text_override: String = "") -> void:
+		var text = text_override if text_override != "" else (element.get_preserved_text() if element.tag_name == "pre" else element.get_bbcode_formatted_text(parser))
 
 		var font_size = 24  # default
 		# Apply font size

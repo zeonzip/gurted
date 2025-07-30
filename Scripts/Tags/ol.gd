@@ -30,7 +30,7 @@ func calculate_marker_width(list_type: String, max_index: int) -> float:
 	add_child(temp_label)
 	
 	var marker_text = get_marker_for_type(list_type, max_index)
-	temp_label.text = "[font_size=24]%s[/font_size]" % marker_text
+	StyleManager.apply_styles_to_label(temp_label, {}, null, null, marker_text)
 	
 	await get_tree().process_frame
 	
@@ -55,7 +55,7 @@ func create_li_node(element: HTMLParser.HTMLElement, list_type: String, index: i
 	marker_label.theme = BROWSER_TEXT
 	
 	var marker_text = get_marker_for_type(list_type, index)
-	marker_label.text = "[font_size=24]%s[/font_size]" % marker_text
+	StyleManager.apply_styles_to_label(marker_label, {}, null, null, marker_text)
 	
 	# Create content
 	var content_label = RichTextLabel.new()
@@ -65,7 +65,8 @@ func create_li_node(element: HTMLParser.HTMLElement, list_type: String, index: i
 	content_label.scroll_active = false
 	content_label.theme = BROWSER_TEXT
 	
-	content_label.text = "[font_size=24]%s[/font_size]" % element.get_bbcode_formatted_text(parser)
+	var content_text = element.get_bbcode_formatted_text(parser)
+	StyleManager.apply_styles_to_label(content_label, {}, null, null, content_text)
 	
 	li_container.add_theme_constant_override("separation", 0)
 	li_container.add_child(marker_label)
