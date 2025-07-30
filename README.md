@@ -1,7 +1,10 @@
 gurted (verb)
 > “to do something smart, but also dangerous”
 
-Sir facedev you should use the appropriate feature for this (issues) instead of using the readme, it's not professional.
+wayfinder (noun)
+> “a person helping others navigate”
+
+In traditional web, you might be familiar with the term "browser." A **wayfinder** is that, but for the **GURT** protocol.
 
 TODO:
 1. Write a new **selection system**. Godot's built-in `RichTextLabel` selection is limited by the node's boundaries. In normal web, holding click and dragging your mouse across the screen will select text across multiple nodes. Godot doesn't have a "set_selected_text" property, despite having one for "get_selected_text".

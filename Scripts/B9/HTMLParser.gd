@@ -132,8 +132,8 @@ func get_element_styles_with_inheritance(element: HTMLElement, event: String = "
 	
 	var styles = {}
 	
-	styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event))
-	
+	var class_names = extract_class_names_from_style(element)
+	styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event, class_names))
 	# Apply inline styles (higher priority) - force override CSS rules
 	var inline_style = element.get_attribute("style")
 	if inline_style.length() > 0:
@@ -159,7 +159,8 @@ func get_element_styles_internal(element: HTMLElement, event: String = "") -> Di
 	
 	# Apply CSS rules
 	if parse_result.css_parser:
-		styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event))
+		var class_names = extract_class_names_from_style(element)
+		styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event, class_names))
 	
 	# Apply inline styles (higher priority) - force override CSS rules
 	var inline_style = element.get_attribute("style")
@@ -198,6 +199,17 @@ func parse_inline_style_with_event(style_string: String, event: String = "") -> 
 	
 	return properties
 
+func extract_class_names_from_style(element: HTMLElement) -> Array[String]:
+	var class_names: Array[String] = []
+	var style_attr = element.get_attribute("style")
+	if style_attr.length() > 0:
+		var style_tokens = style_attr.split(" ")
+		for token in style_tokens:
+			token = token.strip_edges()
+			if token.length() > 0 and not CSSParser.is_utility_class(token):
+				class_names.append(token)
+	return class_names
+
 # Creates element from CURRENT xml parser node
 func create_element() -> HTMLElement:
 	var element = HTMLElement.new(xml_parser.get_node_name())
@@ -230,7 +242,7 @@ func find_all_by_class(tag: String, the_class_name: String) -> Array[HTMLElement
 	
 	var results: Array[HTMLElement] = []
 	for element in parse_result.all_elements:
-		if element.tag_name == tag and element.get_class() == the_class_name:
+		if element.tag_name == tag and element.get_class_name() == the_class_name:
 			results.append(element)
 	
 	return results

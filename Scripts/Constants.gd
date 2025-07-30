@@ -35,7 +35,7 @@ var HTML_CONTENT = """<head>
 		h2 { text-[#cbd5e1] text-xl }
 		p { text-[#94a3b8] text-base }
 		button { bg-[#4ade80] text-[#ffffff] hover:bg-[#22c55e] active:bg-[#15803d] }
-		card { bg-[#1e293b] text-[#f8fafc] rounded-xl p-4 shadow-lg }
+		.card { bg-[#1e293b] text-[#f8fafc] rounded-xl p-4 shadow-lg }
 	</style>
 </head>
 

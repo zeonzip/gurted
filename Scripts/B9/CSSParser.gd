@@ -21,6 +21,8 @@ class CSSRule:
 	
 	func calculate_specificity():
 		specificity = 1
+		if selector.begins_with("."):
+			specificity += 10  # Class selectors have higher specificity than tag selectors
 		if event_prefix.length() > 0:
 			specificity += 10
 
@@ -30,13 +32,13 @@ class CSSStylesheet:
 	func add_rule(rule: CSSRule):
 		rules.append(rule)
 	
-	func get_styles_for_element(tag_name: String, event: String = "") -> Dictionary:
+	func get_styles_for_element(tag_name: String, event: String = "", class_names: Array[String] = []) -> Dictionary:
 		var styles = {}
 		
 		# Sort rules by specificity
 		var applicable_rules: Array[CSSRule] = []
 		for rule in rules:
-			if selector_matches(rule, tag_name, event):
+			if selector_matches(rule, tag_name, event, class_names):
 				applicable_rules.append(rule)
 		
 		applicable_rules.sort_custom(func(a, b): return a.specificity < b.specificity)
@@ -48,9 +50,16 @@ class CSSStylesheet:
 		
 		return styles
 	
-	func selector_matches(rule: CSSRule, tag_name: String, event: String = "") -> bool:
-		if rule.selector != tag_name:
-			return false
+	func selector_matches(rule: CSSRule, tag_name: String, event: String = "", cls_names: Array[String] = []) -> bool:
+		# Handle class selectors
+		if rule.selector.begins_with("."):
+			var cls = rule.selector.substr(1)  # Remove the "." prefix
+			if not cls in cls_names:
+				return false
+		else:
+			# Handle tag selectors
+			if rule.selector != tag_name:
+				return false
 		
 		if rule.event_prefix.length() > 0:
 			return rule.event_prefix == event
@@ -555,6 +564,39 @@ static func parse_inline_style(style_string: String) -> Dictionary:
 		parse_utility_class_internal(rule, utility_name)
 	
 	return rule.properties
+
+# TODO: probably a better idea to precompile the patterns, though idk how much more efficient that would be, if at all
+static func is_utility_class(cls: String) -> bool:
+	var utility_patterns = [
+		"^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl)$",  # font sizes
+		"^text-(left|center|right|justify)$",  # text alignment
+		"^text-\\[.*\\]$",  # custom text colors
+		"^text-(white|black|transparent|slate-\\d+|gray-\\d+|red-\\d+|green-\\d+|blue-\\d+|yellow-\\d+)$",  # text colors
+		"^bg-\\[.*\\]$",  # custom bg colors
+		"^bg-(white|black|transparent|slate-\\d+|gray-\\d+|red-\\d+|green-\\d+|blue-\\d+|yellow-\\d+)$",  # bg colors
+		"^(w|h|min-w|min-h|max-w|max-h)-",  # sizing
+		"^font-(bold|mono|italic)$",  # font styles
+		"^underline$",
+		"^flex",  # flex utilities
+		"^items-",  # align items
+		"^justify-",  # justify content
+		"^content-",  # align content
+		"^self-",  # align self
+		"^order-",  # order
+		"^gap-",  # gap
+		"^(p|px|py|pt|pr|pb|pl)-",  # padding
+		"^rounded",  # border radius
+		"^basis-",  # flex basis
+		"^(hover|active):",  # pseudo classes
+	]
+	
+	for pattern in utility_patterns:
+		var regex = RegEx.new()
+		regex.compile(pattern)
+		if regex.search(cls):
+			return true
+	
+	return false
 
 static func get_color(color_name: String) -> Color:
 	# Common colors
