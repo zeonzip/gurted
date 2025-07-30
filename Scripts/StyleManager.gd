@@ -9,9 +9,9 @@ static func parse_size(val):
 		return float(val.replace("px", ""))
 	if val.ends_with("rem"):
 		return float(val.replace("rem", "")) * 16.0
-	if val.ends_with("%"):
-		# Not supported directly, skip
-		return null
+	if val.ends_with("%") or (val.ends_with("]") and "%" in val):
+		var clean_val = val.replace("[", "").replace("]", "")
+		return clean_val
 	if val == "full":
 		return null
 	return float(val)
@@ -35,14 +35,18 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 	var skip_sizing = should_skip_sizing(node, element, parser)
 	
 	if (width != null or height != null) and not skip_sizing:
-		node.custom_minimum_size = Vector2(
-			width if width != null else node.custom_minimum_size.x,
-			height if height != null else node.custom_minimum_size.y
-		)
-		if width != null:
-			node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		if height != null:
-			node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		# FlexContainers handle percentage sizing differently than regular controls
+		if node is FlexContainer:
+			if width != null and typeof(width) != TYPE_STRING:
+				node.custom_minimum_size.x = width
+			if height != null and typeof(height) != TYPE_STRING:
+				node.custom_minimum_size.y = height
+		elif node is VBoxContainer or node is HBoxContainer or node is Container:
+			# Hcontainer nodes (like ul, ol)
+			apply_container_dimension_sizing(node, width, height)
+		else:
+			# regular controls
+			apply_regular_control_sizing(node, width, height)
 
 		if label and label != node:
 			label.anchors_preset = Control.PRESET_FULL_RECT
@@ -62,6 +66,7 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 
 static func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, element: HTMLParser.HTMLElement, parser) -> void:
 		var text =  element.get_preserved_text() if element.tag_name == "pre" else element.get_bbcode_formatted_text(parser)
+
 		var font_size = 24  # default
 		# Apply font size
 		if styles.has("font-size"):
@@ -120,7 +125,6 @@ static func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, elem
 				bold_close,
 				"[/color]" if color_tag.length() > 0 else "",
 		]
-		label.text = styled_text
 
 static func apply_flex_container_properties(node: FlexContainer, styles: Dictionary, element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	# Flex direction - default to row if not specified
@@ -180,6 +184,8 @@ static func apply_flex_container_properties(node: FlexContainer, styles: Diction
 		if width_val == "full":
 			# For flex containers, w-full should expand to fill parent
 			node.set_meta("should_fill_horizontal", true)
+		elif typeof(width_val) == TYPE_STRING and width_val.ends_with("%"):
+			node.set_meta("custom_css_width_percentage", width_val)
 		else:
 			node.set_meta("custom_css_width", parse_size(width_val))
 	if styles.has("height"):
@@ -187,6 +193,8 @@ static func apply_flex_container_properties(node: FlexContainer, styles: Diction
 		if height_val == "full":
 			# For flex containers, h-full should expand to fill parent
 			node.set_meta("should_fill_vertical", true)
+		elif typeof(height_val) == TYPE_STRING and height_val.ends_with("%"):
+			node.set_meta("custom_css_height_percentage", height_val)
 		else:
 			node.set_meta("custom_css_height", parse_size(height_val))
 	if styles.has("background-color"):
@@ -272,6 +280,137 @@ static func should_skip_sizing(node: Control, element: HTMLParser.HTMLElement, p
 		return true
 	
 	return false
+
+static func apply_container_dimension_sizing(node: Control, width, height) -> void:
+	if width != null:
+		if is_percentage(width):
+			node.set_meta("container_percentage_width", width)
+			node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			apply_container_percentage_sizing(node)
+		else:
+			node.custom_minimum_size.x = width
+			node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	
+	if height != null:
+		if is_percentage(height):
+			node.set_meta("container_percentage_height", height)
+			node.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			apply_container_percentage_sizing(node)
+		else:
+			node.custom_minimum_size.y = height
+			node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+
+static func apply_regular_control_sizing(node: Control, width, height) -> void:
+	if width != null:
+		if is_percentage(width):
+			var estimated_width = calculate_percentage_size(width, 800.0)
+			node.custom_minimum_size.x = estimated_width
+			node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		else:
+			node.custom_minimum_size.x = width
+			node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	
+	if height != null:
+		if is_percentage(height):
+			var estimated_height = calculate_percentage_size(height, 600.0)
+			node.custom_minimum_size.y = estimated_height
+			node.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		else:
+			node.custom_minimum_size.y = height
+			node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+
+static func is_percentage(value) -> bool:
+	return typeof(value) == TYPE_STRING and value.ends_with("%")
+
+static func calculate_percentage_size(percentage_str: String, fallback_size: float) -> float:
+	var clean_percentage = percentage_str.replace("%", "")
+	var percentage = float(clean_percentage) / 100.0
+	return fallback_size * percentage
+
+static func apply_container_percentage_sizing(node: Control) -> void:
+	var parent = node.get_parent()
+	if not parent:
+		return
+
+	var new_min_size = node.custom_minimum_size
+	
+	if node.has_meta("container_percentage_width"):
+		var percentage_str = node.get_meta("container_percentage_width")
+		var parent_width = get_parent_dimension(parent, true, 800.0)
+		new_min_size.x = calculate_percentage_size(percentage_str, parent_width)
+	
+	if node.has_meta("container_percentage_height"):
+		var percentage_str = node.get_meta("container_percentage_height")
+		var parent_height = get_parent_dimension(parent, false, 600.0)
+		new_min_size.y = calculate_percentage_size(percentage_str, parent_height)
+	
+	node.custom_minimum_size = new_min_size
+
+static func get_parent_dimension(parent: Control, is_width: bool, fallback: float) -> float:
+	var size_value = parent.size.x if is_width else parent.size.y
+	if size_value > 0:
+		return size_value
+	
+	var rect_size = parent.get_rect().size.x if is_width else parent.get_rect().size.y
+	if rect_size > 0:
+		return rect_size
+	
+	var min_size = parent.custom_minimum_size.x if is_width else parent.custom_minimum_size.y
+	if min_size > 0:
+		return min_size
+	
+	return fallback
+
+static func apply_body_styles(body: HTMLParser.HTMLElement, parser: HTMLParser, website_container: Control, website_background: Control) -> void:
+	var styles = parser.get_element_styles_with_inheritance(body, "", [])
+	
+	# Apply background color
+	if styles.has("background-color"):
+		var style_box = StyleBoxFlat.new()
+		style_box.bg_color = styles["background-color"] as Color
+		website_background.add_theme_stylebox_override("panel", style_box)
+	
+	# Apply padding
+	var has_padding = styles.has("padding") or styles.has("padding-top") or styles.has("padding-right") or styles.has("padding-bottom") or styles.has("padding-left")
+	
+	if has_padding:
+		var margin_container = MarginContainer.new()
+		margin_container.name = "BodyMarginContainer"
+		margin_container.size_flags_horizontal = website_container.size_flags_horizontal
+		margin_container.size_flags_vertical = website_container.size_flags_vertical
+
+		# ScrollContainer
+		# |__ BodyMarginContainer
+		#     |__ WebsiteContainer
+		var original_parent = website_container.get_parent()
+		var container_index = website_container.get_index()
+
+		original_parent.remove_child(website_container)
+		original_parent.add_child(margin_container)
+		original_parent.move_child(margin_container, container_index)
+		margin_container.add_child(website_container)
+		
+		var margin_val = parse_size(styles["padding"])
+
+		margin_container.add_theme_constant_override("margin_left", margin_val)
+		margin_container.add_theme_constant_override("margin_right", margin_val)
+		margin_container.add_theme_constant_override("margin_top", margin_val)
+		margin_container.add_theme_constant_override("margin_bottom", margin_val)
+		
+		# Apply individual padding values
+		var padding_sides = [
+			["padding-top", "margin_top"],
+			["padding-right", "margin_right"], 
+			["padding-bottom", "margin_bottom"],
+			["padding-left", "margin_left"]
+		]
+		
+		for side_pair in padding_sides:
+			var style_key = side_pair[0]
+			var margin_key = side_pair[1]
+			if styles.has(style_key):
+				var margin_val2 = parse_size(styles[style_key])
+				margin_container.add_theme_constant_override(margin_key, margin_val2)
 
 static func parse_radius(radius_str: String) -> int:
 	if radius_str.ends_with("px"):

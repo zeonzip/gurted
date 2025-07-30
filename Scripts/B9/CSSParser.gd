@@ -249,11 +249,15 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 	# Width
 	if utility_name.begins_with("w-"):
 		var val = utility_name.substr(2)
+		if val.begins_with("[") and val.ends_with("]"):
+			val = val.substr(1, val.length() - 2)
 		rule.properties["width"] = parse_size(val)
 		return
 	# Height
 	if utility_name.begins_with("h-"):
 		var val = utility_name.substr(2)
+		if val.begins_with("[") and val.ends_with("]"):
+			val = val.substr(1, val.length() - 2)
 		rule.properties["height"] = parse_size(val)
 		return
 	# Min width
@@ -365,6 +369,54 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 	if utility_name.begins_with("order-"):
 		var val = utility_name.substr(6)
 		rule.properties["order"] = val.to_int()
+		return
+
+	# Handle border-radius classes like rounded-8, rounded-lg, etc.
+	if utility_name.begins_with("rounded-"):
+		var val = utility_name.substr(8)
+		rule.properties["border-radius"] = parse_size(val)
+		return
+	if utility_name == "rounded":
+		rule.properties["border-radius"] = "4px"  # Default rounded
+		return
+
+	# Handle padding classes like p-8, px-4, py-2, etc.
+	if utility_name.begins_with("p-"):
+		var val = utility_name.substr(2)
+		var padding_value = parse_size(val)
+		rule.properties["padding"] = padding_value
+		return
+	if utility_name.begins_with("px-"):
+		var val = utility_name.substr(3)
+		var padding_value = parse_size(val)
+		rule.properties["padding-left"] = padding_value
+		rule.properties["padding-right"] = padding_value
+		return
+	if utility_name.begins_with("py-"):
+		var val = utility_name.substr(3)
+		var padding_value = parse_size(val)
+		rule.properties["padding-top"] = padding_value
+		rule.properties["padding-bottom"] = padding_value
+		return
+	if utility_name.begins_with("pt-"):
+		var val = utility_name.substr(3)
+		var padding_value = parse_size(val)
+		rule.properties["padding-top"] = padding_value
+		return
+	if utility_name.begins_with("pr-"):
+		var val = utility_name.substr(3)
+		var padding_value = parse_size(val)
+		rule.properties["padding-right"] = padding_value
+		return
+	if utility_name.begins_with("pb-"):
+		var val = utility_name.substr(3)
+		var padding_value = parse_size(val)
+		rule.properties["padding-bottom"] = padding_value
+		return
+	if utility_name.begins_with("pl-"):
+		var val = utility_name.substr(3)
+		var padding_value = parse_size(val)
+		rule.properties["padding-left"] = padding_value
 		return
 
 	# Handle border radius classes like rounded, rounded-lg, rounded-[12px]

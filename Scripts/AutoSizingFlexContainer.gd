@@ -85,38 +85,17 @@ func _resort() -> void:
 		_root.mark_dirty_and_propogate()
 
 
-	var auto_size_width = not has_meta("custom_css_width") and not has_meta("should_fill_horizontal")
-	var auto_size_height = not has_meta("custom_css_height") and not has_meta("should_fill_vertical")
+	var auto_size_width = not has_meta("custom_css_width") and not has_meta("should_fill_horizontal") and not has_meta("custom_css_width_percentage")
+	var auto_size_height = not has_meta("custom_css_height") and not has_meta("should_fill_vertical") and not has_meta("custom_css_height_percentage")
 
 	var available_width = NAN
 	var available_height = NAN
 	
 	if not auto_size_width:
-		if has_meta("should_fill_horizontal"):
-			# For w-full, use the full parent size if available
-			var parent_container = get_parent()
-			if parent_container and parent_container.size.x > 0:
-				available_width = parent_container.size.x
-			elif size.x > 0:
-				available_width = size.x
-			else:
-				# Fallback: try to get from custom_minimum_size
-				available_width = custom_minimum_size.x if custom_minimum_size.x > 0 else NAN
-		else:
-			available_width = size.x
+		available_width = calculate_available_dimension(true)
 	
 	if not auto_size_height:
-		if has_meta("should_fill_vertical"):
-			# For h-full, use the full parent size if available
-			var parent_container = get_parent()
-			if parent_container and parent_container.size.y > 0:
-				available_height = parent_container.size.y
-			elif size.y > 0:
-				available_height = size.y
-			else:
-				available_height = custom_minimum_size.y if custom_minimum_size.y > 0 else NAN
-		else:
-			available_height = size.y
+		available_height = calculate_available_dimension(false)
 
 	_root.calculate_layout(available_width, available_height, 1) # 1 = LTR direction
 
@@ -127,31 +106,8 @@ func _resort() -> void:
 	)
 
 	# Respect any explicit width/height set via metadata
-	var custom_w = 0.0
-	if has_meta("custom_css_width"):
-		custom_w = float(get_meta("custom_css_width"))
-	elif has_meta("should_fill_horizontal"):
-		# Use the same logic as available_width calculation
-		var parent_container = get_parent()
-		if parent_container and parent_container.size.x > 0:
-			custom_w = parent_container.size.x
-		elif size.x > 0:
-			custom_w = size.x
-		else:
-			custom_w = custom_minimum_size.x if custom_minimum_size.x > 0 else 0.0
-
-	var custom_h = 0.0
-	if has_meta("custom_css_height"):
-		custom_h = float(get_meta("custom_css_height"))
-	elif has_meta("should_fill_vertical"):
-		# Use the same logic as available_height calculation
-		var parent_container = get_parent()
-		if parent_container and parent_container.size.y > 0:
-			custom_h = parent_container.size.y
-		elif size.y > 0:
-			custom_h = size.y
-		else:
-			custom_h = custom_minimum_size.y if custom_minimum_size.y > 0 else 0.0
+	var custom_w = calculate_custom_dimension(true)
+	var custom_h = calculate_custom_dimension(false)
 
 	var needed_size = Vector2(
 		max(custom_w, computed_size.x),
@@ -200,3 +156,56 @@ func _resort() -> void:
 
 	queue_redraw()
 	emit_signal("flex_resized")
+
+func calculate_available_dimension(is_width: bool) -> float:
+	var dimension_key = "custom_css_width" if is_width else "custom_css_height"
+	var percentage_key = "custom_css_width_percentage" if is_width else "custom_css_height_percentage"
+	var fill_key = "should_fill_horizontal" if is_width else "should_fill_vertical"
+	
+	if has_meta(fill_key):
+		return get_parent_or_fallback_size(is_width)
+	elif has_meta(percentage_key):
+		var percentage_str = get_meta(percentage_key)
+		var percentage = float(percentage_str.replace("%", "")) / 100.0
+		var parent_size = get_parent_size(is_width)
+		return parent_size * percentage if parent_size > 0 else (custom_minimum_size.x if is_width else custom_minimum_size.y)
+	else:
+		return size.x if is_width else size.y
+
+func calculate_custom_dimension(is_width: bool) -> float:
+	var dimension_key = "custom_css_width" if is_width else "custom_css_height"
+	var percentage_key = "custom_css_width_percentage" if is_width else "custom_css_height_percentage"
+	var fill_key = "should_fill_horizontal" if is_width else "should_fill_vertical"
+	
+	if has_meta(dimension_key):
+		return float(get_meta(dimension_key))
+	elif has_meta(percentage_key):
+		var percentage_str = get_meta(percentage_key)
+		var percentage = float(percentage_str.replace("%", "")) / 100.0
+		var parent_size = get_parent_size(is_width)
+		if parent_size > 0:
+			return parent_size * percentage
+		elif (size.x if is_width else size.y) > 0:
+			return (size.x if is_width else size.y) * percentage
+		else:
+			return 0.0
+	elif has_meta(fill_key):
+		return get_parent_or_fallback_size(is_width)
+	else:
+		return 0.0
+
+func get_parent_size(is_width: bool) -> float:
+	var parent_container = get_parent()
+	if parent_container:
+		return parent_container.size.x if is_width else parent_container.size.y
+	return 0.0
+
+func get_parent_or_fallback_size(is_width: bool) -> float:
+	var parent_container = get_parent()
+	if parent_container and (parent_container.size.x if is_width else parent_container.size.y) > 0:
+		return parent_container.size.x if is_width else parent_container.size.y
+	elif (size.x if is_width else size.y) > 0:
+		return size.x if is_width else size.y
+	else:
+		var fallback = custom_minimum_size.x if is_width else custom_minimum_size.y
+		return fallback if fallback > 0 else NAN

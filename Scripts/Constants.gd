@@ -6,6 +6,7 @@ const SECONDARY_COLOR = Color(43/255.0, 43/255.0, 43/255.0, 1)
 const HOVER_COLOR = Color(0, 0, 0, 1)
 
 const DEFAULT_CSS = """
+body { text-base text-[#000000] text-left }
 h1 { text-5xl font-bold }
 h2 { text-4xl font-bold }
 h3 { text-3xl font-bold }
@@ -23,6 +24,82 @@ pre { text-xl font-mono }
 button { bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] }
 """
 
+var HTML_CONTENT = """<head>
+	<title>My Custom Dashboard</title>
+	<icon src="https://cdn-icons-png.flaticon.com/512/1828/1828774.png">
+	<meta name="theme-color" content="#1a202c">
+	<meta name="description" content="A stylish no-script dashboard">
+
+	<style>
+		h1 { text-[#ffffff] text-3xl font-bold }
+		h2 { text-[#cbd5e1] text-xl }
+		p { text-[#94a3b8] text-base }
+		button { bg-[#4ade80] text-[#ffffff] hover:bg-[#22c55e] active:bg-[#15803d] }
+		card { bg-[#1e293b] text-[#f8fafc] rounded-xl p-4 shadow-lg }
+	</style>
+</head>
+
+<body style="bg-[#0f172a] p-8 text-white">
+
+	<h1 style="text-center mb-4">📊 My Dashboard</h1>
+
+	<!-- Top Summary Cards -->
+	<div style="flex flex-row gap-4 justify-center flex-wrap">
+		<div style="card w-48 h-24 flex flex-col justify-center items-center">
+			<h2>Users</h2>
+			<p>1,240</p>
+		</div>
+		<div style="card w-48 h-24 flex flex-col justify-center items-center">
+			<h2>Sales</h2>
+			<p>$9,842</p>
+		</div>
+		<div style="card w-48 h-24 flex flex-col justify-center items-center">
+			<h2>Visitors</h2>
+			<p>3,590</p>
+		</div>
+	</div>
+
+	<separator direction="horizontal" />
+
+	<!-- User Info Panel -->
+	<h2 style="text-center mt-6">👤 User Panel</h2>
+	<div style="flex flex-row gap-4 justify-center mt-2">
+		<div style="card w-64">
+			<p>Name: Jane Doe</p>
+			<p>Email: jane@example.com</p>
+			<p>Status: <span style="text-[#22c55e]">Active</span></p>
+		</div>
+		<div style="card w-64">
+			<p>Plan: Pro</p>
+			<p>Projects: 8</p>
+			<p>Tasks: 42</p>
+		</div>
+	</div>
+
+	<separator direction="horizontal" />
+
+	<!-- Recent Activity Log -->
+	<h2 style="text-center mt-6">📝 Recent Activity</h2>
+	<div style="w-[80%] mx-auto mt-2">
+		<ul>
+			<li style="bg-[#334155] px-4 py-2 rounded mb-1">✅ Task "Update UI" marked as complete</li>
+			<li style="bg-[#334155] px-4 py-2 rounded mb-1">🔔 New comment on "Bug Fix #224"</li>
+			<li style="bg-[#334155] px-4 py-2 rounded mb-1">📤 Exported report "Q2 Metrics"</li>
+		</ul>
+	</div>
+
+	<separator direction="horizontal" />
+
+	<!-- Action Buttons -->
+	<h2 style="text-center mt-6">🔧 Actions</h2>
+	<div style="flex flex-row gap-2 justify-center mt-2">
+		<button style="rounded-lg px-4 py-2">Create Report</button>
+		<button style="rounded-lg px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] active:bg-[#1e40af]">Invite User</button>
+		<button style="rounded-lg px-4 py-2 bg-[#facc15] text-[#000] hover:bg-[#eab308] active:bg-[#ca8a04]">Upgrade Plan</button>
+	</div>
+
+</body>
+""".to_utf8_buffer()
 var HTML_CONTENT2 = "<head>
 	<title>My cool web</title>
 	<icon src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png\">
@@ -230,7 +307,7 @@ So
 	</div>
 </body>".to_utf8_buffer()
 
-var HTML_CONTENT = """<head>
+var HTML_CONTENT3 = """<head>
 	<title>Task Manager</title>
 	<icon src="https://cdn-icons-png.flaticon.com/512/126/126472.png">
 

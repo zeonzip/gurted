@@ -2,6 +2,7 @@ class_name Main
 extends Control
 
 @onready var website_container: Control = %WebsiteContainer
+@onready var website_background: Control = %WebsiteBackground
 @onready var tab_container: TabManager = $VBoxContainer/TabContainer
 const LOADER_CIRCLE = preload("res://Assets/Icons/loader-circle.svg")
 const AUTO_SIZING_FLEX_CONTAINER = preload("res://Scripts/AutoSizingFlexContainer.gd")
@@ -62,6 +63,10 @@ func render() -> void:
 	tab.update_icon_from_url(icon)
 	
 	var body = parser.find_first("body")
+	
+	if body:
+		StyleManager.apply_body_styles(body, parser, website_container, website_background)
+	
 	var i = 0
 	while i < body.children.size():
 		var element: HTMLParser.HTMLElement = body.children[i]

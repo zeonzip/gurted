@@ -266,6 +266,7 @@ layout_mode = 2
 mouse_filter = 1
 
 [node name="WebsiteBackground" type="Panel" parent="."]
+unique_name_in_owner = true
 z_index = -1
 layout_mode = 1
 anchors_preset = 15
