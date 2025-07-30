@@ -1,6 +1,8 @@
 class_name StyleManager
 extends RefCounted
 
+static var body_text_color: Color = Color.BLACK
+
 static func parse_size(val):
 	if val == null: return null
 	if typeof(val) == TYPE_INT or typeof(val) == TYPE_FLOAT:
@@ -75,7 +77,13 @@ static func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, elem
 		var color_tag = ""
 		if styles.has("color"):
 			var color = styles["color"] as Color
+
+			if color == Color.BLACK and StyleManager.body_text_color != Color.BLACK:
+				color = StyleManager.body_text_color
 			color_tag = "[color=#%s]" % color.to_html(false)
+		else:
+			if StyleManager.body_text_color != Color.BLACK:
+				color_tag = "[color=#%s]" % StyleManager.body_text_color.to_html(false)
 		# Apply bold
 		var bold_open = ""
 		var bold_close = ""
@@ -125,6 +133,8 @@ static func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, elem
 				bold_close,
 				"[/color]" if color_tag.length() > 0 else "",
 		]
+		
+		label.text = styled_text
 
 static func apply_flex_container_properties(node: FlexContainer, styles: Dictionary, element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	# Flex direction - default to row if not specified
@@ -370,6 +380,8 @@ static func apply_body_styles(body: HTMLParser.HTMLElement, parser: HTMLParser, 
 		style_box.bg_color = styles["background-color"] as Color
 		website_background.add_theme_stylebox_override("panel", style_box)
 	
+	if styles.has("color"):
+		StyleManager.body_text_color = styles["color"]
 	# Apply padding
 	var has_padding = styles.has("padding") or styles.has("padding-top") or styles.has("padding-right") or styles.has("padding-bottom") or styles.has("padding-left")
 	

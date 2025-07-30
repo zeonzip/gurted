@@ -46,7 +46,7 @@ var HTML_CONTENT = """<head>
 	<!-- Top Summary Cards -->
 	<div style="flex flex-row gap-4 justify-center flex-wrap">
 		<div style="card w-48 h-24 flex flex-col justify-center items-center">
-			<h2>Users</h2>
+			<h2 style="text-red-500">Users</h2>
 			<p>1,240</p>
 		</div>
 		<div style="card w-48 h-24 flex flex-col justify-center items-center">

@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://bytm7bt2s4ak8"]
+[gd_scene load_steps=27 format=3 uid="uid://bytm7bt2s4ak8"]
 
 [ext_resource type="Script" uid="uid://bg5iqnwic1rio" path="res://Scripts/main.gd" id="1_8q3xr"]
 [ext_resource type="Texture2D" uid="uid://df1m4j7uxi63v" path="res://Assets/Icons/chevron-down.svg" id="2_6bp64"]
@@ -11,8 +11,6 @@
 [ext_resource type="Texture2D" uid="uid://cehbtwq6gq0cn" path="res://Assets/Icons/plus.svg" id="5_ynf5e"]
 [ext_resource type="Script" uid="uid://bgqglerkcylxx" path="res://addons/SmoothScroll/SmoothScrollContainer.gd" id="10_d1ilt"]
 [ext_resource type="Script" uid="uid://b7h0k2h2qwlqv" path="res://addons/SmoothScroll/scroll_damper/expo_scroll_damper.gd" id="11_6iyac"]
-[ext_resource type="Script" uid="uid://2dcp833juv7b" path="res://addons/godot-flexbox/flex_container.gd" id="12_6iyac"]
-[ext_resource type="PackedScene" uid="uid://bkj3x5y2m8qrl" path="res://Scenes/Tags/span.tscn" id="13_fdnlq"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_344ge"]
 
@@ -223,47 +221,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 22
-
-[node name="Control" type="Control" parent="VBoxContainer/SmoothScrollContainer/WebsiteContainer"]
-layout_mode = 2
-mouse_filter = 1
-
-[node name="FlexContainer" type="Container" parent="VBoxContainer/SmoothScrollContainer/WebsiteContainer/Control"]
-custom_minimum_size = Vector2(40, 60)
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("12_6iyac")
-flex_direction = 0
-justify_content = 1
-align_items = 2
-align_content = 2
-metadata/_custom_type_script = "uid://2dcp833juv7b"
-
-[node name="FlexContainer" type="Container" parent="VBoxContainer/SmoothScrollContainer/WebsiteContainer/Control/FlexContainer"]
-custom_minimum_size = Vector2(40, 40)
-layout_mode = 2
-script = ExtResource("12_6iyac")
-metadata/_custom_type_script = "uid://2dcp833juv7b"
-metadata/flex_metas = {
-&"align_self": 0,
-&"grow": 0.0
-}
-
-[node name="RichTextLabel" parent="VBoxContainer/SmoothScrollContainer/WebsiteContainer/Control/FlexContainer/FlexContainer" instance=ExtResource("13_fdnlq")]
-layout_mode = 2
-mouse_filter = 1
-
-[node name="RichTextLabel2" parent="VBoxContainer/SmoothScrollContainer/WebsiteContainer/Control/FlexContainer/FlexContainer" instance=ExtResource("13_fdnlq")]
-layout_mode = 2
-mouse_filter = 1
-
-[node name="RichTextLabel3" parent="VBoxContainer/SmoothScrollContainer/WebsiteContainer/Control/FlexContainer/FlexContainer" instance=ExtResource("13_fdnlq")]
-layout_mode = 2
-mouse_filter = 1
 
 [node name="WebsiteBackground" type="Panel" parent="."]
 unique_name_in_owner = true
