@@ -371,11 +371,6 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		rule.properties["order"] = val.to_int()
 		return
 
-	# Handle border-radius classes like rounded-8, rounded-lg, etc.
-	if utility_name.begins_with("rounded-"):
-		var val = utility_name.substr(8)
-		rule.properties["border-radius"] = parse_size(val)
-		return
 	if utility_name == "rounded":
 		rule.properties["border-radius"] = "4px"  # Default rounded
 		return
@@ -453,6 +448,13 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		var radius_value = extract_bracket_content(utility_name, 8)  # after 'rounded-'
 		rule.properties["border-radius"] = radius_value
 		return
+
+	# Handle numeric border radius classes like rounded-8, rounded-12, etc.
+	if utility_name.begins_with("rounded-"):
+		var val = utility_name.substr(8)
+		if val.is_valid_int():
+			rule.properties["border-radius"] = str(int(val)) + "px"
+			return
 
 	# Handle more utility classes as needed
 	# Add more cases here for other utilities
