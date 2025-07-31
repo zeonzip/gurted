@@ -72,7 +72,18 @@ func create_li_node(element: HTMLParser.HTMLElement, list_type: String, index: i
 	li_container.add_child(marker_label)
 	li_container.add_child(content_label)
 	
-	return li_container
+	var styles = parser.get_element_styles_with_inheritance(element, "", [])
+	if BackgroundUtils.needs_background_wrapper(styles):
+		var panel_container = BackgroundUtils.create_panel_container_with_background(styles)
+		panel_container.name = "Li"
+		# Get the VBoxContainer inside PanelContainer and replace it with our HBoxContainer
+		var vbox = panel_container.get_child(0)
+		panel_container.remove_child(vbox)
+		vbox.queue_free()
+		panel_container.add_child(li_container)
+		return panel_container
+	else:
+		return li_container
 
 func get_marker_for_type(list_type: String, index: int) -> String:
 	match list_type:

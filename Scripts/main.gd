@@ -49,7 +49,6 @@ func render() -> void:
 	
 	parser.process_styles()
 	
-	print("Total elements found: " + str(parse_result.all_elements.size()))
 	
 	if parse_result.errors.size() > 0:
 		print("Parse errors: " + str(parse_result.errors))
@@ -148,8 +147,25 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 		final_node = AUTO_SIZING_FLEX_CONTAINER.new()
 		final_node.name = "Flex_" + element.tag_name
 		container_for_children = final_node
+		
+		# For FLEX ul/ol elements, we need to create the li children directly in the flex container
+		if element.tag_name == "ul" or element.tag_name == "ol":
+			final_node.flex_direction = FlexContainer.FlexDirection.Column
+
+			website_container.add_child(final_node)
+			
+			var temp_list = UL.instantiate() if element.tag_name == "ul" else OL.instantiate()
+			website_container.add_child(temp_list)
+			await temp_list.init(element, parser)
+			
+			for child in temp_list.get_children():
+				temp_list.remove_child(child)
+				container_for_children.add_child(child)
+			
+			website_container.remove_child(temp_list)
+			temp_list.queue_free()
 		# If the element itself has text (like <span style="flex">TEXT</span>)
-		if not element.text_content.is_empty():
+		elif not element.text_content.is_empty():
 			var new_node = await create_element_node_internal(element, parser)
 			container_for_children.add_child(new_node)
 	else:
@@ -248,12 +264,12 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 		"ul":
 			node = UL.instantiate()
 			website_container.add_child(node)
-			await node.init(element)
+			await node.init(element, parser)
 			return node
 		"ol":
 			node = OL.instantiate()
 			website_container.add_child(node)
-			await node.init(element)
+			await node.init(element, parser)
 			return node
 		"li":
 			node = LI.instantiate()

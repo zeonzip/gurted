@@ -80,13 +80,11 @@ var HTML_CONTENT = """<head>
 
 	<!-- Recent Activity Log -->
 	<h2 style="text-center mt-6">📝 Recent Activity</h2>
-	<div style="w-[80%] mx-auto mt-2">
-		<ul>
-			<li style="bg-[#334155] px-4 py-2 rounded mb-1">✅ Task "Update UI" marked as complete</li>
-			<li style="bg-[#334155] px-4 py-2 rounded mb-1">🔔 New comment on "Bug Fix #224"</li>
-			<li style="bg-[#334155] px-4 py-2 rounded mb-1">📤 Exported report "Q2 Metrics"</li>
-		</ul>
-	</div>
+	<ul style="w-[80%] mt-2 flex justify-center flex-column gap-2">
+		<li style="bg-[#334155] px-4 py-2 rounded-xl mb-1">✅ Task "Update UI" marked as complete</li>
+		<li style="bg-[#334155] px-4 py-2 rounded-xl mb-1">🔔 New comment on "Bug Fix #224"</li>
+		<li style="bg-[#334155] px-4 py-2 rounded-xl mb-1">📤 Exported report "Q2 Metrics"</li>
+	</ul>
 
 	<separator direction="horizontal" />
 
