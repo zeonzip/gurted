@@ -45,8 +45,16 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 		if node is FlexContainer:
 			if width != null and typeof(width) != TYPE_STRING:
 				node.custom_minimum_size.x = width
+				var should_center_h = styles.has("mx-auto") or styles.has("justify-self-center") or (styles.has("text-align") and styles["text-align"] == "center")
+
+				node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER if should_center_h else Control.SIZE_SHRINK_BEGIN
+				node.set_meta("size_flags_set_by_style_manager", true)
 			if height != null and typeof(height) != TYPE_STRING:
 				node.custom_minimum_size.y = height
+				var should_center_v = styles.has("my-auto") or styles.has("align-self-center")
+				node.size_flags_vertical = Control.SIZE_SHRINK_CENTER if should_center_v else Control.SIZE_SHRINK_BEGIN
+				if not node.has_meta("size_flags_set_by_style_manager"):
+					node.set_meta("size_flags_set_by_style_manager", true)
 		elif node is VBoxContainer or node is HBoxContainer or node is Container:
 			# Hcontainer nodes (like ul, ol)
 			SizingUtils.apply_container_dimension_sizing(node, width, height)

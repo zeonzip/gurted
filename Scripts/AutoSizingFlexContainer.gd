@@ -12,13 +12,15 @@ func _resort() -> void:
 	if has_meta("should_fill_horizontal"):
 		size_flags_horizontal = Control.SIZE_FILL
 	else:
-		size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		if not has_meta("size_flags_set_by_style_manager"):
+			size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	
 	# Check if we should fill vertically (for h-full)  
 	if has_meta("should_fill_vertical"):
 		size_flags_vertical = Control.SIZE_FILL
 	else:
-		size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if not has_meta("size_flags_set_by_style_manager"):
+			size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	
 	if debug_draw:
 		_draw_rects.clear()

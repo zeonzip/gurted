@@ -27,6 +27,7 @@ static func init_patterns():
 			"^(p|px|py|pt|pr|pb|pl)-",  # padding
 			"^rounded",  # border radius
 			"^basis-",  # flex basis
+			"^(mx|my|m)-auto$",  # margin auto for centering
 			"^(hover|active):",  # pseudo classes
 		]
 		for pattern in utility_patterns:

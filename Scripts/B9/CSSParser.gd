@@ -496,6 +496,18 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 			rule.properties["border-radius"] = str(int(val)) + "px"
 			return
 
+	# Handle margin auto classes for centering
+	if utility_name == "mx-auto":
+		rule.properties["mx-auto"] = true
+		return
+	if utility_name == "my-auto":
+		rule.properties["my-auto"] = true
+		return
+	if utility_name == "m-auto":
+		rule.properties["mx-auto"] = true
+		rule.properties["my-auto"] = true
+		return
+	
 	# Handle more utility classes as needed
 	# Add more cases here for other utilities
 

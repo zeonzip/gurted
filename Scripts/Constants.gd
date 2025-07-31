@@ -24,7 +24,7 @@ pre { text-xl font-mono }
 button { bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] }
 """
 
-var HTML_CONTENT2 = """<head>
+var HTML_CONTENT = """<head>
 	<title>My Custom Dashboard</title>
 	<icon src="https://cdn-icons-png.flaticon.com/512/1828/1828774.png">
 	<meta name="theme-color" content="#1a202c">
@@ -41,9 +41,8 @@ var HTML_CONTENT2 = """<head>
 	</style>
 </head>
 
-<body style="bg-[#0f172a] p-8 text-white">
-
-	<h1 style="text-center mb-4 font-roboto">📊 My Dashboard</h1>
+<body style="bg-[#0f172a] p-8 text-white font-roboto">
+	<h1 style="text-center mb-4">📊 My Dashboard</h1>
 
 	<!-- Top Summary Cards -->
 	<div style="flex flex-row gap-4 justify-center flex-wrap">
@@ -100,7 +99,7 @@ var HTML_CONTENT2 = """<head>
 
 </body>
 """.to_utf8_buffer()
-var HTML_CONTENT = """<head>
+var HTML_CONTENT2 = """<head>
 	<title>My cool web</title>
 	<icon src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png\">
 
@@ -204,7 +203,7 @@ So
   
   <h2>File Upload</h2>
   <input type=\"file\" accept=\".txt,.pdf,image/*\" />
-
+</form>
 	<separator direction=\"horizontal\" />
 # Ordered list
 <ol>
