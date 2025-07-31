@@ -1,3 +1,4 @@
+class_name HTMLButton
 extends Control
 
 var current_element: HTMLParser.HTMLElement

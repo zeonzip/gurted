@@ -204,7 +204,7 @@ stretch_mode = 5
 custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 
-[node name="SmoothScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("10_d1ilt")
@@ -214,7 +214,7 @@ drag_with_mouse = false
 allow_overdragging = false
 metadata/_custom_type_script = "uid://bgqglerkcylxx"
 
-[node name="WebsiteContainer" type="VBoxContainer" parent="VBoxContainer/SmoothScrollContainer"]
+[node name="WebsiteContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 200)
 layout_mode = 2

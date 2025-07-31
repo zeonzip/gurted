@@ -3,15 +3,11 @@
 [ext_resource type="Script" uid="uid://cg6kjvlx3an1j" path="res://Scripts/Tags/p.gd" id="1_pnbfg"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_1glvj"]
 
-[node name="P" type="VBoxContainer"]
+[node name="RichTextLabel" type="RichTextLabel"]
 anchors_preset = 10
 anchor_right = 1.0
+offset_bottom = 19.0
 grow_horizontal = 2
-script = ExtResource("1_pnbfg")
-
-[node name="RichTextLabel" type="RichTextLabel" parent="."]
-layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 2
 mouse_default_cursor_shape = 1
 theme = ExtResource("2_1glvj")
@@ -20,3 +16,4 @@ bbcode_enabled = true
 text = "Placeholder"
 fit_content = true
 selection_enabled = true
+script = ExtResource("1_pnbfg")

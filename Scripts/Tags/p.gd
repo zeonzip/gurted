@@ -1,7 +1,12 @@
-extends Control
-
-@onready var rich_text_label: RichTextLabel = $RichTextLabel
+class_name HTMLP
+extends RichTextLabel
 
 func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
-	var label: RichTextLabel = $RichTextLabel
-	label.text = "[font_size=24]%s[/font_size]" % element.get_bbcode_formatted_text(parser)
+	text = "[font_size=24]%s[/font_size]" % element.get_bbcode_formatted_text(parser)
+	
+	# NOTE: estimate width/height because FlexContainer removes our anchor preset (sets 0 width)  
+	var plain_text = element.get_collapsed_text()
+	var estimated_height = 30
+	var estimated_width = min(400, max(100, plain_text.length() * 12))
+	
+	custom_minimum_size = Vector2(estimated_width, estimated_height)

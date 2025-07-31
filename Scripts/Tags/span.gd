@@ -1,3 +1,4 @@
+class_name HTMLSpan
 extends RichTextLabel
 
 @onready var rich_text_label: RichTextLabel = self

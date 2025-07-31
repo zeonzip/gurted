@@ -46,6 +46,17 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 		elif node is VBoxContainer or node is HBoxContainer or node is Container:
 			# Hcontainer nodes (like ul, ol)
 			SizingUtils.apply_container_dimension_sizing(node, width, height)
+		elif node is HTMLP:
+			# Only apply sizing if element has explicit size, otherwise preserve natural sizing
+			var element_styles = parser.get_element_styles_internal(element, "")
+			if element_styles.has("width") or element_styles.has("height"):
+				var orig_h_flag = node.size_flags_horizontal
+				var orig_v_flag = node.size_flags_vertical
+				SizingUtils.apply_regular_control_sizing(node, width, height)
+				if not element_styles.has("width"):
+					node.size_flags_horizontal = orig_h_flag
+				if not element_styles.has("height"):
+					node.size_flags_vertical = orig_v_flag
 		else:
 			# regular controls
 			SizingUtils.apply_regular_control_sizing(node, width, height)
@@ -53,11 +64,14 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 		if label and label != node:
 			label.anchors_preset = Control.PRESET_FULL_RECT
 
-	# Apply background color
-	if styles.has("background-color"):
+	# Apply background color and border radius
+	if styles.has("background-color") or styles.has("border-radius"):
 		var target_node_for_bg = node if node is FlexContainer else label
 		if target_node_for_bg:
-			target_node_for_bg.set_meta("custom_css_background_color", styles["background-color"])
+			if styles.has("background-color"):
+				target_node_for_bg.set_meta("custom_css_background_color", styles["background-color"])
+			if styles.has("border-radius"):
+				target_node_for_bg.set_meta("custom_css_border_radius", styles["border-radius"])
 			if target_node_for_bg.has_method("add_background_rect"):
 				target_node_for_bg.call_deferred("add_background_rect")
 

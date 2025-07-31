@@ -26,7 +26,7 @@ static func should_skip_sizing(node: Control, element, parser) -> bool:
 	
 	# Button sizing rules: Skip sizing only when button has no explicit size 
 	# AND parent doesn't have explicit width (auto-inherited sizing)
-	if node.get_script() and node.get_script().get_path().ends_with("button.gd"):
+	if node is HTMLButton:
 		# If button has explicit size, don't skip sizing
 		if element_styles.has("width") or element_styles.has("height"):
 			return false
@@ -43,9 +43,9 @@ static func should_skip_sizing(node: Control, element, parser) -> bool:
 	
 	# Span sizing rules: Always skip sizing for spans since they're inline elements
 	# (flex containers use AutoSizingFlexContainer, not span.gd)
-	elif node.get_script() and node.get_script().get_path().ends_with("span.gd"):
+	elif node is HTMLSpan:
 		return true
-	
+
 	return false
 
 static func apply_container_dimension_sizing(node: Control, width, height) -> void:
