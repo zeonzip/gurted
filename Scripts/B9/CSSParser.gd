@@ -238,9 +238,23 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		rule.properties["font-bold"] = true
 		return
 
-	# Handle font mono
+	# Handle font family
+	if utility_name == "font-sans":
+		rule.properties["font-family"] = "sans-serif"
+		return
+	if utility_name == "font-serif":
+		rule.properties["font-family"] = "serif"
+		return
 	if utility_name == "font-mono":
+		rule.properties["font-family"] = "monospace"
 		rule.properties["font-mono"] = true
+		return
+	
+	var reserved_font_styles = ["font-sans", "font-serif", "font-mono", "font-bold", "font-italic"]
+	# Handle custom font families like font-roboto
+	if utility_name.begins_with("font-") and not utility_name in reserved_font_styles:
+		var font_name = utility_name.substr(5)  # after 'font-'
+		rule.properties["font-family"] = font_name
 		return
 
 	# Handle font style italic

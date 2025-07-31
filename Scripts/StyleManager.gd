@@ -25,6 +25,10 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 	if not (node is FlexContainer):
 		label = node if node is RichTextLabel else node.get_node_or_null("RichTextLabel")
 	
+	if label and styles.has("font-family") and styles["font-family"] not in ["sans-serif", "serif", "monospace"]:
+		var main_node = Engine.get_main_loop().current_scene
+		main_node.register_font_dependent_element(label, styles, element, parser)
+	
 	var width = null
 	var height = null
 
@@ -84,6 +88,21 @@ static func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, elem
 		var text = text_override if text_override != "" else (element.get_preserved_text() if element.tag_name == "pre" else element.get_bbcode_formatted_text(parser))
 
 		var font_size = 24  # default
+
+		if styles.has("font-family"):
+			var font_family = styles["font-family"]
+			var font_resource = FontManager.get_font(font_family)
+			
+			# set a sans-serif fallback first
+			if font_family not in ["sans-serif", "serif", "monospace"]:
+				if not FontManager.loaded_fonts.has(font_family):
+					# Font not loaded yet, use sans-serif as fallback
+					var fallback_font = FontManager.get_font("sans-serif")
+					apply_font_to_label(label, fallback_font)
+			
+			if font_resource:
+				apply_font_to_label(label, font_resource)
+		
 		# Apply font size
 		if styles.has("font-size"):
 			font_size = int(styles["font-size"])
@@ -120,8 +139,10 @@ static func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, elem
 		var mono_open = ""
 		var mono_close = ""
 		if styles.has("font-mono") and styles["font-mono"]:
-			mono_open = "[code]"
-			mono_close = "[/code]"
+			# If font-family is already monospace, just use BBCode for styling
+			if not (styles.has("font-family") and styles["font-family"] == "monospace"):
+				mono_open = "[code]"
+				mono_close = "[/code]"
 		if styles.has("text-align"):
 			match styles["text-align"]:
 				"left":
@@ -214,3 +235,9 @@ static func apply_body_styles(body: HTMLParser.HTMLElement, parser: HTMLParser, 
 
 static func parse_radius(radius_str: String) -> int:
 	return SizeUtils.parse_radius(radius_str)
+
+static func apply_font_to_label(label: RichTextLabel, font_resource: Font) -> void:
+	label.add_theme_font_override("normal_font", font_resource)
+	label.add_theme_font_override("bold_font", font_resource) 
+	label.add_theme_font_override("italics_font", font_resource)
+	label.add_theme_font_override("bold_italics_font", font_resource)

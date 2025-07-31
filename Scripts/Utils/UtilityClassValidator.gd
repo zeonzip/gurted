@@ -13,7 +13,9 @@ static func init_patterns():
 			"^bg-\\[.*\\]$",  # custom bg colors
 			"^bg-(white|black|transparent|slate-\\d+|gray-\\d+|red-\\d+|green-\\d+|blue-\\d+|yellow-\\d+)$",  # bg colors
 			"^(w|h|min-w|min-h|max-w|max-h)-",  # sizing
-			"^font-(bold|mono|italic)$",  # font styles
+			"^font-(bold|mono|italic|sans|serif)$",  # font styles
+			"^font-\\[.*\\]$",  # custom font families with brackets
+			"^font-[a-zA-Z][a-zA-Z0-9_-]*$",  # custom font families without brackets
 			"^underline$",
 			"^flex",  # flex utilities
 			"^items-",  # align items

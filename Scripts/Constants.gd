@@ -24,11 +24,13 @@ pre { text-xl font-mono }
 button { bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] }
 """
 
-var HTML_CONTENT = """<head>
+var HTML_CONTENT2 = """<head>
 	<title>My Custom Dashboard</title>
 	<icon src="https://cdn-icons-png.flaticon.com/512/1828/1828774.png">
 	<meta name="theme-color" content="#1a202c">
 	<meta name="description" content="A stylish no-script dashboard">
+
+	<font name="roboto" src="https://fonts.gstatic.com/s/roboto/v48/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3KUBGEe.woff2" />
 
 	<style>
 		h1 { text-[#ffffff] text-3xl font-bold }
@@ -41,7 +43,7 @@ var HTML_CONTENT = """<head>
 
 <body style="bg-[#0f172a] p-8 text-white">
 
-	<h1 style="text-center mb-4">📊 My Dashboard</h1>
+	<h1 style="text-center mb-4 font-roboto">📊 My Dashboard</h1>
 
 	<!-- Top Summary Cards -->
 	<div style="flex flex-row gap-4 justify-center flex-wrap">
@@ -98,12 +100,14 @@ var HTML_CONTENT = """<head>
 
 </body>
 """.to_utf8_buffer()
-var HTML_CONTENT2 = "<head>
+var HTML_CONTENT = """<head>
 	<title>My cool web</title>
 	<icon src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png\">
 
 	<meta name=\"theme-color\" content=\"#000000\">
 	<meta name=\"description\" content=\"My cool web\">
+
+	<font name="roboto" src="https://fonts.gstatic.com/s/roboto/v48/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3KUBGEe.woff2" />
 
 	<style>
 		h1 { text-[#ff0000] font-italic hover:text-[#00ff00] }
@@ -121,6 +125,13 @@ var HTML_CONTENT2 = "<head>
 	<h4>Header 4</h4>
 	<h5>Header 5</h5>
 	<h6>Header 6</h6>
+	
+	<separator />
+	
+	<p>Normal font</p>
+	<p style="font-mono">Mono font</p>
+	<p style="font-sans">Sans font</p>
+	<p style="font-roboto">Custom font - Roboto</p>
 	
 	<p>Hey there!       this is a        test</p>
 	<b>This is bold</b>
@@ -303,7 +314,7 @@ So
 		<span style=\"bg-[#aaaaff] w-12 h-8 self-end flex items-center justify-center\">End</span>
 		<span style=\"bg-[#ffffaa] w-12 h-8 self-stretch flex items-center justify-center\">Stretch</span>
 	</div>
-</body>".to_utf8_buffer()
+</body>""".to_utf8_buffer()
 
 var HTML_CONTENT3 = """<head>
 	<title>Task Manager</title>

@@ -12,8 +12,8 @@ class HTMLElement:
 	func _init(tag: String = ""):
 		tag_name = tag
 	
-	func get_attribute(name_: String) -> String:
-		return attributes.get(name_, "")
+	func get_attribute(name_: String, default: String = "") -> String:
+		return attributes.get(name_, default)
 	
 	func has_attribute(name_: String) -> bool:
 		return attributes.has(name_)
@@ -292,6 +292,17 @@ func get_title() -> String:
 func get_icon() -> String:
 	var icon_element = find_first("icon")
 	return icon_element.get_attribute("src")
+
+func process_fonts() -> void:
+	var font_elements = find_all("font")
+	
+	for font_element in font_elements:
+		var name = font_element.get_attribute("name")
+		var src = font_element.get_attribute("src")
+		var weight = font_element.get_attribute("weight", "400")
+		
+		if name and src:
+			FontManager.register_font(name, src, weight)
 
 func get_meta_content(name_: String) -> String:
 	var meta_elements = find_all("meta", "name")

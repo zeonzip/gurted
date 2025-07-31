@@ -32,6 +32,8 @@ const DIV = preload("res://Scenes/Tags/div.tscn")
 
 const MIN_SIZE = Vector2i(750, 200)
 
+var font_dependent_elements: Array = []
+
 func _ready():
 	ProjectSettings.set_setting("display/window/size/min_width", MIN_SIZE.x)
 	ProjectSettings.set_setting("display/window/size/min_height", MIN_SIZE.y)
@@ -42,6 +44,10 @@ func render() -> void:
 	for child in website_container.get_children():
 		child.queue_free()
 	
+	font_dependent_elements.clear()
+	FontManager.clear_fonts()
+	FontManager.set_refresh_callback(refresh_fonts)
+	
 	var html_bytes = Constants.HTML_CONTENT
 	
 	var parser: HTMLParser = HTMLParser.new(html_bytes)
@@ -49,6 +55,9 @@ func render() -> void:
 	
 	parser.process_styles()
 	
+	# Process and load all custom fonts defined in <font> tags
+	parser.process_fonts()
+	FontManager.load_all_fonts()
 	
 	if parse_result.errors.size() > 0:
 		print("Parse errors: " + str(parse_result.errors))
@@ -295,3 +304,23 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			return null
 	
 	return node
+
+func register_font_dependent_element(label: RichTextLabel, styles: Dictionary, element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
+	font_dependent_elements.append({
+		"label": label,
+		"styles": styles,
+		"element": element,
+		"parser": parser
+	})
+
+func refresh_fonts(font_name: String) -> void:
+	# Find all elements that should use this font and refresh them
+	for element_info in font_dependent_elements:
+		var label = element_info["label"]
+		var styles = element_info["styles"]
+		var element = element_info["element"]
+		var parser = element_info["parser"]
+		
+		if styles.has("font-family") and styles["font-family"] == font_name:
+			if is_instance_valid(label):
+				StyleManager.apply_styles_to_label(label, styles, element, parser)
