@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://cg6kjvlx3an1j" path="res://Scripts/Tags/p.gd" id="1_pnbfg"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_1glvj"]
 
-[node name="RichTextLabel" type="RichTextLabel"]
+[node name="p" type="RichTextLabel"]
 anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 19.0

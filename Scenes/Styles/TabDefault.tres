@@ -7,3 +7,5 @@ bg_color = Color(0.152476, 0.152476, 0.152476, 1)
 draw_center = false
 corner_radius_top_left = 15
 corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15

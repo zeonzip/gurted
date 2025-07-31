@@ -5,44 +5,6 @@ extends FlexContainer
 signal flex_resized
 
 var content_size: Vector2 = Vector2.ZERO
-var background_panel: Panel = null
-
-func update_background_panel():
-	var needs_background = has_meta("custom_css_background_color") or has_meta("custom_css_border_radius")
-	
-	if needs_background:
-		if not background_panel:
-			background_panel = Panel.new()
-			background_panel.name = "BackgroundPanel"
-			background_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			add_child(background_panel)
-			move_child(background_panel, 0)  # Ensure it's behind content
-		
-		# Set panel size to match container
-		background_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		
-		# Create StyleBoxFlat for background and border radius
-		var style_box = StyleBoxFlat.new()
-		
-		if has_meta("custom_css_background_color"):
-			style_box.bg_color = get_meta("custom_css_background_color")
-		else:
-			style_box.bg_color = Color.TRANSPARENT
-		
-		if has_meta("custom_css_border_radius"):
-			var radius_str = get_meta("custom_css_border_radius")
-			var radius = StyleManager.parse_radius(radius_str)
-			style_box.corner_radius_top_left = radius
-			style_box.corner_radius_top_right = radius
-			style_box.corner_radius_bottom_left = radius
-			style_box.corner_radius_bottom_right = radius
-		
-		background_panel.add_theme_stylebox_override("panel", style_box)
-	
-	elif background_panel:
-		# Remove background panel if no longer needed
-		background_panel.queue_free()
-		background_panel = null
 
 # This is the overridden layout logic for the auto-sizing container
 func _resort() -> void:
@@ -69,7 +31,7 @@ func _resort() -> void:
 			continue
 		
 		# Skip background panel from flex calculations
-		if c.name == "BackgroundPanel":
+		if BackgroundUtils.is_background_panel(c):
 			continue
 
 		var cid = c.get_instance_id()
@@ -183,7 +145,7 @@ func _resort() -> void:
 
 
 	# Update background panel if needed
-	update_background_panel()
+	BackgroundUtils.update_background_panel(self)
 	
 	emit_signal("flex_resized")
 

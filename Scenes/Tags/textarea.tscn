@@ -4,7 +4,7 @@
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_theme"]
 [ext_resource type="Script" uid="uid://c5xpoyqcg1p8k" path="res://Scripts/ResizableTextEdit.gd" id="3_kbdk1"]
 
-[node name="Textarea" type="Control"]
+[node name="textarea" type="Control"]
 layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0

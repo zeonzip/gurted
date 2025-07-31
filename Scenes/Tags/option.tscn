@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://ps8duq0aw3tu" path="res://Scripts/Tags/li.gd" id="1_option"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_theme"]
 
-[node name="Option" type="Control"]
+[node name="option" type="Control"]
 layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0

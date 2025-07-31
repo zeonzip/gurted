@@ -156,8 +156,12 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 		final_node = await create_element_node_internal(element, parser)
 		if not final_node:
 			return null # Unsupported tag
-		# Children will be added to this node.
-		container_for_children = final_node
+
+		# If final_node is a PanelContainer, children should go to the VBoxContainer inside
+		if final_node is PanelContainer and final_node.get_child_count() > 0:
+			container_for_children = final_node.get_child(0)  # The VBoxContainer inside
+		else:
+			container_for_children = final_node
 
 	# Applies background, size, etc. to the FlexContainer (top-level node)
 	final_node = StyleManager.apply_element_styles(final_node, element, parser)
@@ -264,8 +268,13 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			node = TEXTAREA.instantiate()
 			node.init(element)
 		"div":
-			node = DIV.instantiate()
-			node.init(element)
+			var styles = parser.get_element_styles_with_inheritance(element, "", [])
+		
+			if BackgroundUtils.needs_background_wrapper(styles):
+				node = BackgroundUtils.create_panel_container_with_background(styles)
+			else:
+				node = VBoxContainer.new()
+				node.name = "Div"
 		_:
 			return null
 	
