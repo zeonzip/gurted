@@ -35,7 +35,10 @@ class HTMLElement:
 		return text_content
 	
 	func get_bbcode_formatted_text(parser: HTMLParser = null) -> String:
-		return HTMLParser.get_bbcode_with_styles(self, {}, parser)  # Pass empty dict for default
+		var styles = {}
+		if parser != null:
+			styles = parser.get_element_styles_with_inheritance(self, "", [])
+		return HTMLParser.get_bbcode_with_styles(self, styles, parser)
 	
 	func is_inline_element() -> bool:
 		return tag_name in ["b", "i", "u", "small", "mark", "code", "span", "a", "input"]
@@ -132,8 +135,8 @@ func get_element_styles_with_inheritance(element: HTMLElement, event: String = "
 	
 	var styles = {}
 	
-	var class_names = extract_class_names_from_style(element)
-	styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event, class_names))
+	var class_names = get_css_class_names(element)
+	styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event, class_names, element))
 	# Apply inline styles (higher priority) - force override CSS rules
 	var inline_style = element.get_attribute("style")
 	if inline_style.length() > 0:
@@ -159,8 +162,8 @@ func get_element_styles_internal(element: HTMLElement, event: String = "") -> Di
 	
 	# Apply CSS rules
 	if parse_result.css_parser:
-		var class_names = extract_class_names_from_style(element)
-		styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event, class_names))
+		var class_names = get_css_class_names(element)
+		styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event, class_names, element))
 	
 	# Apply inline styles (higher priority) - force override CSS rules
 	var inline_style = element.get_attribute("style")
@@ -198,6 +201,17 @@ func parse_inline_style_with_event(style_string: String, event: String = "") -> 
 					properties[property] = rule.properties[property]
 	
 	return properties
+
+func get_css_class_names(element: HTMLElement) -> Array[String]:
+	var class_names: Array[String] = []
+	var class_attr = element.get_attribute("class")
+	if class_attr.length() > 0:
+		var classes = class_attr.split(" ")
+		for cls in classes:
+			cls = cls.strip_edges()
+			if cls.length() > 0:
+				class_names.append(cls)
+	return class_names
 
 func extract_class_names_from_style(element: HTMLElement) -> Array[String]:
 	var class_names: Array[String] = []
@@ -291,7 +305,7 @@ func get_title() -> String:
 
 func get_icon() -> String:
 	var icon_element = find_first("icon")
-	return icon_element.get_attribute("src")
+	return icon_element.get_attribute("src") if icon_element != null else ""
 
 func process_fonts() -> void:
 	var font_elements = find_all("font")
@@ -330,6 +344,48 @@ func apply_element_styles(node: Control, element: HTMLElement, parser: HTMLParse
 		var text = HTMLParser.get_bbcode_with_styles(element, styles, parser)
 		label.text = text
 
+static func apply_element_bbcode_formatting(element: HTMLElement, styles: Dictionary, content: String) -> String:
+	match element.tag_name:
+		"b":
+			if styles.has("font-bold") and styles["font-bold"]:
+				return "[b]" + content + "[/b]"
+		"i":
+			if styles.has("font-italic") and styles["font-italic"]:
+				return "[i]" + content + "[/i]"
+		"u":
+			if styles.has("underline") and styles["underline"]:
+				return "[u]" + content + "[/u]"
+		"small":
+			if styles.has("font-size"):
+				return "[font_size=%d]%s[/font_size]" % [styles["font-size"], content]
+			else:
+				return "[font_size=20]%s[/font_size]" % content
+		"mark":
+			if styles.has("bg"):
+				var color = styles["bg"]
+				if typeof(color) == TYPE_COLOR:
+					color = color.to_html(false)
+				return "[bgcolor=#%s]%s[/bgcolor]" % [color, content]
+			else:
+				return "[bgcolor=#FFFF00]%s[/bgcolor]" % content
+		"code":
+			if styles.has("font-size"):
+				return "[font_size=%d][code]%s[/code][/font_size]" % [styles["font-size"], content]
+			else:
+				return "[font_size=20][code]%s[/code][/font_size]" % content
+		"a":
+			var href = element.get_attribute("href")
+			var color = "#1a0dab"
+			if styles.has("color"):
+				var c = styles["color"]
+				if typeof(c) == TYPE_COLOR:
+					color = "#" + c.to_html(false)
+				else:
+					color = str(c)
+			if href.length() > 0:
+				return "[color=%s][url=%s]%s[/url][/color]" % [color, href, content]
+	return content
+
 static func get_bbcode_with_styles(element: HTMLElement, styles: Dictionary, parser: HTMLParser) -> String:
 	var text = ""
 	if element.text_content.length() > 0:
@@ -340,46 +396,10 @@ static func get_bbcode_with_styles(element: HTMLElement, styles: Dictionary, par
 		if parser != null:
 			child_styles = parser.get_element_styles_with_inheritance(child, "", [])
 		var child_content = HTMLParser.get_bbcode_with_styles(child, child_styles, parser)
-		match child.tag_name:
-			"b":
-				if child_styles.has("font-bold") and child_styles["font-bold"]:
-					child_content = "[b]" + child_content + "[/b]"
-			"i":
-				if child_styles.has("font-italic") and child_styles["font-italic"]:
-					child_content = "[i]" + child_content + "[/i]"
-			"u":
-				if child_styles.has("underline") and child_styles["underline"]:
-					child_content = "[u]" + child_content + "[/u]"
-			"small":
-				if child_styles.has("font-size"):
-					child_content = "[font_size=%d]%s[/font_size]" % [child_styles["font-size"], child_content]
-				else:
-					child_content = "[font_size=20]%s[/font_size]" % child_content
-			"mark":
-				if child_styles.has("bg"):
-					var color = child_styles["bg"]
-					if typeof(color) == TYPE_COLOR:
-						color = color.to_html(false)
-					child_content = "[bgcolor=#%s]%s[/bgcolor]" % [color, child_content]
-				else:
-					child_content = "[bgcolor=#FFFF00]%s[/bgcolor]" % child_content
-			"code":
-				if child_styles.has("font-size"):
-					child_content = "[font_size=%d][code]%s[/code][/font_size]" % [child_styles["font-size"], child_content]
-				else:
-					child_content = "[font_size=20][code]%s[/code][/font_size]" % child_content
-			"a":
-				var href = child.get_attribute("href")
-				var color = "#1a0dab"
-				if child_styles.has("color"):
-					var c = child_styles["color"]
-					if typeof(c) == TYPE_COLOR:
-						color = "#" + c.to_html(false)
-					else:
-						color = str(c)
-				if href.length() > 0:
-					child_content = "[color=%s][url=%s]%s[/url][/color]" % [color, href, child_content]
-			_:
-				pass
+		child_content = apply_element_bbcode_formatting(child, child_styles, child_content)
 		text += child_content
+	
+	# Apply formatting to the current element itself
+	text = apply_element_bbcode_formatting(element, styles, text)
+	
 	return text

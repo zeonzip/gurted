@@ -32,6 +32,9 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 			if button_node:
 				target = button_node
 
+	if element.tag_name == "input":
+		apply_input_border_styles(node, styles)
+
 	# Unified font applying for label and button
 	if target and styles.has("font-family") and styles["font-family"] not in ["sans-serif", "serif", "monospace"]:
 		var main_node = Engine.get_main_loop().current_scene
@@ -145,34 +148,34 @@ static func apply_styles_to_label(label: Control, styles: Dictionary, element: H
 	# Apply font size
 	if styles.has("font-size"):
 		font_size = int(styles["font-size"])
+	var has_existing_bbcode = text.contains("[url=") or text.contains("[color=")
+	
 	# Apply color
 	var color_tag = ""
-	if styles.has("color"):
+	if not has_existing_bbcode and styles.has("color"):
 		var color = styles["color"] as Color
-
 		if color == Color.BLACK and StyleManager.body_text_color != Color.BLACK:
 			color = StyleManager.body_text_color
 		color_tag = "[color=#%s]" % color.to_html(false)
-	else:
-		if StyleManager.body_text_color != Color.BLACK:
-			color_tag = "[color=#%s]" % StyleManager.body_text_color.to_html(false)
+	elif not has_existing_bbcode and StyleManager.body_text_color != Color.BLACK:
+		color_tag = "[color=#%s]" % StyleManager.body_text_color.to_html(false)
 
-	# Apply bold
+	# Apply text styling (but not for text with existing BBCode)
 	var bold_open = ""
 	var bold_close = ""
-	if styles.has("font-bold") and styles["font-bold"]:
+	if not has_existing_bbcode and styles.has("font-bold") and styles["font-bold"]:
 		bold_open = "[b]"
 		bold_close = "[/b]"
-	# Apply italic
+	
 	var italic_open = ""
 	var italic_close = ""
-	if styles.has("font-italic") and styles["font-italic"]:
+	if not has_existing_bbcode and styles.has("font-italic") and styles["font-italic"]:
 		italic_open = "[i]"
 		italic_close = "[/i]"
-	# Apply underline
+	
 	var underline_open = ""
 	var underline_close = ""
-	if styles.has("underline") and styles["underline"]:
+	if not has_existing_bbcode and styles.has("underline") and styles["underline"]:
 		underline_open = "[u]"
 		underline_close = "[/u]"
 	# Apply monospace font
@@ -295,3 +298,45 @@ static func apply_font_to_button(button: Button, styles: Dictionary) -> void:
 		
 		if font_resource:
 			button.add_theme_font_override("font", font_resource)
+
+static func apply_input_border_styles(input_node: Control, styles: Dictionary) -> void:
+	if not BackgroundUtils.needs_background_wrapper(styles):
+		return
+	
+	# Find the appropriate input control to style
+	var styleable_controls = []
+	
+	# Get all potential input controls that support StyleBox
+	var line_edit = input_node.get_node_or_null("LineEdit")
+	var spinbox = input_node.get_node_or_null("SpinBox")
+	var file_container = input_node.get_node_or_null("FileContainer")
+	
+	if line_edit: styleable_controls.append(line_edit)
+	if spinbox: styleable_controls.append(spinbox)
+	if file_container:
+		var file_button = file_container.get_node_or_null("FileButton")
+		if file_button: styleable_controls.append(file_button)
+	
+	# Apply styles using BackgroundUtils
+	for control in styleable_controls:
+		var style_box = BackgroundUtils.create_stylebox_from_styles(styles)
+		
+		# Set appropriate content margins for inputs if not specified
+		if not styles.has("padding") and not styles.has("padding-left"):
+			style_box.content_margin_left = 5.0
+		if not styles.has("padding") and not styles.has("padding-right"):
+			style_box.content_margin_right = 5.0
+		if not styles.has("padding") and not styles.has("padding-top"):
+			style_box.content_margin_top = 2.0
+		if not styles.has("padding") and not styles.has("padding-bottom"):
+			style_box.content_margin_bottom = 2.0
+		
+		# Apply the style to the appropriate states
+		if control is LineEdit:
+			control.add_theme_stylebox_override("normal", style_box)
+			control.add_theme_stylebox_override("focus", style_box)
+		elif control is SpinBox:
+			control.add_theme_stylebox_override("normal", style_box)
+			control.add_theme_stylebox_override("focus", style_box)
+		elif control is Button:
+			control.add_theme_stylebox_override("normal", style_box)

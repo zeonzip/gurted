@@ -6,6 +6,8 @@ class CSSRule:
 	var event_prefix: String = ""
 	var properties: Dictionary = {}
 	var specificity: int = 0
+	var selector_type: String = "simple"  # simple, descendant, child, adjacent_sibling, general_sibling, attribute
+	var selector_parts: Array = []  # For complex selectors
 	
 	func init(sel: String = ""):
 		selector = sel
@@ -18,11 +20,52 @@ class CSSRule:
 			if parts.size() == 2:
 				selector = parts[0]
 				event_prefix = parts[1]
+		
+		# Parse complex selectors
+		if selector.contains(" > "):
+			selector_type = "child"
+			selector_parts = selector.split(" > ")
+		elif selector.contains(" + "):
+			selector_type = "adjacent_sibling"
+			selector_parts = selector.split(" + ")
+		elif selector.contains(" ~ "):
+			selector_type = "general_sibling"
+			selector_parts = selector.split(" ~ ")
+		elif selector.contains("["):
+			selector_type = "attribute"
+			parse_attribute_selector()
+		elif selector.contains(" "):
+			selector_type = "descendant"
+			selector_parts = selector.split(" ")
+		else:
+			selector_type = "simple"
+			selector_parts = [selector]
+	
+	func parse_attribute_selector():
+		var bracket_start = selector.find("[")
+		var bracket_end = selector.find("]")
+		if bracket_start != -1 and bracket_end != -1:
+			var element_part = selector.substr(0, bracket_start)
+			var attribute_part = selector.substr(bracket_start + 1, bracket_end - bracket_start - 1)
+			selector_parts = [element_part, attribute_part]
 	
 	func calculate_specificity():
 		specificity = 1
 		if selector.begins_with("."):
-			specificity += 10  # Class selectors have higher specificity than tag selectors
+			specificity += 10
+		if selector.contains("["):
+			specificity += 10  # Attribute selectors
+		match selector_type:
+			"child":
+				specificity += 8
+			"adjacent_sibling":
+				specificity += 7
+			"attribute":
+				specificity += 6
+			"general_sibling":
+				specificity += 5
+			"descendant":
+				specificity += 4
 		if event_prefix.length() > 0:
 			specificity += 10
 
@@ -32,13 +75,13 @@ class CSSStylesheet:
 	func add_rule(rule: CSSRule):
 		rules.append(rule)
 	
-	func get_styles_for_element(tag_name: String, event: String = "", class_names: Array[String] = []) -> Dictionary:
+	func get_styles_for_element(tag_name: String, event: String = "", class_names: Array[String] = [], element: HTMLParser.HTMLElement = null) -> Dictionary:
 		var styles = {}
 		
 		# Sort rules by specificity
 		var applicable_rules: Array[CSSRule] = []
 		for rule in rules:
-			if selector_matches(rule, tag_name, event, class_names):
+			if selector_matches(rule, tag_name, event, class_names, element):
 				applicable_rules.append(rule)
 		
 		applicable_rules.sort_custom(func(a, b): return a.specificity < b.specificity)
@@ -50,21 +93,175 @@ class CSSStylesheet:
 		
 		return styles
 	
-	func selector_matches(rule: CSSRule, tag_name: String, event: String = "", cls_names: Array[String] = []) -> bool:
-		# Handle class selectors
-		if rule.selector.begins_with("."):
-			var cls = rule.selector.substr(1)  # Remove the "." prefix
-			if not cls in cls_names:
-				return false
-		else:
-			# Handle tag selectors
-			if rule.selector != tag_name:
-				return false
-		
+	func selector_matches(rule: CSSRule, tag_name: String, event: String = "", cls_names: Array[String] = [], element: HTMLParser.HTMLElement = null) -> bool:
 		if rule.event_prefix.length() > 0:
-			return rule.event_prefix == event
+			if rule.event_prefix != event:
+				return false
+		elif event.length() > 0:
+			return false
 		
-		return event.length() == 0
+		match rule.selector_type:
+			"simple":
+				return matches_simple_selector(rule.selector_parts[0], tag_name, cls_names)
+			"descendant":
+				return matches_descendant_selector(rule.selector_parts, element)
+			"child":
+				return matches_child_selector(rule.selector_parts, element)
+			"adjacent_sibling":
+				return matches_adjacent_sibling_selector(rule.selector_parts, element)
+			"general_sibling":
+				return matches_general_sibling_selector(rule.selector_parts, element)
+			"attribute":
+				return matches_attribute_selector(rule.selector_parts, tag_name, cls_names, element)
+		
+		return false
+	
+	func matches_simple_selector(selector: String, tag_name: String, cls_names: Array[String]) -> bool:
+		if selector.begins_with("."):
+			var cls = selector.substr(1)
+			return cls in cls_names
+		else:
+			return selector == tag_name
+	
+	func matches_descendant_selector(parts: Array, element: HTMLParser.HTMLElement) -> bool:
+		if not element or parts.size() < 2:
+			return false
+		
+		# Last part should match current element
+		var last_part = parts[-1].strip_edges()
+		if not matches_simple_selector(last_part, element.tag_name, get_element_class_names(element)):
+			return false
+		
+		# Check ancestors for remaining parts
+		var current_element = element.parent
+		var part_index = parts.size() - 2
+		
+		while current_element and part_index >= 0:
+			var part = parts[part_index].strip_edges()
+			if matches_simple_selector(part, current_element.tag_name, get_element_class_names(current_element)):
+				part_index -= 1
+				if part_index < 0:
+					return true
+			current_element = current_element.parent
+		
+		return false
+	
+	func matches_child_selector(parts: Array, element: HTMLParser.HTMLElement) -> bool:
+		if not element or not element.parent or parts.size() != 2:
+			return false
+		
+		var child_part = parts[1].strip_edges()
+		var parent_part = parts[0].strip_edges()
+		
+		# Element must match the child part
+		if not matches_simple_selector(child_part, element.tag_name, get_element_class_names(element)):
+			return false
+		
+		# Parent must match the parent part
+		return matches_simple_selector(parent_part, element.parent.tag_name, get_element_class_names(element.parent))
+	
+	func matches_adjacent_sibling_selector(parts: Array, element: HTMLParser.HTMLElement) -> bool:
+		if not element or not element.parent or parts.size() != 2:
+			return false
+		
+		var second_part = parts[1].strip_edges()
+		var first_part = parts[0].strip_edges()
+		
+		if not matches_simple_selector(second_part, element.tag_name, get_element_class_names(element)):
+			return false
+		
+		# Find previous sibling
+		var siblings = element.parent.children
+		var element_index = siblings.find(element)
+		if element_index <= 0:
+			return false
+		
+		var prev_sibling = siblings[element_index - 1]
+		return matches_simple_selector(first_part, prev_sibling.tag_name, get_element_class_names(prev_sibling))
+	
+	func matches_general_sibling_selector(parts: Array, element: HTMLParser.HTMLElement) -> bool:
+		if not element or not element.parent or parts.size() != 2:
+			return false
+		
+		var second_part = parts[1].strip_edges()
+		var first_part = parts[0].strip_edges()
+		
+		if not matches_simple_selector(second_part, element.tag_name, get_element_class_names(element)):
+			return false
+		
+		# Check all previous siblings
+		var siblings = element.parent.children
+		var element_index = siblings.find(element)
+		
+		for i in range(element_index):
+			var sibling = siblings[i]
+			if matches_simple_selector(first_part, sibling.tag_name, get_element_class_names(sibling)):
+				return true
+		
+		return false
+	
+	func matches_attribute_selector(parts: Array, tag_name: String, cls_names: Array[String], element: HTMLParser.HTMLElement) -> bool:
+		if not element or parts.size() != 2:
+			return false
+		
+		var element_part = parts[0].strip_edges()
+		var attribute_part = parts[1].strip_edges()
+		
+		# Check if element matches
+		if element_part != "" and not matches_simple_selector(element_part, tag_name, cls_names):
+			return false
+		
+		# Parse attribute condition
+		if attribute_part.contains("="):
+			var parsed = {}
+			var element_value = ""
+			
+			if attribute_part.contains("^="):
+				# Starts with
+				parsed = parse_attribute_value(attribute_part, "^=")
+				element_value = element.get_attribute(parsed.name)
+				return element_value.begins_with(parsed.value)
+			elif attribute_part.contains("$="):
+				# Ends with
+				parsed = parse_attribute_value(attribute_part, "$=")
+				element_value = element.get_attribute(parsed.name)
+				return element_value.ends_with(parsed.value)
+			elif attribute_part.contains("*="):
+				# Contains
+				parsed = parse_attribute_value(attribute_part, "*=")
+				element_value = element.get_attribute(parsed.name)
+				return element_value.contains(parsed.value)
+			else:
+				# Exact match
+				parsed = parse_attribute_value(attribute_part, "=")
+				return element.get_attribute(parsed.name) == parsed.value
+		else:
+			# Just check if attribute exists
+			return element.has_attribute(attribute_part)
+	
+	func parse_attribute_value(attribute_part: String, operator: String) -> Dictionary:
+		var attr_parts = attribute_part.split(operator)
+		var attr_name = attr_parts[0].strip_edges()
+		var attr_value = attr_parts[1].strip_edges()
+		
+		# Remove quotes
+		if attr_value.begins_with('"') and attr_value.ends_with('"'):
+			attr_value = attr_value.substr(1, attr_value.length() - 2)
+		elif attr_value.begins_with("'") and attr_value.ends_with("'"):
+			attr_value = attr_value.substr(1, attr_value.length() - 2)
+		
+		return {"name": attr_name, "value": attr_value}
+	
+	func get_element_class_names(element: HTMLParser.HTMLElement) -> Array[String]:
+		var class_names: Array[String] = []
+		var class_attr = element.get_attribute("class")
+		if class_attr.length() > 0:
+			var classes = class_attr.split(" ")
+			for cls in classes:
+				cls = cls.strip_edges()
+				if cls.length() > 0:
+					class_names.append(cls)
+		return class_names
 
 var stylesheet: CSSStylesheet
 var css_text: String

@@ -99,7 +99,7 @@ var HTML_CONTENT2 = """<head>
 
 </body>
 """.to_utf8_buffer()
-var HTML_CONTENT = """<head>
+var HTML_CONTENT4 = """<head>
 	<title>My cool web</title>
 	<icon src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png\">
 
@@ -341,6 +341,84 @@ line breaks
 		<span style=\"bg-[#ffffaa] w-12 h-8 self-stretch flex items-center justify-center\">Stretch</span>
 	</div>
 </body>""".to_utf8_buffer()
+
+var HTML_CONTENT = """<head>
+	<title>CSS Selector Tests</title>
+	<style>
+		/* Descendant selectors */
+		div p { text-[#663399] }
+		.container span { bg-[#ffeeaa] }
+		
+		/* Direct child selectors */
+		.outer-div > p { font-bold }
+		.parent > button { bg-[#44cc88] }
+		
+		/* Adjacent sibling selectors */
+		h1 + p { text-[#ff0000] font-bold }
+		h2 + div { bg-[#eeffee] }
+		
+		/* General sibling selectors */
+		h1 ~ p { text-[#0000ff] }
+		h1 ~ .second-p { text-[#0000ff] }
+		h3 ~ span { bg-[#ffdddd] }
+		
+		/* Attribute selectors */
+		input[type="text"] { border border-[#cccccc] bg-[#f9f9f9] }
+		a[href^="https"] { text-[#008000] font-bold }
+		button[disabled] { bg-[#888888] text-[#cccccc] }
+		input[placeholder*="email"] { border-2 border-[#0066cc] bg-[#ffffff] }
+		div[class$="special"] { bg-[#ffffaa] }
+	</style>
+</head>
+
+<body>
+	<h1>CSS Selector Test Page</h1>
+	<p>This paragraph should be red and bold (h1 + p)</p>
+	<p class="second-p">This paragraph should be blue (h1 ~ p)</p>
+	
+	<h2>Descendant vs Child Selectors</h2>
+	<div class="outer-div">
+		<p>This paragraph should be purple and bold (div p and .outer-div > p)</p>
+		<div>
+			<p>This paragraph should be purple but not bold (div p only)</p>
+		</div>
+	</div>
+	
+	<h3>Attribute Selectors</h3>
+	<input type="text" placeholder="Enter your name" />
+	<input type="text" placeholder="Enter your email address" />
+	<input type="password" placeholder="Enter password" />
+	
+	<br />
+	<a href="http://example.com">HTTP Link (normal)</a>
+	<br />
+	<a href="https://secure.com">HTTPS Link (green and bold)</a>
+	
+	<br />
+	<button>Normal Button</button>
+	<button disabled="true">Disabled Button (gray)</button>
+	
+	<h3>Sibling Selectors</h3>
+	<div style="bg-[#eeffee]">This div should have light green bg (h2 + div)</div>
+	<span>This span should have light red bg (h3 ~ span)</span>
+	<span>This span should also have light red bg (h3 ~ span)</span>
+	
+	<div class="container">
+		<span>This span should have yellow bg (.container span)</span>
+		<p>Regular paragraph in container</p>
+	</div>
+	
+	<div class="parent">
+		<button>This button should be green (.parent > button)</button>
+		<div>
+			<button>This button should be normal (not direct child)</button>
+		</div>
+	</div>
+	
+	<div class="item-special">This div should have yellow bg (class ends with 'special')</div>
+	<div class="special-item">This div should be normal</div>
+</body>
+""".to_utf8_buffer()
 
 var HTML_CONTENT3 = """<head>
 	<title>Task Manager</title>

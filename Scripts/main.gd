@@ -34,6 +34,19 @@ const MIN_SIZE = Vector2i(750, 200)
 
 var font_dependent_elements: Array = []
 
+func should_group_as_inline(element: HTMLParser.HTMLElement) -> bool:
+	# Don't group inputs unless they're inside a form
+	if element.tag_name == "input":
+		# Check if this element has a form ancestor
+		var parent = element.parent
+		while parent:
+			if parent.tag_name == "form":
+				return true
+			parent = parent.parent
+		return false
+	
+	return element.is_inline_element()
+
 func _ready():
 	ProjectSettings.set_setting("display/window/size/min_width", MIN_SIZE.x)
 	ProjectSettings.set_setting("display/window/size/min_height", MIN_SIZE.y)
@@ -79,11 +92,11 @@ func render() -> void:
 	while i < body.children.size():
 		var element: HTMLParser.HTMLElement = body.children[i]
 		
-		if element.is_inline_element():
+		if should_group_as_inline(element):
 			# Create an HBoxContainer for consecutive inline elements
 			var inline_elements: Array[HTMLParser.HTMLElement] = []
 
-			while i < body.children.size() and body.children[i].is_inline_element():
+			while i < body.children.size() and should_group_as_inline(body.children[i]):
 				inline_elements.append(body.children[i])
 				i += 1
 
@@ -95,8 +108,8 @@ func render() -> void:
 				if inline_node:
 					safe_add_child(hbox, inline_node)
 					# Handle hyperlinks for all inline elements
-					if contains_hyperlink(inline_element) and inline_node.rich_text_label:
-						inline_node.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+					if contains_hyperlink(inline_element) and inline_node is RichTextLabel:
+						inline_node.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
 				else:
 					print("Failed to create inline element node: ", inline_element.tag_name)
 
@@ -110,8 +123,11 @@ func render() -> void:
 				safe_add_child(website_container, element_node)
 
 			# Handle hyperlinks for all elements
-			if contains_hyperlink(element) and element_node.has_method("get") and element_node.get("rich_text_label"):
-				element_node.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+			if contains_hyperlink(element):
+				if element_node is RichTextLabel:
+					element_node.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+				elif element_node.has_method("get") and element_node.get("rich_text_label"):
+					element_node.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
 		else:
 			print("Couldn't parse unsupported HTML tag \"%s\"" % element.tag_name)
 		
