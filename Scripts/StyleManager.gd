@@ -21,14 +21,22 @@ static func parse_size(val):
 static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement, parser: HTMLParser) -> Control:
 	var styles = parser.get_element_styles_with_inheritance(element, "", [])
 	var label = null
-	
+	var target = null
+
 	if not (node is FlexContainer):
-		label = node if node is RichTextLabel else node.get_node_or_null("RichTextLabel")
-	
-	if label and styles.has("font-family") and styles["font-family"] not in ["sans-serif", "serif", "monospace"]:
+		target = node if node is RichTextLabel else node.get_node_or_null("RichTextLabel")
+		label = target
+		# Also check for Button nodes
+		if not target and node is HTMLButton:
+			var button_node = node.get_node_or_null("ButtonNode")
+			if button_node:
+				target = button_node
+
+	# Unified font applying for label and button
+	if target and styles.has("font-family") and styles["font-family"] not in ["sans-serif", "serif", "monospace"]:
 		var main_node = Engine.get_main_loop().current_scene
-		main_node.register_font_dependent_element(label, styles, element, parser)
-	
+		main_node.register_font_dependent_element(target, styles, element, parser)
+
 	var width = null
 	var height = null
 
@@ -128,7 +136,7 @@ static func apply_styles_to_label(label: Control, styles: Dictionary, element: H
 
 		if color == Color.BLACK and StyleManager.body_text_color != Color.BLACK:
 			color = StyleManager.body_text_color
-			color_tag = "[color=#%s]" % color.to_html(false)
+		color_tag = "[color=#%s]" % color.to_html(false)
 	else:
 		if StyleManager.body_text_color != Color.BLACK:
 			color_tag = "[color=#%s]" % StyleManager.body_text_color.to_html(false)
