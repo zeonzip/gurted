@@ -132,6 +132,13 @@ func contains_hyperlink(element: HTMLParser.HTMLElement) -> bool:
 	
 	return false
 
+func is_text_only_element(element: HTMLParser.HTMLElement) -> bool:
+	if element.children.size() == 0:
+		var text = element.get_collapsed_text()
+		return not text.is_empty()
+	
+	return false
+
 func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) -> Control:
 	var styles = parser.get_element_styles_with_inheritance(element, "", [])
 	var is_flex_container = styles.has("display") and ("flex" in styles["display"])
@@ -269,7 +276,7 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			node.init(element, parser)
 		"span", "b", "i", "u", "small", "mark", "code", "a":
 			node = SPAN.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"ul":
 			node = UL.instantiate()
 			website_container.add_child(node)
@@ -282,24 +289,37 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			return node
 		"li":
 			node = LI.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"select":
 			node = SELECT.instantiate()
 			node.init(element)
 		"option":
 			node = OPTION.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"textarea":
 			node = TEXTAREA.instantiate()
 			node.init(element)
 		"div":
 			var styles = parser.get_element_styles_with_inheritance(element, "", [])
-		
+			
+			# Create div container
 			if BackgroundUtils.needs_background_wrapper(styles):
 				node = BackgroundUtils.create_panel_container_with_background(styles)
 			else:
-				node = VBoxContainer.new()
-				node.name = "Div"
+				node = DIV.instantiate()
+				node.init(element)
+			
+			var has_only_text = is_text_only_element(element)
+			
+			if has_only_text:
+				var p_node = P.instantiate()
+				p_node.init(element)
+				
+				var container_for_children = node
+				if node is PanelContainer and node.get_child_count() > 0:
+					container_for_children = node.get_child(0)  # The VBoxContainer inside
+				
+				safe_add_child(container_for_children, p_node)
 		_:
 			return null
 	

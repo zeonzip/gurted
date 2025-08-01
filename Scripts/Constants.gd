@@ -24,7 +24,7 @@ pre { text-xl font-mono }
 button { bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] }
 """
 
-var HTML_CONTENT = """<head>
+var HTML_CONTENT2 = """<head>
 	<title>My Custom Dashboard</title>
 	<icon src="https://cdn-icons-png.flaticon.com/512/1828/1828774.png">
 	<meta name="theme-color" content="#1a202c">
@@ -99,7 +99,7 @@ var HTML_CONTENT = """<head>
 
 </body>
 """.to_utf8_buffer()
-var HTML_CONTENT2 = """<head>
+var HTML_CONTENT = """<head>
 	<title>My cool web</title>
 	<icon src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png\">
 
@@ -141,7 +141,7 @@ var HTML_CONTENT2 = """<head>
 	<code>this is code<span> THIS IS A SPAN AND SHOULDNT BE ANY DIFFERENT</span></code>
 	
 	<p>
-	<a href=\"https://youtube.com\">Hello gang</a>
+	<a href="https://youtube.com">Hello gang</a>
 	</p>
 
 	<pre>
@@ -152,9 +152,36 @@ both      spaces and
 line breaks
 	</pre>
 
-<p style=\"text-center w-32 h-32\">
-So
-</p>
+	<p style="text-center w-32 h-32">
+	So
+	</p>
+
+	<!-- Border examples -->
+	<div style="border p-2 mb-2">border</div>
+	<div style="border-2 p-2 mb-2">border-2</div>
+	<div style="border-4 p-2 mb-2">border-4</div>
+	<div style="border-2 border-red-500 p-2 mb-2">border-2 border-red-500</div>
+	<div style="border p-2 mb-2">border-solid</div>
+	<div style="border border-dashed p-2 mb-2">border-dashed</div>
+	<div style="border border-dotted p-2 mb-2">border-dotted</div>
+	<div style="border-none p-2 mb-2">border-none</div>
+	<div style="border-t p-2 mb-2">border-t</div>
+	<div style="border-r p-2 mb-2">border-r</div>
+	<div style="border-b p-2 mb-2">border-b</div>
+	<div style="border-l p-2 mb-2">border-l</div>
+	<div style="border-t-4 p-2 mb-2">border-t-4</div>
+	<div style="border-b-2 p-2 mb-2">border-b-2</div>
+	<div style="border-l-6 p-2 mb-2">border-l-6</div>
+	<div style="border-t-3 border-green-500 p-2 mb-2">border-t-3 border-green-500</div>
+	<div style="border border-white p-2 mb-2">border-white</div>
+	<div style="border border-black p-2 mb-2">border-black</div>
+	<div style="border border-transparent p-2 mb-2">border-transparent</div>
+	<div style="border border-gray-400 p-2 mb-2">border-gray-400</div>
+	<div style="border border-slate-700 p-2 mb-2">border-slate-700</div>
+	<div style="border border-red-500 p-2 mb-2">border-red-500</div>
+	<div style="border border-green-600 p-2 mb-2">border-green-600</div>
+	<div style="border border-blue-400 p-2 mb-2">border-blue-400</div>
+	<div style="border border-yellow-300 p-2 mb-2">border-yellow-300</div>
 
 <select style=\"text-center max-w-5 max-h-32\">
 <option value=\"test1\">Test 1</option>

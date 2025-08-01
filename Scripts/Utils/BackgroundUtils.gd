@@ -30,6 +30,60 @@ static func create_stylebox_from_styles(styles: Dictionary = {}, container: Cont
 		style_box.corner_radius_bottom_left = radius
 		style_box.corner_radius_bottom_right = radius
 	
+	# Border properties
+	var has_border = false
+
+	style_box.border_width_top = 0
+	style_box.border_width_right = 0
+	style_box.border_width_bottom = 0
+	style_box.border_width_left = 0
+	
+	var general_border_width = null
+	if styles.has("border-width"):
+		general_border_width = styles["border-width"]
+	elif container and container.has_meta("custom_css_border_width"):
+		general_border_width = container.get_meta("custom_css_border_width")
+	
+	if general_border_width:
+		has_border = true
+		var parsed_width = StyleManager.parse_size(general_border_width)
+		style_box.border_width_top = parsed_width
+		style_box.border_width_right = parsed_width
+		style_box.border_width_bottom = parsed_width
+		style_box.border_width_left = parsed_width
+	
+	var individual_border_keys = [
+		["border-top-width", "border_width_top"],
+		["border-right-width", "border_width_right"],
+		["border-bottom-width", "border_width_bottom"],
+		["border-left-width", "border_width_left"]
+	]
+	
+	for pair in individual_border_keys:
+		var style_key = pair[0]
+		var property_name = pair[1]
+		var width = null
+		var meta_key = "custom_css_" + style_key.replace("-", "_")
+		
+		if styles.has(style_key):
+			width = styles[style_key]
+		elif container and container.has_meta(meta_key):
+			width = container.get_meta(meta_key)
+		
+		if width:
+			has_border = true
+			var parsed_width = StyleManager.parse_size(width)
+			style_box.set(property_name, parsed_width)
+	
+	var border_color = Color.BLACK
+	if styles.has("border-color"):
+		border_color = styles["border-color"]
+	elif container and container.has_meta("custom_css_border_color"):
+		border_color = container.get_meta("custom_css_border_color")
+	
+	if has_border:
+		style_box.border_color = border_color
+	
 	# Padding as content margins
 	var has_padding = false
 	if styles.size() > 0:
@@ -114,4 +168,4 @@ static func create_panel_container_with_background(styles: Dictionary) -> PanelC
 	return panel_container
 
 static func needs_background_wrapper(styles: Dictionary) -> bool:
-	return styles.has("background-color") or styles.has("border-radius") or styles.has("padding") or styles.has("padding-top") or styles.has("padding-right") or styles.has("padding-bottom") or styles.has("padding-left")
+	return styles.has("background-color") or styles.has("border-radius") or styles.has("padding") or styles.has("padding-top") or styles.has("padding-right") or styles.has("padding-bottom") or styles.has("padding-left") or styles.has("border-width") or styles.has("border-top-width") or styles.has("border-right-width") or styles.has("border-bottom-width") or styles.has("border-left-width") or styles.has("border-color") or styles.has("border-style") or styles.has("border-top-color") or styles.has("border-right-color") or styles.has("border-bottom-color") or styles.has("border-left-color")

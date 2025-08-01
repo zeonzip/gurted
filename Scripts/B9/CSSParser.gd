@@ -508,6 +508,86 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		rule.properties["my-auto"] = true
 		return
 	
+	# Apply border properties
+	var apply_border = func(side: String, width: String = "", color = null, style: String = "solid"):
+		var prefix = "border" + ("-" + side if side != "" else "")
+		if width != "":
+			rule.properties[prefix + "-width"] = width
+		if color != null:
+			rule.properties[prefix + "-color"] = color
+		if style != "":
+			rule.properties[prefix + "-style"] = style
+	
+	# Handle border utilities
+	if utility_name == "border":
+		apply_border.call("", "1px", Color.BLACK)
+		return
+	
+	if utility_name == "border-none":
+		rule.properties["border-style"] = "none"
+		return
+	
+	# Individual border sides - pattern: border-{side}-{value}
+	var border_sides = ["t", "r", "b", "l"]
+	var side_map = {"t": "top", "r": "right", "b": "bottom", "l": "left"}
+	
+	for side in border_sides:
+		var short_side = side
+		var full_side = side_map[side]
+		
+		# Basic side border (e.g., border-t)
+		if utility_name == "border-" + short_side:
+			apply_border.call(full_side, "1px")
+			return
+		
+		# Side with value (e.g., border-t-2, border-t-red-500)
+		if utility_name.begins_with("border-" + short_side + "-"):
+			var val = utility_name.substr(9)  # after "border-X-"
+			
+			# Check for bracket notation first
+			if utility_name.begins_with("border-" + short_side + "-[") and utility_name.ends_with("]"):
+				var value = SizeUtils.extract_bracket_content(utility_name, 9)
+				if value.begins_with("#") or ColorUtils.parse_color(value) != null:
+					apply_border.call(full_side, "", ColorUtils.parse_color(value))
+				else:
+					apply_border.call(full_side, value)
+				return
+			
+			# Check if it's a numeric width
+			if val.is_valid_int():
+				apply_border.call(full_side, str(int(val)) + "px")
+				return
+			
+			# Check if it's a color
+			var color = ColorUtils.get_color(val)
+			if color != null:
+				apply_border.call(full_side, "", color)
+				return
+	
+	# General border width (e.g., border-2)
+	if utility_name.begins_with("border-"):
+		var val = utility_name.substr(7)
+		
+		# Custom border width like border-[2px]
+		if utility_name.begins_with("border-[") and utility_name.ends_with("]"):
+			var value = SizeUtils.extract_bracket_content(utility_name, 7)
+			if value.begins_with("#"):
+				apply_border.call("", "", ColorUtils.parse_color(value))
+			else:
+				apply_border.call("", value)
+			return
+		
+		# Numeric width
+		if val.is_valid_int():
+			apply_border.call("", str(int(val)) + "px")
+			return
+		
+		# Color name
+		var color = ColorUtils.get_color(val)
+		if color != null:
+			apply_border.call("", "", color)
+			return
+
 	# Handle more utility classes as needed
 	# Add more cases here for other utilities
 

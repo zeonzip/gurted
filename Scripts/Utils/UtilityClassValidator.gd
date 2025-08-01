@@ -3,6 +3,7 @@ extends RefCounted
 
 static var compiled_patterns: Array = []
 
+# TODO: hardcoded colors gotta be swapped with Tailwind colors. stuff like "text-red-500" is considered a selector class
 static func init_patterns():
 	if compiled_patterns.size() == 0:
 		var utility_patterns = [
@@ -28,6 +29,15 @@ static func init_patterns():
 			"^rounded",  # border radius
 			"^basis-",  # flex basis
 			"^(mx|my|m)-auto$",  # margin auto for centering
+			"^border$",  # general border
+			"^border-\\d+$",  # border width (e.g., border-2)
+			"^border-\\[.*\\]$",  # custom border width/color (e.g., border-[2px], border-[#ff0000])
+			"^border-none$",  # border styles
+			"^border-(t|r|b|l)$",  # individual border sides (e.g., border-t)
+			"^border-(t|r|b|l)-\\d+$",  # individual border side widths (e.g., border-t-2)
+			"^border-(t|r|b|l)-\\[.*\\]$",  # custom individual border sides (e.g., border-t-[2px])
+			"^border-(t|r|b|l)-(white|black|transparent|slate-\\d+|gray-\\d+|red-\\d+|green-\\d+|blue-\\d+|yellow-\\d+)$",  # individual border side colors
+			"^border-(white|black|transparent|slate-\\d+|gray-\\d+|red-\\d+|green-\\d+|blue-\\d+|yellow-\\d+)$",  # border colors
 			"^(hover|active):",  # pseudo classes
 		]
 		for pattern in utility_patterns:

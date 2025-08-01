@@ -18,6 +18,7 @@ TODO:
 9. Installer should register **gurt://** as a valid protocol thru the registry.
 10. < input type=**datetime** />, essentially a type "date" but with a vertical separator, then `mm | ss | FORMAT` layout for time.
 11. **< table >** component. [🔗 Related Godot proposal](https://github.com/godotengine/godot-proposals/issues/97)
+12. **< canvas >** component should be theoretically impossible by exposing Godot `_draw()` APIs to Lua.
 
 Issues:
 1. **< br />** counts as 1 element in **WebsiteContainer**, therefore despite being (0,0) in size, it counts as double in spacing

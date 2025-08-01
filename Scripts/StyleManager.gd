@@ -84,14 +84,30 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 		if label and label != node:
 			label.anchors_preset = Control.PRESET_FULL_RECT
 
-	# Apply background color and border radius
-	if styles.has("background-color") or styles.has("border-radius"):
+	# Apply background color, border radius, borders
+	var needs_styling = styles.has("background-color") or styles.has("border-radius") or styles.has("border-width") or styles.has("border-top-width") or styles.has("border-right-width") or styles.has("border-bottom-width") or styles.has("border-left-width") or styles.has("border-color")
+	
+	if needs_styling:
 		var target_node_for_bg = node if node is FlexContainer else label
 		if target_node_for_bg:
 			if styles.has("background-color"):
 				target_node_for_bg.set_meta("custom_css_background_color", styles["background-color"])
 			if styles.has("border-radius"):
 				target_node_for_bg.set_meta("custom_css_border_radius", styles["border-radius"])
+			
+			# Border properties
+			if styles.has("border-width"):
+				target_node_for_bg.set_meta("custom_css_border_width", styles["border-width"])
+			if styles.has("border-color"):
+				target_node_for_bg.set_meta("custom_css_border_color", styles["border-color"])
+			
+			# Individual border sides
+			var border_sides = ["top", "right", "bottom", "left"]
+			for side in border_sides:
+				var width_key = "border-" + side + "-width"
+				if styles.has(width_key):
+					target_node_for_bg.set_meta("custom_css_" + width_key.replace("-", "_"), styles[width_key])
+
 			if target_node_for_bg.has_method("add_background_rect"):
 				target_node_for_bg.call_deferred("add_background_rect")
 
