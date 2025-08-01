@@ -50,7 +50,9 @@ func create_li_node(element: HTMLParser.HTMLElement, list_type: String, marker_w
 	bullet_label.theme = BROWSER_TEXT
 	
 	var bullet_text = get_bullet_for_type(list_type)
-	StyleManager.apply_styles_to_label(bullet_label, {}, null, null, bullet_text)
+
+	var bullet_styles = parser.get_element_styles_with_inheritance(element, "", []) if parser else {}
+	StyleManager.apply_styles_to_label(bullet_label, bullet_styles, element, parser, bullet_text)
 	
 	# Create content
 	var content_label = RichTextLabel.new()
@@ -60,7 +62,9 @@ func create_li_node(element: HTMLParser.HTMLElement, list_type: String, marker_w
 	content_label.theme = BROWSER_TEXT
 	content_label.scroll_active = false
 	var content_text = element.get_bbcode_formatted_text(parser)
-	StyleManager.apply_styles_to_label(content_label, {}, null, null, content_text)
+
+	var content_styles = parser.get_element_styles_with_inheritance(element, "", []) if parser else {}
+	StyleManager.apply_styles_to_label(content_label, content_styles, element, parser, content_text)
 	
 	li_container.add_theme_constant_override("separation", 0)
 	li_container.add_child(bullet_label)

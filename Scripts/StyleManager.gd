@@ -92,92 +92,100 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 
 	return node
 
-static func apply_styles_to_label(label: RichTextLabel, styles: Dictionary, element: HTMLParser.HTMLElement, parser, text_override: String = "") -> void:
-		var text = text_override if text_override != "" else (element.get_preserved_text() if element.tag_name == "pre" else element.get_bbcode_formatted_text(parser))
+static func apply_styles_to_label(label: Control, styles: Dictionary, element: HTMLParser.HTMLElement, parser, text_override: String = "") -> void:
+	if label is Button:
+		apply_font_to_button(label, styles)
+		return
+	
+	if not label is RichTextLabel:
+		return
+	
+	var text = text_override if text_override != "" else (element.get_preserved_text() if element.tag_name == "pre" else element.get_bbcode_formatted_text(parser))
 
-		var font_size = 24  # default
+	var font_size = 24  # default
 
-		if styles.has("font-family"):
-			var font_family = styles["font-family"]
-			var font_resource = FontManager.get_font(font_family)
+	if styles.has("font-family"):
+		var font_family = styles["font-family"]
+		var font_resource = FontManager.get_font(font_family)
 			
-			# set a sans-serif fallback first
-			if font_family not in ["sans-serif", "serif", "monospace"]:
-				if not FontManager.loaded_fonts.has(font_family):
-					# Font not loaded yet, use sans-serif as fallback
-					var fallback_font = FontManager.get_font("sans-serif")
-					apply_font_to_label(label, fallback_font)
+		# set a sans-serif fallback first
+		if font_family not in ["sans-serif", "serif", "monospace"]:
+			if not FontManager.loaded_fonts.has(font_family):
+				# Font not loaded yet, use sans-serif as fallback
+				var fallback_font = FontManager.get_font("sans-serif")
+				apply_font_to_label(label, fallback_font)
 			
-			if font_resource:
-				apply_font_to_label(label, font_resource)
+		if font_resource:
+			apply_font_to_label(label, font_resource)
 		
-		# Apply font size
-		if styles.has("font-size"):
-			font_size = int(styles["font-size"])
-		# Apply color
-		var color_tag = ""
-		if styles.has("color"):
-			var color = styles["color"] as Color
+	# Apply font size
+	if styles.has("font-size"):
+		font_size = int(styles["font-size"])
+	# Apply color
+	var color_tag = ""
+	if styles.has("color"):
+		var color = styles["color"] as Color
 
-			if color == Color.BLACK and StyleManager.body_text_color != Color.BLACK:
-				color = StyleManager.body_text_color
+		if color == Color.BLACK and StyleManager.body_text_color != Color.BLACK:
+			color = StyleManager.body_text_color
 			color_tag = "[color=#%s]" % color.to_html(false)
-		else:
-			if StyleManager.body_text_color != Color.BLACK:
-				color_tag = "[color=#%s]" % StyleManager.body_text_color.to_html(false)
-		# Apply bold
-		var bold_open = ""
-		var bold_close = ""
-		if styles.has("font-bold") and styles["font-bold"]:
-			bold_open = "[b]"
-			bold_close = "[/b]"
-		# Apply italic
-		var italic_open = ""
-		var italic_close = ""
-		if styles.has("font-italic") and styles["font-italic"]:
-			italic_open = "[i]"
-			italic_close = "[/i]"
-		# Apply underline
-		var underline_open = ""
-		var underline_close = ""
-		if styles.has("underline") and styles["underline"]:
-			underline_open = "[u]"
-			underline_close = "[/u]"
-		# Apply monospace font
-		var mono_open = ""
-		var mono_close = ""
-		if styles.has("font-mono") and styles["font-mono"]:
-			# If font-family is already monospace, just use BBCode for styling
-			if not (styles.has("font-family") and styles["font-family"] == "monospace"):
-				mono_open = "[code]"
-				mono_close = "[/code]"
-		if styles.has("text-align"):
-			match styles["text-align"]:
-				"left":
-					label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-				"center":
-					label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-				"right":
-					label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-				"justify":
-					label.horizontal_alignment = HORIZONTAL_ALIGNMENT_FILL
-		# Construct final text
-		var styled_text = "[font_size=%d]%s%s%s%s%s%s%s%s%s%s%s[/font_size]" % [
-				font_size,
-				color_tag,
-				bold_open,
-				italic_open,
-				underline_open,
-				mono_open,
-				text,
-				mono_close,
-				underline_close,
-				italic_close,
-				bold_close,
-				"[/color]" if color_tag.length() > 0 else "",
-		]
+	else:
+		if StyleManager.body_text_color != Color.BLACK:
+			color_tag = "[color=#%s]" % StyleManager.body_text_color.to_html(false)
+
+	# Apply bold
+	var bold_open = ""
+	var bold_close = ""
+	if styles.has("font-bold") and styles["font-bold"]:
+		bold_open = "[b]"
+		bold_close = "[/b]"
+	# Apply italic
+	var italic_open = ""
+	var italic_close = ""
+	if styles.has("font-italic") and styles["font-italic"]:
+		italic_open = "[i]"
+		italic_close = "[/i]"
+	# Apply underline
+	var underline_open = ""
+	var underline_close = ""
+	if styles.has("underline") and styles["underline"]:
+		underline_open = "[u]"
+		underline_close = "[/u]"
+	# Apply monospace font
+	var mono_open = ""
+	var mono_close = ""
+	if styles.has("font-mono") and styles["font-mono"]:
+		# If font-family is already monospace, just use BBCode for styling
+		if not (styles.has("font-family") and styles["font-family"] == "monospace"):
+			mono_open = "[code]"
+			mono_close = "[/code]"
+	if styles.has("text-align"):
+		match styles["text-align"]:
+			"left":
+				label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+			"center":
+				label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			"right":
+				label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			"justify":
+				label.horizontal_alignment = HORIZONTAL_ALIGNMENT_FILL
+	# Construct final text
+	var styled_text = "[font_size=%d]%s%s%s%s%s%s%s%s%s%s%s[/font_size]" % [
+			font_size,
+			color_tag,
+			bold_open,
+			italic_open,
+			underline_open,
+			mono_open,
+			text,
+			mono_close,
+			underline_close,
+			italic_close,
+			bold_close,
+			"[/color]" if color_tag.length() > 0 else "",
+	]
 		
-		label.text = styled_text
+	label.text = styled_text
 
 static func apply_flex_container_properties(node: FlexContainer, styles: Dictionary) -> void:
 	FlexUtils.apply_flex_container_properties(node, styles)
@@ -249,3 +257,17 @@ static func apply_font_to_label(label: RichTextLabel, font_resource: Font) -> vo
 	label.add_theme_font_override("bold_font", font_resource) 
 	label.add_theme_font_override("italics_font", font_resource)
 	label.add_theme_font_override("bold_italics_font", font_resource)
+
+static func apply_font_to_button(button: Button, styles: Dictionary) -> void:
+	if styles.has("font-family"):
+		var font_family = styles["font-family"]
+		var font_resource = FontManager.get_font(font_family)
+		
+		# Set fallback first for FOUT prevention
+		if font_family not in ["sans-serif", "serif", "monospace"]:
+			if not FontManager.loaded_fonts.has(font_family):
+				var fallback_font = FontManager.get_font("sans-serif")
+				button.add_theme_font_override("font", fallback_font)
+		
+		if font_resource:
+			button.add_theme_font_override("font", font_resource)

@@ -39,9 +39,9 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser, na
 	if not element or not parser:
 		return
 
-	var styles = parser.get_element_styles_internal(element, "")
-	var hover_styles = parser.get_element_styles_internal(element, "hover")
-	var active_styles = parser.get_element_styles_internal(element, "active")
+	var styles = parser.get_element_styles_with_inheritance(element, "", [])
+	var hover_styles = parser.get_element_styles_with_inheritance(element, "hover", [])
+	var active_styles = parser.get_element_styles_with_inheritance(element, "active", [])
 	var button_node = $ButtonNode
 	
 	# Apply text color with state-dependent colors

@@ -305,7 +305,7 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 	
 	return node
 
-func register_font_dependent_element(label: RichTextLabel, styles: Dictionary, element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
+func register_font_dependent_element(label: Control, styles: Dictionary, element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	font_dependent_elements.append({
 		"label": label,
 		"styles": styles,

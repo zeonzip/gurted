@@ -55,7 +55,9 @@ func create_li_node(element: HTMLParser.HTMLElement, list_type: String, index: i
 	marker_label.theme = BROWSER_TEXT
 	
 	var marker_text = get_marker_for_type(list_type, index)
-	StyleManager.apply_styles_to_label(marker_label, {}, null, null, marker_text)
+
+	var marker_styles = parser.get_element_styles_with_inheritance(element, "", []) if parser else {}
+	StyleManager.apply_styles_to_label(marker_label, marker_styles, element, parser, marker_text)
 	
 	# Create content
 	var content_label = RichTextLabel.new()
@@ -66,7 +68,9 @@ func create_li_node(element: HTMLParser.HTMLElement, list_type: String, index: i
 	content_label.theme = BROWSER_TEXT
 	
 	var content_text = element.get_bbcode_formatted_text(parser)
-	StyleManager.apply_styles_to_label(content_label, {}, null, null, content_text)
+
+	var content_styles = parser.get_element_styles_with_inheritance(element, "", []) if parser else {}
+	StyleManager.apply_styles_to_label(content_label, content_styles, element, parser, content_text)
 	
 	li_container.add_theme_constant_override("separation", 0)
 	li_container.add_child(marker_label)
