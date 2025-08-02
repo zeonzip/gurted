@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Gurted"
+config/name="Flumi"
 run/main_scene="uid://bytm7bt2s4ak8"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="uid://ctpe0lbehepen"
