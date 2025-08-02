@@ -87,6 +87,31 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 		if label and label != node:
 			label.anchors_preset = Control.PRESET_FULL_RECT
 
+	# Apply z-index
+	if styles.has("z-index"):
+		node.z_index = styles["z-index"]
+	
+	# Apply opacity
+	if styles.has("opacity"):
+		node.modulate.a = styles["opacity"]
+	
+	# Apply cursor
+	if styles.has("cursor"):
+		var cursor_shape = get_cursor_shape_from_type(styles["cursor"])
+		node.mouse_default_cursor_shape = cursor_shape
+	
+	# Handle cursor inheritance for text elements (RichTextLabel)
+	# If current element has no cursor, traverse up parent chain to find one
+	if not styles.has("cursor") and label:
+		var current_parent = element.parent
+		while current_parent:
+			var parent_styles = parser.get_element_styles_with_inheritance(current_parent, "", [])
+			if parent_styles.has("cursor"):
+				var parent_cursor_shape = get_cursor_shape_from_type(parent_styles["cursor"])
+				label.mouse_default_cursor_shape = parent_cursor_shape
+				break  # Found a cursor, stop traversing
+			current_parent = current_parent.parent
+
 	# Apply background color, border radius, borders
 	var needs_styling = styles.has("background-color") or styles.has("border-radius") or styles.has("border-width") or styles.has("border-top-width") or styles.has("border-right-width") or styles.has("border-bottom-width") or styles.has("border-left-width") or styles.has("border-color")
 	
@@ -298,6 +323,41 @@ static func apply_font_to_button(button: Button, styles: Dictionary) -> void:
 		
 		if font_resource:
 			button.add_theme_font_override("font", font_resource)
+
+static func get_cursor_shape_from_type(cursor_type: String) -> Control.CursorShape:
+	match cursor_type:
+		"pointer", "hand":
+			return Control.CURSOR_POINTING_HAND
+		"text":
+			return Control.CURSOR_IBEAM
+		"crosshair":
+			return Control.CURSOR_CROSS
+		"move":
+			return Control.CURSOR_MOVE
+		"not-allowed", "forbidden":
+			return Control.CURSOR_FORBIDDEN
+		"wait":
+			return Control.CURSOR_WAIT
+		"help":
+			return Control.CURSOR_HELP
+		"grab":
+			return Control.CURSOR_DRAG
+		"grabbing":
+			return Control.CURSOR_CAN_DROP
+		"e-resize", "ew-resize":
+			return Control.CURSOR_HSIZE
+		"n-resize", "ns-resize":
+			return Control.CURSOR_VSIZE
+		"ne-resize":
+			return Control.CURSOR_BDIAGSIZE
+		"nw-resize":
+			return Control.CURSOR_FDIAGSIZE
+		"se-resize":
+			return Control.CURSOR_FDIAGSIZE
+		"sw-resize":
+			return Control.CURSOR_BDIAGSIZE
+		"default", "auto", _:
+			return Control.CURSOR_ARROW
 
 static func apply_input_border_styles(input_node: Control, styles: Dictionary) -> void:
 	if not BackgroundUtils.needs_background_wrapper(styles):

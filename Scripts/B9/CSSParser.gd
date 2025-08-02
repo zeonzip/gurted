@@ -785,6 +785,31 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 			apply_border.call("", "", color)
 			return
 
+	# Handle cursor classes like cursor-pointer, cursor-default, cursor-text, etc.
+	if utility_name.begins_with("cursor-"):
+		var cursor_type = utility_name.substr(7)  # after 'cursor-'
+		rule.properties["cursor"] = cursor_type
+		return
+	
+	# Handle z-index classes like z-10, z-50, z-[999]
+	if utility_name.begins_with("z-"):
+		var val = utility_name.substr(2)
+		if val.begins_with("[") and val.ends_with("]"):
+			val = val.substr(1, val.length() - 2)
+		rule.properties["z-index"] = val.to_int()
+		return
+	
+	# Handle opacity classes like opacity-50, opacity-75, opacity-[0.5]
+	if utility_name.begins_with("opacity-"):
+		var val = utility_name.substr(8)  # after 'opacity-'
+		if val.begins_with("[") and val.ends_with("]"):
+			val = val.substr(1, val.length() - 2)
+			rule.properties["opacity"] = val.to_float()
+		elif val.is_valid_int():
+			# Convert percentage (0-100) to decimal (0.0-1.0)
+			rule.properties["opacity"] = val.to_int() / 100.0
+		return
+
 	# Handle more utility classes as needed
 	# Add more cases here for other utilities
 

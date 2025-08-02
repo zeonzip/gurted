@@ -22,6 +22,7 @@ a { text-[#1a0dab] }
 pre { text-xl font-mono }
 
 button { bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] }
+button[disabled] { bg-[#666666] text-[#999999] cursor-not-allowed }
 """
 
 var HTML_CONTENT2 = """<head>
@@ -99,7 +100,7 @@ var HTML_CONTENT2 = """<head>
 
 </body>
 """.to_utf8_buffer()
-var HTML_CONTENT4 = """<head>
+var HTML_CONTENT = """<head>
 	<title>My cool web</title>
 	<icon src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png\">
 
@@ -151,10 +152,58 @@ font, and it preserves
 both      spaces and
 line breaks
 	</pre>
-
+	
 	<p style="text-center w-32 h-32">
 	So
 	</p>
+
+	<div>
+		<button style="rounded-lg px-4 py-2 cursor-pointer">Create Report</button>
+		<button style="rounded-lg px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] active:bg-[#1e40af] cursor-pointer">Invite User</button>
+		<button style="rounded-lg px-4 py-2 bg-[#facc15] text-[#000] hover:bg-[#eab308] active:bg-[#ca8a04] cursor-pointer">Upgrade Plan</button>
+	</div>
+	<button disabled="true">Disabled Button</button>
+	<button>Normal Button</button>
+
+	<separator direction="horizontal" />
+
+	<!-- Test CSS Properties -->
+	<h2 style="text-center mt-6">🧪 CSS Properties Test</h2>
+	<div style="flex flex-col gap-2 justify-center items-center mt-2">
+		<div style="bg-[#ef4444] text-white p-4 rounded-lg opacity-75 z-10 cursor-pointer">
+			<p>Opacity 75% with cursor pointer and z-index 10 - Text should show pointer cursor, not I-beam</p>
+		</div>
+		<div style="bg-[#10b981] text-white p-4 rounded-lg opacity-50 z-20 cursor-text">
+			<p>Opacity 50% with cursor text and z-index 20 - Text should show I-beam cursor</p>
+		</div>
+		<div style="bg-[#8b5cf6] text-white p-4 rounded-lg opacity-[0.25] z-[999] cursor-default">
+			<p>Custom opacity 0.25 with cursor default and z-index 999 - Text should show arrow cursor</p>
+		</div>
+		<div style="bg-[#f59e0b] text-white p-2 rounded cursor-move">
+			<p>Cursor move - Text should show move cursor</p>
+		</div>
+		<div style="bg-[#06b6d4] text-white p-2 rounded cursor-crosshair">
+			<p>Cursor crosshair - Text should show crosshair cursor</p>
+		</div>
+		<div style="bg-[#84cc16] text-white p-2 rounded cursor-help">
+			<p>Cursor help - Text should show help cursor</p>
+		</div>
+		<div style="bg-[#ec4899] text-white p-2 rounded cursor-not-allowed">
+			<p>Cursor not-allowed - Text should show forbidden cursor</p>
+		</div>
+	</div>
+	
+	<separator direction="horizontal" />
+	
+	<!-- Test cursor inheritance -->
+	<h2 style="text-center mt-6">🖱️ Cursor Inheritance Test</h2>
+	<div style="cursor-pointer bg-[#1e293b] p-4 rounded-lg">
+		<p>This paragraph is inside a div with cursor-pointer.</p>
+		<p>Both paragraphs should show pointer cursor instead of default I-beam.</p>
+		<div style="bg-[#334155] p-2 rounded mt-2">
+			<p>This nested paragraph should also inherit the pointer cursor.</p>
+		</div>
+	</div>
 
 	<!-- Border examples -->
 	<div style="border p-2 mb-2">border</div>
@@ -342,7 +391,7 @@ line breaks
 	</div>
 </body>""".to_utf8_buffer()
 
-var HTML_CONTENT = """<head>
+var HTML_CONTENT_S = """<head>
 	<title>CSS Selector Tests</title>
 	<style>
 		/* Descendant selectors */

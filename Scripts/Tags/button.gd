@@ -8,6 +8,8 @@ func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
 	current_element = element
 	current_parser = parser
 	var button_node: Button = $ButtonNode
+	if element.has_attribute("disabled"):
+		button_node.disabled = true
 	
 	var button_text = element.text_content.strip_edges()
 	if button_text.length() == 0:
@@ -43,6 +45,11 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser, na
 	var hover_styles = parser.get_element_styles_with_inheritance(element, "hover", [])
 	var active_styles = parser.get_element_styles_with_inheritance(element, "active", [])
 	var button_node = $ButtonNode
+	
+	if styles.has("cursor"):
+		var cursor_shape = StyleManager.get_cursor_shape_from_type(styles["cursor"])
+		mouse_default_cursor_shape = cursor_shape
+		button_node.mouse_default_cursor_shape = cursor_shape
 	
 	# Apply text color with state-dependent colors
 	apply_button_text_color(button_node, styles, hover_styles, active_styles)
@@ -115,6 +122,9 @@ func apply_button_text_color(button: Button, normal_styles: Dictionary, hover_st
 	button.add_theme_color_override("font_hover_color", hover_color)
 	button.add_theme_color_override("font_pressed_color", active_color)
 	button.add_theme_color_override("font_focus_color", normal_color)
+	
+	if button.disabled:
+		button.add_theme_color_override("font_disabled_color", normal_color)
 
 func apply_button_color_with_states(button: Button, normal_color: Color, hover_color: Color, active_color: Color) -> void:
 	var style_normal = StyleBoxFlat.new()
