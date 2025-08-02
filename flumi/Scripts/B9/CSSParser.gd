@@ -377,12 +377,13 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 	# Handle color classes like text-[#ff0000]
 	if utility_name.begins_with("text-[") and utility_name.ends_with("]"):
 		var color_value = SizeUtils.extract_bracket_content(utility_name, 5)  # after 'text-'
-		rule.properties["color"] = ColorUtils.parse_color(color_value)
+		var parsed_color = ColorUtils.parse_color(color_value)
+		rule.properties["color"] = parsed_color
 		return
 	
 	# Handle standard text color classes like text-white, text-black, etc.
-	# But exclude text alignment classes
-	if utility_name.begins_with("text-") and not utility_name in ["text-left", "text-center", "text-right", "text-justify"]:
+	# But exclude text alignment and font size classes
+	if utility_name.begins_with("text-") and not utility_name in ["text-left", "text-center", "text-right", "text-justify", "text-xs", "text-sm", "text-base", "text-lg", "text-xl", "text-2xl", "text-3xl", "text-4xl", "text-5xl", "text-6xl"]:
 		var color_name = utility_name.substr(5)  # after 'text-'
 		var color = ColorUtils.get_color(color_name)
 		if color != null:
@@ -466,16 +467,16 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 
 	# Handle text size classes
 	match utility_name:
-		"text-xs": rule.properties["font-size"] = 12
-		"text-sm": rule.properties["font-size"] = 14
-		"text-base": rule.properties["font-size"] = 16
-		"text-lg": rule.properties["font-size"] = 18
-		"text-xl": rule.properties["font-size"] = 20
-		"text-2xl": rule.properties["font-size"] = 24
-		"text-3xl": rule.properties["font-size"] = 30
-		"text-4xl": rule.properties["font-size"] = 36
-		"text-5xl": rule.properties["font-size"] = 48
-		"text-6xl": rule.properties["font-size"] = 60
+		"text-xs": rule.properties["font-size"] = 18   # 12px web equivalent
+		"text-sm": rule.properties["font-size"] = 21   # 14px web equivalent
+		"text-base": rule.properties["font-size"] = 24  # 16px web equivalent
+		"text-lg": rule.properties["font-size"] = 27   # 18px web equivalent
+		"text-xl": rule.properties["font-size"] = 30   # 20px web equivalent
+		"text-2xl": rule.properties["font-size"] = 36  # 24px web equivalent
+		"text-3xl": rule.properties["font-size"] = 45  # 30px web equivalent
+		"text-4xl": rule.properties["font-size"] = 54  # 36px web equivalent
+		"text-5xl": rule.properties["font-size"] = 72  # 48px web equivalent
+		"text-6xl": rule.properties["font-size"] = 90  # 60px web equivalent
 		
 		# Handle text alignment classes
 		"text-left": rule.properties["text-align"] = "left"
@@ -744,8 +745,9 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 			# Check for bracket notation first
 			if utility_name.begins_with("border-" + short_side + "-[") and utility_name.ends_with("]"):
 				var value = SizeUtils.extract_bracket_content(utility_name, 9)
-				if value.begins_with("#") or ColorUtils.parse_color(value) != null:
-					apply_border.call(full_side, "", ColorUtils.parse_color(value))
+				var parsed_color = ColorUtils.parse_color(value)
+				if parsed_color != null:
+					apply_border.call(full_side, "", parsed_color)
 				else:
 					apply_border.call(full_side, value)
 				return
@@ -768,8 +770,9 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		# Custom border width like border-[2px]
 		if utility_name.begins_with("border-[") and utility_name.ends_with("]"):
 			var value = SizeUtils.extract_bracket_content(utility_name, 7)
-			if value.begins_with("#"):
-				apply_border.call("", "", ColorUtils.parse_color(value))
+			var parsed_color = ColorUtils.parse_color(value)
+			if parsed_color != null:
+				apply_border.call("", "", parsed_color)
 			else:
 				apply_border.call("", value)
 			return
@@ -818,7 +821,7 @@ static func parse_inline_style(style_string: String) -> Dictionary:
 	rule.selector = ""
 	rule.init(rule.selector)
 	
-	var utility_classes = style_string.split(" ")
+	var utility_classes = smart_split_utility_classes(style_string)
 	for utility_name in utility_classes:
 		utility_name = utility_name.strip_edges()
 		if utility_name.is_empty():
@@ -826,3 +829,35 @@ static func parse_inline_style(style_string: String) -> Dictionary:
 		parse_utility_class_internal(rule, utility_name)
 	
 	return rule.properties
+
+static func smart_split_utility_classes(style_string: String) -> Array[String]:
+	var result: Array[String] = []
+	var current_class = ""
+	var bracket_depth = 0
+	var in_brackets = false
+	
+	for i in range(style_string.length()):
+		var char = style_string[i]
+		
+		if char == "[":
+			bracket_depth += 1
+			in_brackets = true
+			current_class += char
+		elif char == "]":
+			bracket_depth -= 1
+			if bracket_depth == 0:
+				in_brackets = false
+			current_class += char
+		elif char == " " and not in_brackets:
+			# Split here
+			if current_class.strip_edges().length() > 0:
+				result.append(current_class.strip_edges())
+			current_class = ""
+		else:
+			current_class += char
+	
+	# Add the last class if any
+	if current_class.strip_edges().length() > 0:
+		result.append(current_class.strip_edges())
+	
+	return result

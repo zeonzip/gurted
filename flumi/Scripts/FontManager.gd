@@ -73,7 +73,7 @@ static func get_font(family_name: String) -> Font:
 		return sys_font
 	elif family_name == "monospace":
 		var sys_font = SystemFont.new()
-		sys_font.font_names = ["monospace"]
+		sys_font.font_names = ["Consolas", "monospace"]
 		return sys_font
 	elif loaded_fonts.has(family_name):
 		return loaded_fonts[family_name]

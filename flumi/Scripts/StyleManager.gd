@@ -173,6 +173,13 @@ static func apply_styles_to_label(label: Control, styles: Dictionary, element: H
 	# Apply font size
 	if styles.has("font-size"):
 		font_size = int(styles["font-size"])
+	
+	label.add_theme_font_size_override("normal_font_size", font_size)
+	label.add_theme_font_size_override("bold_font_size", font_size)
+	label.add_theme_font_size_override("italics_font_size", font_size)
+	label.add_theme_font_size_override("bold_italics_font_size", font_size)
+	label.add_theme_font_size_override("mono_font_size", font_size)
+		
 	var has_existing_bbcode = text.contains("[url=") or text.contains("[color=")
 	
 	# Apply color
@@ -222,8 +229,8 @@ static func apply_styles_to_label(label: Control, styles: Dictionary, element: H
 			"justify":
 				label.horizontal_alignment = HORIZONTAL_ALIGNMENT_FILL
 	# Construct final text
-	var styled_text = "[font_size=%d]%s%s%s%s%s%s%s%s%s%s%s[/font_size]" % [
-			font_size,
+	
+	var styled_text = "%s%s%s%s%s%s%s%s%s%s%s" % [
 			color_tag,
 			bold_open,
 			italic_open,
@@ -323,6 +330,11 @@ static func apply_font_to_button(button: Button, styles: Dictionary) -> void:
 		
 		if font_resource:
 			button.add_theme_font_override("font", font_resource)
+	
+	# Apply font size
+	if styles.has("font-size"):
+		var font_size = int(styles["font-size"])
+		button.add_theme_font_size_override("font_size", font_size)
 
 static func get_cursor_shape_from_type(cursor_type: String) -> Control.CursorShape:
 	match cursor_type:
