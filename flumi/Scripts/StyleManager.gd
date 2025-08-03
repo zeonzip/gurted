@@ -54,38 +54,46 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 	if (width != null or height != null) and not skip_sizing:
 		# FlexContainers handle percentage sizing differently than regular controls
 		if node is FlexContainer:
-			if width != null and typeof(width) != TYPE_STRING:
-				node.custom_minimum_size.x = width
-				var should_center_h = styles.has("mx-auto") or styles.has("justify-self-center") or (styles.has("text-align") and styles["text-align"] == "center")
-
-				node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER if should_center_h else Control.SIZE_SHRINK_BEGIN
-				node.set_meta("size_flags_set_by_style_manager", true)
-			if height != null and typeof(height) != TYPE_STRING:
-				node.custom_minimum_size.y = height
-				var should_center_v = styles.has("my-auto") or styles.has("align-self-center")
-				node.size_flags_vertical = Control.SIZE_SHRINK_CENTER if should_center_v else Control.SIZE_SHRINK_BEGIN
-				if not node.has_meta("size_flags_set_by_style_manager"):
-					node.set_meta("size_flags_set_by_style_manager", true)
+			if width != null:
+				if SizingUtils.is_percentage(width):
+					# For FlexContainers with percentage width, use proportion sizing
+					var percentage_value = float(width.replace("%", "")) / 100.0
+					node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					node.size_flags_stretch_ratio = percentage_value
+				else:
+					node.custom_minimum_size.x = width
+					var should_center_h = styles.has("mx-auto") or styles.has("justify-self-center") or (styles.has("text-align") and styles["text-align"] == "center")
+					node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER if should_center_h else Control.SIZE_SHRINK_BEGIN
+			
+			if height != null:
+				if SizingUtils.is_percentage(height):
+					node.size_flags_vertical = Control.SIZE_EXPAND_FILL
+				else:
+					node.custom_minimum_size.y = height
+					var should_center_v = styles.has("my-auto") or styles.has("align-self-center")
+					node.size_flags_vertical = Control.SIZE_SHRINK_CENTER if should_center_v else Control.SIZE_SHRINK_BEGIN
+			
+			node.set_meta("size_flags_set_by_style_manager", true)
 		elif node is VBoxContainer or node is HBoxContainer or node is Container:
 			# Hcontainer nodes (like ul, ol)
-			SizingUtils.apply_container_dimension_sizing(node, width, height)
+			SizingUtils.apply_container_dimension_sizing(node, width, height, styles)
 		elif node is HTMLP:
 			# Only apply sizing if element has explicit size, otherwise preserve natural sizing
 			var element_styles = parser.get_element_styles_internal(element, "")
 			if element_styles.has("width") or element_styles.has("height"):
 				var orig_h_flag = node.size_flags_horizontal
 				var orig_v_flag = node.size_flags_vertical
-				SizingUtils.apply_regular_control_sizing(node, width, height)
+				SizingUtils.apply_regular_control_sizing(node, width, height, styles)
 				if not element_styles.has("width"):
 					node.size_flags_horizontal = orig_h_flag
 				if not element_styles.has("height"):
 					node.size_flags_vertical = orig_v_flag
 		else:
 			# regular controls
-			SizingUtils.apply_regular_control_sizing(node, width, height)
+			SizingUtils.apply_regular_control_sizing(node, width, height, styles)
 
-		if label and label != node:
-			label.anchors_preset = Control.PRESET_FULL_RECT
+	if label and label != node:
+		label.anchors_preset = Control.PRESET_FULL_RECT
 
 	# Apply z-index
 	if styles.has("z-index"):
@@ -99,20 +107,30 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 	if styles.has("cursor"):
 		var cursor_shape = get_cursor_shape_from_type(styles["cursor"])
 		node.mouse_default_cursor_shape = cursor_shape
-	
-	# Handle cursor inheritance for text elements (RichTextLabel)
-	# If current element has no cursor, traverse up parent chain to find one
-	if not styles.has("cursor") and label:
-		var current_parent = element.parent
-		while current_parent:
-			var parent_styles = parser.get_element_styles_with_inheritance(current_parent, "", [])
-			if parent_styles.has("cursor"):
-				var parent_cursor_shape = get_cursor_shape_from_type(parent_styles["cursor"])
-				label.mouse_default_cursor_shape = parent_cursor_shape
-				break  # Found a cursor, stop traversing
-			current_parent = current_parent.parent
+		
+		# For text elements, apply cursor and handle mouse events appropriately
+		if label:
+			label.mouse_default_cursor_shape = cursor_shape
+			
+			# For non-pointer cursors on RichTextLabel, disable text interaction and let parent handle cursor
+			if label is RichTextLabel and cursor_shape != Control.CURSOR_POINTING_HAND:
+				label.selection_enabled = false
+				label.context_menu_enabled = false
+				label.shortcut_keys_enabled = false
+				# Let parent container handle the cursor by ignoring mouse on text element
+				label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			else:
+				# For pointer cursors or non-RichTextLabel, ensure they can receive mouse events
+				if label.mouse_filter == Control.MOUSE_FILTER_PASS:
+					label.mouse_filter = Control.MOUSE_FILTER_STOP
 
-	# Apply background color, border radius, borders
+	# Check for margins first and wrap in MarginContainer if needed
+	var has_margin = styles.has("margin") or styles.has("margin-top") or styles.has("margin-right") or styles.has("margin-bottom") or styles.has("margin-left")
+	
+	if has_margin:
+		node = apply_margin_wrapper(node, styles)
+	
+	# Apply background color, border radius, borders  
 	var needs_styling = styles.has("background-color") or styles.has("border-radius") or styles.has("border-width") or styles.has("border-top-width") or styles.has("border-right-width") or styles.has("border-bottom-width") or styles.has("border-left-width") or styles.has("border-color")
 	
 	if needs_styling:
@@ -143,6 +161,52 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 		apply_styles_to_label(label, styles, element, parser)
 
 	return node
+
+static func apply_margin_wrapper(node: Control, styles: Dictionary) -> Control:
+	var margin_container = MarginContainer.new()
+	margin_container.name = "MarginWrapper_" + node.name
+	
+	# Copy size flags from the original node
+	margin_container.size_flags_horizontal = node.size_flags_horizontal
+	margin_container.size_flags_vertical = node.size_flags_vertical
+	
+	# Set margin values using theme overrides
+	var general_margin_str = null
+	if styles.has("margin"):
+		general_margin_str = styles["margin"]
+	
+	if general_margin_str != null:
+		var general_margin = parse_size(general_margin_str)
+		if general_margin != null:
+			margin_container.add_theme_constant_override("margin_top", general_margin)
+			margin_container.add_theme_constant_override("margin_right", general_margin)
+			margin_container.add_theme_constant_override("margin_bottom", general_margin)
+			margin_container.add_theme_constant_override("margin_left", general_margin)
+	
+	# Individual margin overrides
+	var margin_sides = [
+		["margin-top", "margin_top"],
+		["margin-right", "margin_right"],
+		["margin-bottom", "margin_bottom"],
+		["margin-left", "margin_left"]
+	]
+	
+	for side_pair in margin_sides:
+		var style_key = side_pair[0]
+		var theme_key = side_pair[1]
+		if styles.has(style_key):
+			var margin_val_str = styles[style_key]
+			var margin_val = parse_size(margin_val_str)
+			if margin_val != null:
+				margin_container.add_theme_constant_override(theme_key, margin_val)
+	
+	# Reset the original node's size flags since they're now handled by the wrapper
+	node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	node.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	
+	margin_container.add_child(node)
+	
+	return margin_container
 
 static func apply_styles_to_label(label: Control, styles: Dictionary, element: HTMLParser.HTMLElement, parser, text_override: String = "") -> void:
 	if label is Button:

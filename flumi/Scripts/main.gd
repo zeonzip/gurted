@@ -51,6 +51,18 @@ func _ready():
 	ProjectSettings.set_setting("display/window/size/min_width", MIN_SIZE.x)
 	ProjectSettings.set_setting("display/window/size/min_height", MIN_SIZE.y)
 	DisplayServer.window_set_min_size(MIN_SIZE)
+	
+	get_viewport().size_changed.connect(_on_viewport_size_changed)
+
+func _on_viewport_size_changed():
+	recalculate_percentage_elements(website_container)
+
+func recalculate_percentage_elements(node: Node):
+	if node is Control and node.has_meta("needs_percentage_recalc"):
+		SizingUtils.apply_container_percentage_sizing(node)
+	
+	for child in node.get_children():
+		recalculate_percentage_elements(child)
 
 func render() -> void:
 	# Clear existing content
@@ -137,6 +149,10 @@ static func safe_add_child(parent: Node, child: Node) -> void:
 	if child.get_parent():
 		child.get_parent().remove_child(child)
 	parent.add_child(child)
+	
+	if child.has_meta("container_percentage_width") or child.has_meta("container_percentage_height"):
+		SizingUtils.apply_container_percentage_sizing(child)
+		child.set_meta("needs_percentage_recalc", true)
 
 func contains_hyperlink(element: HTMLParser.HTMLElement) -> bool:
 	if element.tag_name == "a":
@@ -317,13 +333,14 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			node.init(element)
 		"div":
 			var styles = parser.get_element_styles_with_inheritance(element, "", [])
+			var hover_styles = parser.get_element_styles_with_inheritance(element, "hover", [])
 			
 			# Create div container
-			if BackgroundUtils.needs_background_wrapper(styles):
-				node = BackgroundUtils.create_panel_container_with_background(styles)
+			if BackgroundUtils.needs_background_wrapper(styles) or hover_styles.size() > 0:
+				node = BackgroundUtils.create_panel_container_with_background(styles, hover_styles)
 			else:
 				node = DIV.instantiate()
-				node.init(element)
+				node.init(element, parser)
 			
 			var has_only_text = is_text_only_element(element)
 			

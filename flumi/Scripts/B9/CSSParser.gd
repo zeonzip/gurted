@@ -613,7 +613,12 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		rule.properties["border-radius"] = "4px"  # Default rounded
 		return
 
-	# Handle padding classes like p-8, px-4, py-2, etc.
+	# Handle padding classes like p-8, px-4, py-2, p-[20px], etc.
+	if utility_name.begins_with("p-[") and utility_name.ends_with("]"):
+		var val = SizeUtils.extract_bracket_content(utility_name, 2)  # after 'p-'
+		var padding_value = SizeUtils.parse_size(val)
+		rule.properties["padding"] = padding_value
+		return
 	if utility_name.begins_with("p-"):
 		var val = utility_name.substr(2)
 		var padding_value = SizeUtils.parse_size(val)
@@ -694,16 +699,58 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 			rule.properties["border-radius"] = str(int(val)) + "px"
 			return
 
-	# Handle margin auto classes for centering
-	if utility_name == "mx-auto":
-		rule.properties["mx-auto"] = true
+	# Handle margin classes like m-8, mx-4, my-2, m-[10px], etc.
+	if utility_name.begins_with("m-[") and utility_name.ends_with("]"):
+		var val = SizeUtils.extract_bracket_content(utility_name, 2)  # after 'm-'
+		var margin_value = SizeUtils.parse_size(val)
+		rule.properties["margin"] = margin_value
 		return
-	if utility_name == "my-auto":
-		rule.properties["my-auto"] = true
+	if utility_name.begins_with("m-"):
+		var val = utility_name.substr(2)
+		if val == "auto":
+			rule.properties["mx-auto"] = true
+			rule.properties["my-auto"] = true
+			return
+		var margin_value = SizeUtils.parse_size(val)
+		rule.properties["margin"] = margin_value
 		return
-	if utility_name == "m-auto":
-		rule.properties["mx-auto"] = true
-		rule.properties["my-auto"] = true
+	if utility_name.begins_with("mx-"):
+		var val = utility_name.substr(3)
+		if val == "auto":
+			rule.properties["mx-auto"] = true
+			return
+		var margin_value = SizeUtils.parse_size(val)
+		rule.properties["margin-left"] = margin_value
+		rule.properties["margin-right"] = margin_value
+		return
+	if utility_name.begins_with("my-"):
+		var val = utility_name.substr(3)
+		if val == "auto":
+			rule.properties["my-auto"] = true
+			return
+		var margin_value = SizeUtils.parse_size(val)
+		rule.properties["margin-top"] = margin_value
+		rule.properties["margin-bottom"] = margin_value
+		return
+	if utility_name.begins_with("mt-"):
+		var val = utility_name.substr(3)
+		var margin_value = SizeUtils.parse_size(val)
+		rule.properties["margin-top"] = margin_value
+		return
+	if utility_name.begins_with("mr-"):
+		var val = utility_name.substr(3)
+		var margin_value = SizeUtils.parse_size(val)
+		rule.properties["margin-right"] = margin_value
+		return
+	if utility_name.begins_with("mb-"):
+		var val = utility_name.substr(3)
+		var margin_value = SizeUtils.parse_size(val)
+		rule.properties["margin-bottom"] = margin_value
+		return
+	if utility_name.begins_with("ml-"):
+		var val = utility_name.substr(3)
+		var margin_value = SizeUtils.parse_size(val)
+		rule.properties["margin-left"] = margin_value
 		return
 	
 	# Apply border properties

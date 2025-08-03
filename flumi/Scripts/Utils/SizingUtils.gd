@@ -48,12 +48,12 @@ static func should_skip_sizing(node: Control, element, parser) -> bool:
 
 	return false
 
-static func apply_container_dimension_sizing(node: Control, width, height) -> void:
+static func apply_container_dimension_sizing(node: Control, width, height, styles: Dictionary = {}) -> void:
 	if width != null:
 		if is_percentage(width):
 			node.set_meta("container_percentage_width", width)
 			node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			apply_container_percentage_sizing(node)
+			# Don't call immediately - will be called later when parent is available
 		else:
 			node.custom_minimum_size.x = width
 			node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -66,8 +66,10 @@ static func apply_container_dimension_sizing(node: Control, width, height) -> vo
 		else:
 			node.custom_minimum_size.y = height
 			node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	
+	apply_size_constraints_and_flags(node, styles)
 
-static func apply_regular_control_sizing(node: Control, width, height) -> void:
+static func apply_regular_control_sizing(node: Control, width, height, styles: Dictionary = {}) -> void:
 	if width != null:
 		if is_percentage(width):
 			var estimated_width = calculate_percentage_size(width, DEFAULT_VIEWPORT_WIDTH)
@@ -85,6 +87,8 @@ static func apply_regular_control_sizing(node: Control, width, height) -> void:
 		else:
 			node.custom_minimum_size.y = height
 			node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	
+	apply_size_constraints_and_flags(node, styles)
 
 static func is_percentage(value) -> bool:
 	return typeof(value) == TYPE_STRING and value.ends_with("%")
@@ -103,15 +107,63 @@ static func apply_container_percentage_sizing(node: Control) -> void:
 	
 	if node.has_meta("container_percentage_width"):
 		var percentage_str = node.get_meta("container_percentage_width")
-		var parent_width = get_parent_dimension(parent, true, DEFAULT_VIEWPORT_WIDTH)
-		new_min_size.x = calculate_percentage_size(percentage_str, parent_width)
+		var parent_width = get_parent_dimension(parent, true, 0)
+		if parent_width > 0:
+			new_min_size.x = calculate_percentage_size(percentage_str, parent_width)
+			node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		else:
+			# Parent size not available yet, defer sizing by using SIZE_EXPAND_FILL
+			node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var percentage_value = float(percentage_str.replace("%", "")) / 100.0
+			node.size_flags_stretch_ratio = percentage_value
 	
 	if node.has_meta("container_percentage_height"):
 		var percentage_str = node.get_meta("container_percentage_height")
-		var parent_height = get_parent_dimension(parent, false, DEFAULT_VIEWPORT_HEIGHT)
-		new_min_size.y = calculate_percentage_size(percentage_str, parent_height)
+		var parent_height = get_parent_dimension(parent, false, 0)
+		if parent_height > 0:
+			new_min_size.y = calculate_percentage_size(percentage_str, parent_height)
+		else:
+			# Parent size not available yet, defer sizing by using SIZE_EXPAND_FILL
+			node.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	
 	node.custom_minimum_size = new_min_size
+
+static func apply_size_constraints_and_flags(node: Control, styles: Dictionary) -> void:	
+	# Apply min/max width constraints
+	if styles.has("min-width"):
+		var min_width = parse_size_value(styles["min-width"])
+		if min_width != null and typeof(min_width) != TYPE_STRING:
+			node.custom_minimum_size.x = max(node.custom_minimum_size.x, min_width)
+	
+	if styles.has("max-width"):
+		var max_width = parse_size_value(styles["max-width"])
+		if max_width != null and typeof(max_width) != TYPE_STRING:
+			if node.custom_minimum_size.x > max_width:
+				node.custom_minimum_size.x = max_width
+			# Prevent expansion beyond max width
+			if node.size_flags_horizontal == Control.SIZE_EXPAND_FILL:
+				node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	
+	# Apply min/max height constraints  
+	if styles.has("min-height"):
+		var min_height = parse_size_value(styles["min-height"])
+		if min_height != null and typeof(min_height) != TYPE_STRING:
+			node.custom_minimum_size.y = max(node.custom_minimum_size.y, min_height)
+	
+	if styles.has("max-height"):
+		var max_height = parse_size_value(styles["max-height"])
+		if max_height != null and typeof(max_height) != TYPE_STRING:
+			if node.custom_minimum_size.y > max_height:
+				node.custom_minimum_size.y = max_height
+			# Prevent expansion beyond max height
+			if node.size_flags_vertical == Control.SIZE_EXPAND_FILL:
+				node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	
+	# Handle intrinsic sizing for elements with constraints but no explicit size
+	if not styles.has("width") and (styles.has("min-width") or styles.has("max-width")):
+		node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	if not styles.has("height") and (styles.has("min-height") or styles.has("max-height")):
+		node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 
 static func get_parent_dimension(parent: Control, is_width: bool, fallback: float) -> float:
 	var size_value = parent.size.x if is_width else parent.size.y

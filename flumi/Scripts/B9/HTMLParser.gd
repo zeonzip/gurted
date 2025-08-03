@@ -140,12 +140,12 @@ func get_element_styles_with_inheritance(element: HTMLElement, event: String = "
 	# Apply inline styles (higher priority) - force override CSS rules
 	var inline_style = element.get_attribute("style")
 	if inline_style.length() > 0:
-		var inline_parsed = CSSParser.parse_inline_style(inline_style)
+		var inline_parsed = parse_inline_style_with_event(inline_style, event)
 		for property in inline_parsed:
 			styles[property] = inline_parsed[property]
 	
 	# Inherit certain properties from parent elements
-	var inheritable_properties = ["width", "height", "font-size", "color", "font-family"]
+	var inheritable_properties = ["width", "height", "font-size", "color", "font-family", "cursor"]
 	var parent_element = element.parent
 	while parent_element:
 		var parent_styles = get_element_styles_internal(parent_element, event)

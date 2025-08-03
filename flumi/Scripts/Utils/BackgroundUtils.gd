@@ -155,17 +155,51 @@ static func is_background_panel(node: Node) -> bool:
 	return node.name == "BackgroundPanel" and node is Panel
 
 # for any other tag
-static func create_panel_container_with_background(styles: Dictionary) -> PanelContainer:
+static func create_panel_container_with_background(styles: Dictionary, hover_styles: Dictionary = {}) -> PanelContainer:
 	var panel_container = PanelContainer.new()
 	panel_container.name = "Div"
 	
 	var vbox = VBoxContainer.new()
 	vbox.name = "VBoxContainer"
+	# Allow mouse events to pass through to the parent PanelContainer
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel_container.add_child(vbox)
 	
 	var style_box = create_stylebox_from_styles(styles)
 	panel_container.add_theme_stylebox_override("panel", style_box)
+	
+	# Add hover support if hover styles exist
+	if hover_styles.size() > 0:
+		setup_panel_hover_support(panel_container, styles, hover_styles)
+	
 	return panel_container
+
+static func setup_panel_hover_support(panel: PanelContainer, normal_styles: Dictionary, hover_styles: Dictionary):
+	var normal_stylebox = create_stylebox_from_styles(normal_styles)
+	
+	# Merge normal styles with hover styles for the hover state
+	var merged_hover_styles = normal_styles.duplicate()
+	for key in hover_styles:
+		merged_hover_styles[key] = hover_styles[key]
+	var hover_stylebox = create_stylebox_from_styles(merged_hover_styles)
+	
+	# Store references for the hover handlers
+	panel.set_meta("normal_stylebox", normal_stylebox)
+	panel.set_meta("hover_stylebox", hover_stylebox)
+	
+	# Connect mouse events
+	panel.mouse_entered.connect(_on_panel_mouse_entered.bind(panel))
+	panel.mouse_exited.connect(_on_panel_mouse_exited.bind(panel))
+
+static func _on_panel_mouse_entered(panel: PanelContainer):
+	if panel.has_meta("hover_stylebox"):
+		var hover_stylebox = panel.get_meta("hover_stylebox")
+		panel.add_theme_stylebox_override("panel", hover_stylebox)
+
+static func _on_panel_mouse_exited(panel: PanelContainer):
+	if panel.has_meta("normal_stylebox"):
+		var normal_stylebox = panel.get_meta("normal_stylebox")
+		panel.add_theme_stylebox_override("panel", normal_stylebox)
 
 static func needs_background_wrapper(styles: Dictionary) -> bool:
 	return styles.has("background-color") or styles.has("border-radius") or styles.has("padding") or styles.has("padding-top") or styles.has("padding-right") or styles.has("padding-bottom") or styles.has("padding-left") or styles.has("border-width") or styles.has("border-top-width") or styles.has("border-right-width") or styles.has("border-bottom-width") or styles.has("border-left-width") or styles.has("border-color") or styles.has("border-style") or styles.has("border-top-color") or styles.has("border-right-color") or styles.has("border-bottom-color") or styles.has("border-left-color")
