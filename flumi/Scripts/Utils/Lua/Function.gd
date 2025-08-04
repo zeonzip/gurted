@@ -35,17 +35,17 @@ static func setup_gurt_api(vm: LuauVM, lua_api, dom_parser: HTMLParser) -> void:
 	vm.lua_pushcallable(lua_api._gurt_select_handler, "gurt.select")
 	vm.lua_setfield(-2, "select")
 	
-	vm.lua_pushcallable(lua_api._gurt_select_all_handler, "gurt.select_all")
-	vm.lua_setfield(-2, "select_all")
+	vm.lua_pushcallable(lua_api._gurt_select_all_handler, "gurt.selectAll")
+	vm.lua_setfield(-2, "selectAll")
 	
 	vm.lua_pushcallable(lua_api._gurt_create_handler, "gurt.create")
 	vm.lua_setfield(-2, "create")
 	
-	vm.lua_pushcallable(lua_api._gurt_set_timeout_handler, "gurt.set_timeout")
-	vm.lua_setfield(-2, "set_timeout")
+	vm.lua_pushcallable(lua_api._gurt_set_timeout_handler, "gurt.setTimeout")
+	vm.lua_setfield(-2, "setTimeout")
 	
-	vm.lua_pushcallable(lua_api._gurt_clear_timeout_handler, "gurt.clear_timeout")
-	vm.lua_setfield(-2, "clear_timeout")
+	vm.lua_pushcallable(lua_api._gurt_clear_timeout_handler, "gurt.clearTimeout")
+	vm.lua_setfield(-2, "clearTimeout")
 	
 	# Add body element access
 	var body_element = dom_parser.find_first("body")
@@ -54,18 +54,10 @@ static func setup_gurt_api(vm: LuauVM, lua_api, dom_parser: HTMLParser) -> void:
 		vm.lua_pushstring("body")
 		vm.lua_setfield(-2, "_element_id")
 		
-		# NOTE: same code as add_element_methods, but lazy to handle body.xxxx prop
-		vm.lua_pushcallable(lua_api._element_set_text_handler, "body.set_text")
-		vm.lua_setfield(-2, "set_text")
-		
-		vm.lua_pushcallable(lua_api._element_get_text_handler, "body.get_text")
-		vm.lua_setfield(-2, "get_text")
+		lua_api.add_element_methods(vm)
 		
 		vm.lua_pushcallable(lua_api._body_on_event_handler, "body.on")
 		vm.lua_setfield(-2, "on")
-		
-		vm.lua_pushcallable(lua_api._element_append_handler, "body.append")
-		vm.lua_setfield(-2, "append")
 		
 		vm.lua_setfield(-2, "body")
 

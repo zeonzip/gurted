@@ -612,16 +612,16 @@ var HTML_CONTENT = """
 		gurt.log('Starting Lua script execution...')
 		
 		gurt.body:on('keypress', function(el)
-			typing:set_text(table.tostring(el))
+			typing.text = table.tostring(el)
 		end)
 		
 		gurt.body:on('mousemove', function(el)
-			mouse:set_text(table.tostring(el))
+			mouse.text = table.tostring(el)
 		end)
 
 		-- Test element selection and manipulation
 		local heading = gurt.select('#main-heading')
-		heading:set_text('Welcome to the New Web!')
+		heading.text = 'Welcome to the New Web!'
 		
 		local button = gurt.select('#demo-button')
 		local event_log = gurt.select('#event-log')
@@ -643,7 +643,7 @@ var HTML_CONTENT = """
 		end)
 		
 		button:on('mousemove', function(el)
-			btnmouse:set_text(table.tostring(el))
+			btnmouse.text = table.tostring(el)
 		end)
 		
 		if button and event_log then
@@ -652,7 +652,7 @@ var HTML_CONTENT = """
 			local subscription = button:on('click', function()
 				click_count = click_count + 1
 				local new_text = 'Button clicked ' .. click_count .. ' time(s)!'
-				event_log:set_text(new_text)
+				event_log.text = new_text
 			end)
 			
 			heading:on('focusin', function()
@@ -690,12 +690,12 @@ var HTML_CONTENT = """
 		})
 		gurt.body:append(temp_element)
 		
-		local test = gurt.set_timeout(function()
+		local test = gurt.setTimeout(function()
 			print('removed')
 			temp_element:remove()
 		end, 3000)
 		
-		-- gurt.clear_timeout(test)
+		-- gurt.clearTimeout(test)
 	</script>
 </head>
 
@@ -748,7 +748,7 @@ var HTML_CONTENT_ADD_REMOVE = """<head>
 		end)
 
 		pop_button:on('click', function()
-			local items = list:get_children()
+			local items = list.children
 			local last = items[#items]
 			if last then
 				last:remove()

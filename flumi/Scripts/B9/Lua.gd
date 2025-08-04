@@ -143,89 +143,106 @@ func _gurt_create_handler(vm: LuauVM) -> int:
 	add_element_methods(vm)
 	return 1
 
-func add_element_methods(vm: LuauVM) -> void:
-	vm.lua_pushcallable(_element_set_text_handler, "element.set_text")
-	vm.lua_setfield(-2, "set_text")
-	
-	vm.lua_pushcallable(_element_get_text_handler, "element.get_text")
-	vm.lua_setfield(-2, "get_text")
-	
-	vm.lua_pushcallable(_element_on_event_handler, "element.on")
+func add_element_methods(vm: LuauVM, index: String = "element") -> void:
+	# Add methods directly to element table first
+	vm.lua_pushcallable(_element_on_event_handler, index + ".on")
 	vm.lua_setfield(-2, "on")
 	
-	vm.lua_pushcallable(_element_append_handler, "element.append")
+	vm.lua_pushcallable(_element_append_handler, index + ".append")
 	vm.lua_setfield(-2, "append")
 	
-	vm.lua_pushcallable(_element_remove_handler, "element.remove")
+	vm.lua_pushcallable(_element_remove_handler, index + ".remove")
 	vm.lua_setfield(-2, "remove")
 	
-	vm.lua_pushcallable(_element_get_children_handler, "element.get_children")
-	vm.lua_setfield(-2, "get_children")
+	# Create metatable for property access
+	vm.lua_newtable() # metatable
+	
+	# __index method for property getters
+	vm.lua_pushcallable(_element_index_handler, index + ".__index")
+	vm.lua_setfield(-2, "__index")
+	
+	# __newindex method for property setters
+	vm.lua_pushcallable(_element_newindex_handler, index + ".__newindex")
+	vm.lua_setfield(-2, "__newindex")
+	
+	# Set metatable on element table
+	vm.lua_setmetatable(-2)
 
-func _element_get_children_handler(vm: LuauVM) -> int:
+# Property access handlers
+func _element_index_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	var key: String = vm.luaL_checkstring(2)
 	
 	vm.lua_getfield(1, "_element_id")
 	var element_id: String = vm.lua_tostring(-1)
 	vm.lua_pop(1)
 	
-	# Find the element
-	var element: HTMLParser.HTMLElement = null
-	if element_id == "body":
-		element = dom_parser.find_first("body")
-	else:
-		element = dom_parser.find_by_id(element_id)
-	
-	vm.lua_newtable()
-	var index = 1
-	
-	if element:
-		for child in element.children:
-			vm.lua_newtable()
-			vm.lua_pushstring(child.tag_name)
-			vm.lua_setfield(-2, "tag_name")
-			vm.lua_pushstring(child.get_text_content())
-			vm.lua_setfield(-2, "text")
+	match key:
+		"text":
+			var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+			var text = ""
 			
-			vm.lua_rawseti(-2, index)
-			index += 1
-	
-	return 1
+			var text_node = get_dom_node(dom_node, "text")
+			if text_node:
+				if text_node.has_method("get_text"):
+					text = text_node.get_text()
+				else:
+					text = text_node.text
+			
+			vm.lua_pushstring(text)
+			return 1
+		"children":
+			# Find the element
+			var element: HTMLParser.HTMLElement = null
+			if element_id == "body":
+				element = dom_parser.find_first("body")
+			else:
+				element = dom_parser.find_by_id(element_id)
+			
+			vm.lua_newtable()
+			var index = 1
+			
+			if element:
+				for child in element.children:
+					vm.lua_newtable()
+					vm.lua_pushstring(child.tag_name)
+					vm.lua_setfield(-2, "tagName")
+					vm.lua_pushstring(child.get_text_content())
+					vm.lua_setfield(-2, "text")
+					
+					vm.lua_rawseti(-2, index)
+					index += 1
+			
+			return 1
+		_:
+			# Fall back to checking the original table for methods
+			vm.lua_pushvalue(1) # Push the original table
+			vm.lua_pushstring(key) # Push the key
+			vm.lua_rawget(-2) # Get table[key] without triggering metamethods
+			vm.lua_remove(-2) # Remove the table, leaving just the result
+			return 1
 
-# Element manipulation handlers
-func _element_set_text_handler(vm: LuauVM) -> int:
+func _element_newindex_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)
-	var text: String = vm.luaL_checkstring(2)
+	var key: String = vm.luaL_checkstring(2)
+	var value = vm.lua_tovariant(3)
 	
 	vm.lua_getfield(1, "_element_id")
 	var element_id: String = vm.lua_tostring(-1)
 	vm.lua_pop(1)
 	
-	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
-	var text_node = get_dom_node(dom_node, "text")
-	if text_node:
-		text_node.text = text
+	match key:
+		"text":
+			var text: String = str(value)
+			var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+			var text_node = get_dom_node(dom_node, "text")
+			if text_node:
+				text_node.text = text
+		_:
+			# Ignore unknown properties
+			pass
+	
 	return 0
-
-func _element_get_text_handler(vm: LuauVM) -> int:
-	vm.luaL_checktype(1, vm.LUA_TTABLE)
-	
-	vm.lua_getfield(1, "_element_id")
-	var element_id: String = vm.lua_tostring(-1)
-	vm.lua_pop(1)
-	
-	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
-	var text = ""
-	
-	var text_node = get_dom_node(dom_node, "text")
-	if text_node:
-		if text_node.has_method("get_text"):
-			text = text_node.get_text()
-		else:
-			text = text_node.text
-	
-	vm.lua_pushstring(text)
-	return 1
 
 # append() function to add a child element
 func _element_append_handler(vm: LuauVM) -> int:
