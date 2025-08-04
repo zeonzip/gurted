@@ -43,12 +43,19 @@ class HTMLElement:
 	func is_inline_element() -> bool:
 		return tag_name in ["b", "i", "u", "small", "mark", "code", "span", "a", "input"]
 
+class HTMLBody extends HTMLElement:
+	var body_node: Node = null
+	
+	func _init():
+		super._init("body")
+
 class ParseResult:
 	var root: HTMLElement
 	var all_elements: Array[HTMLElement] = []
 	var errors: Array[String] = []
 	var css_parser: CSSParser = null
 	var inline_styles: Dictionary = {}
+	var dom_nodes: Dictionary = {}
 	
 	func _init():
 		root = HTMLElement.new("document")
@@ -271,6 +278,11 @@ func find_by_id(element_id: String) -> HTMLElement:
 	
 	return null
 
+func register_dom_node(element: HTMLElement, node: Control) -> void:
+	var element_id = element.get_id()
+	if element_id.length() > 0:
+		parse_result.dom_nodes[element_id] = node
+
 func find_first(tag: String, attribute: String = "") -> HTMLElement:
 	var results = find_all(tag, attribute)
 	return results[0] if results.size() > 0 else null
@@ -333,6 +345,24 @@ func get_all_images() -> Array[String]:
 
 func get_all_scripts() -> Array[String]:
 	return get_attribute_values("script", "src")
+
+func process_scripts(lua_api: LuaAPI, lua_vm) -> void:
+	if not lua_api or not lua_vm:
+		print("Warning: Lua API or VM not available for script processing")
+		return
+	
+	lua_api.dom_parser = self
+	
+	for script_element in find_all("script"):
+		var src = script_element.get_attribute("src")
+		var inline_code = script_element.text_content.strip_edges()
+		
+		if not src.is_empty():
+			# TODO: add support for external Lua script
+			print("External script found: ", src)
+		elif not inline_code.is_empty():
+			print("Executing inline Lua script")
+			lua_api.execute_lua_script(inline_code, lua_vm)
 
 func get_all_stylesheets() -> Array[String]:
 	return get_attribute_values("style", "src")

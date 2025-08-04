@@ -100,7 +100,7 @@ var HTML_CONTENT2 = """<head>
 
 </body>
 """.to_utf8_buffer()
-var HTML_CONTENT = """<head>
+var HTML_CONTENTbv = """<head>
 	<title>My cool web</title>
 	<icon src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png\">
 
@@ -111,7 +111,6 @@ var HTML_CONTENT = """<head>
 
 	<style>
 		h1 { text-[#ff0000] font-italic hover:text-[#00ff00] }
-		p { text-[#333333] text-2xl }
 		button { hover:bg-[#FF6B35] hover:text-[#FFFFFF] active:bg-[#CC5429] active:text-[#F0F0F0] }
 	</style>
 	<style src=\"styles.css\">
@@ -416,17 +415,17 @@ var HTML_CONTENT_S = """<head>
 		a[href^="https"] { text-[#008000] font-bold }
 		button[disabled] { bg-[#888888] text-[#cccccc] }
 		input[placeholder*="email"] { border-2 border-[#0066cc] bg-[#ffffff] }
-		div[class$="special"] { bg-[#ffffaa] }
+		div[style$="special"] { bg-[#ffffaa] }
 	</style>
 </head>
 
 <body>
 	<h1>CSS Selector Test Page</h1>
 	<p>This paragraph should be red and bold (h1 + p)</p>
-	<p class="second-p">This paragraph should be blue (h1 ~ p)</p>
+	<p style="second-p">This paragraph should be blue (h1 ~ p)</p>
 	
 	<h2>Descendant vs Child Selectors</h2>
-	<div class="outer-div">
+	<div style="outer-div">
 		<p>This paragraph should be purple and bold (div p and .outer-div > p)</p>
 		<div>
 			<p>This paragraph should be purple but not bold (div p only)</p>
@@ -452,20 +451,20 @@ var HTML_CONTENT_S = """<head>
 	<span>This span should have light red bg (h3 ~ span)</span>
 	<span>This span should also have light red bg (h3 ~ span)</span>
 	
-	<div class="container">
+	<div style="container">
 		<span>This span should have yellow bg (.container span)</span>
 		<p>Regular paragraph in container</p>
 	</div>
 	
-	<div class="parent">
+	<div style="parent">
 		<button>This button should be green (.parent > button)</button>
 		<div>
 			<button>This button should be normal (not direct child)</button>
 		</div>
 	</div>
 	
-	<div class="item-special">This div should have yellow bg (class ends with 'special')</div>
-	<div class="special-item">This div should be normal</div>
+	<div style="item-special">This div should have yellow bg (class ends with 'special')</div>
+	<div style="special-item">This div should be normal</div>
 </body>
 """.to_utf8_buffer()
 
@@ -588,5 +587,99 @@ var HTML_CONTENT3 = """<head>
 <button style=\"bg-[#F39C12] text-[#2C3E50] rounded hover:bg-[#E67E22] hover:text-[#FFFFFF] active:bg-[#D35400] active:text-[#F7F9FC]\">Gold Multi-State</button>
 <button style=\"bg-[#9B59B6] text-[#FFFFFF] rounded-2xl active:bg-[#7D3C98] active:text-[#E8DAEF]\">Purple Active Only</button>
 
+</body>
+""".to_utf8_buffer()
+
+var HTML_CONTENT = """<head>
+	<title>Lua API Demo</title>
+	<icon src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Lua-Logo.svg/256px-Lua-Logo.svg.png">
+	<meta name="theme-color" content="#000080">
+	<meta name="description" content="Demonstrating the GURT Lua API">
+	
+	<style>
+		body { bg-[#f8f9fa] p-6 }
+		h1 { text-[#2563eb] text-4xl font-bold }
+		.container { bg-[#ffffff] p-4 rounded-lg shadow-lg }
+		.demo-button { bg-[#3b82f6] text-white px-4 py-2 rounded hover:bg-[#2563eb] }
+	</style>
+	
+	<script>
+		local typing = gurt.select('#type')
+		local mouse = gurt.select('#mouse')
+		local btnmouse = gurt.select('#btnmouse')
+		
+		gurt.log('Starting Lua script execution...')
+		
+		gurt.body:on('keypress', function(el)
+			typing:set_text(table.tostring(el))
+		end)
+		
+		gurt.body:on('mousemove', function(el)
+			mouse:set_text(table.tostring(el))
+		end)
+
+		-- Test element selection and manipulation
+		local heading = gurt.select('#main-heading')
+		heading:set_text('Welcome to the New Web!')
+		
+		local button = gurt.select('#demo-button')
+		local event_log = gurt.select('#event-log')
+		
+		button:on('mousedown', function()
+			print('Mouse down')
+		end)
+		
+		button:on('mouseup', function()
+			print('Mouse up')
+		end)
+		
+		button:on('mouseenter', function()
+			print('Mouse enter')
+		end)
+		
+		button:on('mouseexit', function()
+			print('Mouse exit')
+		end)
+		
+		button:on('mousemove', function(el)
+			btnmouse:set_text(table.tostring(el))
+		end)
+		
+		if button and event_log then
+			local click_count = 0
+			
+			local subscription = button:on('click', function()
+				click_count = click_count + 1
+				local new_text = 'Button clicked ' .. click_count .. ' time(s)!'
+				event_log:set_text(new_text)
+			end)
+			
+			heading:on('focusin', function()
+				print('oh u flck')
+				subscription:unsubscribe()
+			end)
+			
+			gurt.log('Event listener attached to button with subscription ID')
+		else
+			gurt.log('Could not find button or event log element')
+		end
+	</script>
+</head>
+
+<body>
+	<h1 id="main-heading">Welcome to GURT Lua API Demo</h1>
+	
+	<div style="container">
+		<p>This page demonstrates the GURT Lua API in action.</p>
+		<div id="demo-button" style="w-40 h-40 bg-red-500 p-4 rounded-lg">Click me to see Lua in action!</div>
+	</div>
+	
+	<p id="event-log" style="mt-4 p-4 bg-[#f3f4f6] rounded min-h-24">Click the button</p>
+	
+	<p id="mouse" style="mt-4 p-4 bg-[#f3f4f6] rounded min-h-24">Move your mouse</p>
+	
+	<p id="btnmouse" style="mt-4 p-4 bg-[#f3f4f6] rounded min-h-24">Move mouse over Button</p>
+	
+	<p id="type" style="mt-4 p-4 bg-[#f3f4f6] rounded min-h-24">Type something</p>
 </body>
 """.to_utf8_buffer()

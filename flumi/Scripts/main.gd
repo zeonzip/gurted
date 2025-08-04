@@ -99,7 +99,18 @@ func render() -> void:
 	
 	if body:
 		StyleManager.apply_body_styles(body, parser, website_container, website_background)
+		
+		parser.register_dom_node(body, website_container)
 	
+	var scripts = parser.find_all("script")
+	var lua_vm = null
+	var lua_api = null
+	if scripts.size() > 0:
+		lua_vm = LuauVM.new()
+		lua_api = LuaAPI.new()
+		add_child(lua_vm)
+		add_child(lua_api)
+
 	var i = 0
 	while i < body.children.size():
 		var element: HTMLParser.HTMLElement = body.children[i]
@@ -118,6 +129,8 @@ func render() -> void:
 			for inline_element in inline_elements:
 				var inline_node = await create_element_node(inline_element, parser)
 				if inline_node:
+					parser.register_dom_node(inline_element, inline_node)
+					
 					safe_add_child(hbox, inline_node)
 					# Handle hyperlinks for all inline elements
 					if contains_hyperlink(inline_element) and inline_node is RichTextLabel:
@@ -130,6 +143,8 @@ func render() -> void:
 		
 		var element_node = await create_element_node(element, parser)
 		if element_node:
+			parser.register_dom_node(element, element_node)
+			
 			# ul/ol handle their own adding
 			if element.tag_name != "ul" and element.tag_name != "ol":
 				safe_add_child(website_container, element_node)
@@ -144,6 +159,9 @@ func render() -> void:
 			print("Couldn't parse unsupported HTML tag \"%s\"" % element.tag_name)
 		
 		i += 1
+	
+	if scripts.size() > 0 and lua_vm and lua_api:
+		parser.process_scripts(lua_api, lua_vm)
 
 static func safe_add_child(parent: Node, child: Node) -> void:
 	if child.get_parent():
@@ -232,7 +250,15 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 
 	# Apply flex CONTAINER properties if it's a flex container
 	if is_flex_container:
-		StyleManager.apply_flex_container_properties(final_node, styles)
+		var flex_container_node = final_node
+		# If the node was wrapped in a MarginContainer, get the inner FlexContainer
+		if final_node is MarginContainer and final_node.get_child_count() > 0:
+			var first_child = final_node.get_child(0)
+			if first_child is FlexContainer:
+				flex_container_node = first_child
+		
+		if flex_container_node is FlexContainer:
+			StyleManager.apply_flex_container_properties(flex_container_node, styles)
 
 	# Apply flex ITEM properties
 	StyleManager.apply_flex_item_properties(final_node, styles)
@@ -252,6 +278,7 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 			if not child_element.is_inline_element() or is_flex_container:
 				var child_node = await create_element_node(child_element, parser)
 				if child_node and is_instance_valid(container_for_children):
+					parser.register_dom_node(child_element, child_node)
 					safe_add_child(container_for_children, child_node)
 
 	return final_node
@@ -340,7 +367,7 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 				node = BackgroundUtils.create_panel_container_with_background(styles, hover_styles)
 			else:
 				node = DIV.instantiate()
-				node.init(element, parser)
+				node.init(element)
 			
 			var has_only_text = is_text_only_element(element)
 			
