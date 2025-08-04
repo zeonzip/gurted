@@ -1,9 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://bli1234568aa"]
-
-[ext_resource type="Script" uid="uid://ps8duq0aw3tu" path="res://Scripts/Tags/li.gd" id="1_li"]
-
-[node name="li" type="VBoxContainer"]
-anchors_preset = 10
-anchor_right = 1.0
-grow_horizontal = 2
-script = ExtResource("1_li")

@@ -18,8 +18,8 @@ class HTMLElement:
 	func has_attribute(name_: String) -> bool:
 		return attributes.has(name_)
 	
-	func get_class_name() -> String:
-		return get_attribute("class")
+	func set_attribute(name_: String, value: String) -> void:
+		attributes.set(name_, value)
 	
 	func get_id() -> String:
 		return get_attribute("id")

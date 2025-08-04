@@ -24,7 +24,6 @@ const INPUT = preload("res://Scenes/Tags/input.tscn")
 const BUTTON = preload("res://Scenes/Tags/button.tscn")
 const UL = preload("res://Scenes/Tags/ul.tscn")
 const OL = preload("res://Scenes/Tags/ol.tscn")
-const LI = preload("res://Scenes/Tags/li.tscn")
 const SELECT = preload("res://Scenes/Tags/select.tscn")
 const OPTION = preload("res://Scenes/Tags/option.tscn")
 const TEXTAREA = preload("res://Scenes/Tags/textarea.tscn")
@@ -347,8 +346,8 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			await node.init(element, parser)
 			return node
 		"li":
-			node = LI.instantiate()
-			node.init(element, parser)
+			node = P.instantiate()
+			node.init(element)
 		"select":
 			node = SELECT.instantiate()
 			node.init(element)

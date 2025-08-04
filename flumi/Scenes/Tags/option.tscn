@@ -1,6 +1,5 @@
-[gd_scene load_steps=3 format=3 uid="uid://bopt1234568aa"]
+[gd_scene load_steps=2 format=3 uid="uid://bopt1234568aa"]
 
-[ext_resource type="Script" uid="uid://ps8duq0aw3tu" path="res://Scripts/Tags/li.gd" id="1_option"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_theme"]
 
 [node name="option" type="Control"]
@@ -8,7 +7,6 @@ layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
 grow_horizontal = 2
-script = ExtResource("1_option")
 
 [node name="RichTextLabel" type="RichTextLabel" parent="."]
 layout_mode = 2

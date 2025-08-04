@@ -204,7 +204,16 @@ static func apply_margin_wrapper(node: Control, styles: Dictionary) -> Control:
 	node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	node.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	
-	margin_container.add_child(node)
+	# Handle reparenting properly
+	var original_parent = node.get_parent()
+	if original_parent:
+		var node_index = node.get_index()
+		original_parent.remove_child(node)
+		margin_container.add_child(node)
+		original_parent.add_child(margin_container)
+		original_parent.move_child(margin_container, node_index)
+	else:
+		margin_container.add_child(node)
 	
 	return margin_container
 

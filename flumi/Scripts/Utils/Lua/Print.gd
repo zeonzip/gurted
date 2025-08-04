@@ -10,8 +10,11 @@ static func lua_print(vm: LuauVM) -> int:
 		message_parts.append(value_str)
 	
 	var final_message = "\t".join(message_parts)
-	print("GURT LOG: ", final_message)
+	lua_print_direct(final_message)
 	return 0
+
+static func lua_print_direct(msg) -> void:
+	print("GURT LOG: ", msg)
 
 static func lua_value_to_string(vm: LuauVM, index: int) -> String:
 	var lua_type = vm.lua_type(index)

@@ -35,6 +35,18 @@ static func setup_gurt_api(vm: LuauVM, lua_api, dom_parser: HTMLParser) -> void:
 	vm.lua_pushcallable(lua_api._gurt_select_handler, "gurt.select")
 	vm.lua_setfield(-2, "select")
 	
+	vm.lua_pushcallable(lua_api._gurt_select_all_handler, "gurt.select_all")
+	vm.lua_setfield(-2, "select_all")
+	
+	vm.lua_pushcallable(lua_api._gurt_create_handler, "gurt.create")
+	vm.lua_setfield(-2, "create")
+	
+	vm.lua_pushcallable(lua_api._gurt_set_timeout_handler, "gurt.set_timeout")
+	vm.lua_setfield(-2, "set_timeout")
+	
+	vm.lua_pushcallable(lua_api._gurt_clear_timeout_handler, "gurt.clear_timeout")
+	vm.lua_setfield(-2, "clear_timeout")
+	
 	# Add body element access
 	var body_element = dom_parser.find_first("body")
 	if body_element:
@@ -51,6 +63,9 @@ static func setup_gurt_api(vm: LuauVM, lua_api, dom_parser: HTMLParser) -> void:
 		
 		vm.lua_pushcallable(lua_api._body_on_event_handler, "body.on")
 		vm.lua_setfield(-2, "on")
+		
+		vm.lua_pushcallable(lua_api._element_append_handler, "body.append")
+		vm.lua_setfield(-2, "append")
 		
 		vm.lua_setfield(-2, "body")
 

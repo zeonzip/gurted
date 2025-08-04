@@ -16,6 +16,30 @@ var event_subscriptions: Dictionary = {}
 var next_subscription_id: int = 1
 var next_callback_ref: int = 1
 
+var timeout_manager: LuaTimeoutManager
+var element_id_counter: int = 1
+var element_id_registry: Dictionary = {}
+
+func _init():
+	timeout_manager = LuaTimeoutManager.new()
+
+func get_or_assign_element_id(element: HTMLParser.HTMLElement) -> String:
+	var existing_id = element.get_attribute("id")
+	if not existing_id.is_empty():
+		element_id_registry[element] = existing_id
+		return existing_id
+	
+	if element_id_registry.has(element):
+		return element_id_registry[element]
+	
+	var new_id = "auto_" + str(element_id_counter)
+	element_id_counter += 1
+	
+	element.set_attribute("id", new_id)
+	element_id_registry[element] = new_id
+	
+	return new_id
+
 func _gurt_select_handler(vm: LuauVM) -> int:
 	var selector: String = vm.luaL_checkstring(1)
 	
@@ -38,6 +62,87 @@ func _gurt_select_handler(vm: LuauVM) -> int:
 	add_element_methods(vm)
 	return 1
 
+# selectAll() function to find multiple elements
+func _gurt_select_all_handler(vm: LuauVM) -> int:
+	var selector: String = vm.luaL_checkstring(1)
+	
+	var elements: Array[HTMLParser.HTMLElement] = []
+	 
+	# Handle different selector types
+	if selector.begins_with("#"):
+		# ID selector - find single element
+		var element_id = selector.substr(1)
+		var element = dom_parser.find_by_id(element_id)
+		if element:
+			elements.append(element)
+			LuaPrintUtils.lua_print_direct("WARNING: Using ID selector in select_all is not recommended, use select instead.")
+	elif selector.begins_with("."):
+		# Class selector - find all elements with class
+		var cls = selector.substr(1)
+		for element in dom_parser.parse_result.all_elements:
+			var element_classes = CSSParser.smart_split_utility_classes(element.get_attribute("style"))
+			if cls in element_classes:
+				elements.append(element)
+	else:
+		# Tag selector - find all elements with tag name
+		elements = dom_parser.find_all(selector)
+	
+	vm.lua_newtable()
+	var index = 1
+	
+	for element in elements:
+		var element_id = get_or_assign_element_id(element)
+		
+		# Create element wrapper
+		vm.lua_newtable()
+		vm.lua_pushstring(element_id)
+		vm.lua_setfield(-2, "_element_id")
+		vm.lua_pushstring(element.tag_name)
+		vm.lua_setfield(-2, "_tag_name")
+		
+		add_element_methods(vm)
+		
+		# Add to array at index
+		vm.lua_rawseti(-2, index)
+		index += 1
+	
+	return 1
+
+# create() function to create HTML element
+func _gurt_create_handler(vm: LuauVM) -> int:
+	var tag_name: String = vm.luaL_checkstring(1)
+	var options: Dictionary = {}
+	
+	if vm.lua_gettop() >= 2 and vm.lua_istable(2):
+		options = vm.lua_todictionary(2)
+	
+	var element = HTMLParser.HTMLElement.new(tag_name)
+	
+	# Apply options as attributes and content
+	for key in options:
+		if key == "text":
+			element.text_content = str(options[key])
+		else:
+			element.attributes[str(key)] = str(options[key])
+	
+	# Add to parser's element collection first
+	dom_parser.parse_result.all_elements.append(element)
+	
+	# Get or assign stable ID
+	var unique_id = get_or_assign_element_id(element)
+	
+	# Create Lua element wrapper with methods
+	vm.lua_newtable()
+	vm.lua_pushstring(unique_id)
+	vm.lua_setfield(-2, "_element_id")
+	vm.lua_pushstring(tag_name)
+	vm.lua_setfield(-2, "_tag_name")
+	vm.lua_pushboolean(true)
+	vm.lua_setfield(-2, "_is_dynamic")
+	
+	add_element_methods(vm)
+	return 1
+
 func add_element_methods(vm: LuauVM) -> void:
 	vm.lua_pushcallable(_element_set_text_handler, "element.set_text")
 	vm.lua_setfield(-2, "set_text")
@@ -47,6 +152,45 @@ func add_element_methods(vm: LuauVM) -> void:
 	
 	vm.lua_pushcallable(_element_on_event_handler, "element.on")
 	vm.lua_setfield(-2, "on")
+	
+	vm.lua_pushcallable(_element_append_handler, "element.append")
+	vm.lua_setfield(-2, "append")
+	
+	vm.lua_pushcallable(_element_remove_handler, "element.remove")
+	vm.lua_setfield(-2, "remove")
+	
+	vm.lua_pushcallable(_element_get_children_handler, "element.get_children")
+	vm.lua_setfield(-2, "get_children")
+
+func _element_get_children_handler(vm: LuauVM) -> int:
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	
+	vm.lua_getfield(1, "_element_id")
+	var element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	# Find the element
+	var element: HTMLParser.HTMLElement = null
+	if element_id == "body":
+		element = dom_parser.find_first("body")
+	else:
+		element = dom_parser.find_by_id(element_id)
+	
+	vm.lua_newtable()
+	var index = 1
+	
+	if element:
+		for child in element.children:
+			vm.lua_newtable()
+			vm.lua_pushstring(child.tag_name)
+			vm.lua_setfield(-2, "tag_name")
+			vm.lua_pushstring(child.get_text_content())
+			vm.lua_setfield(-2, "text")
+			
+			vm.lua_rawseti(-2, index)
+			index += 1
+	
+	return 1
 
 # Element manipulation handlers
 func _element_set_text_handler(vm: LuauVM) -> int:
@@ -82,6 +226,129 @@ func _element_get_text_handler(vm: LuauVM) -> int:
 	
 	vm.lua_pushstring(text)
 	return 1
+
+# append() function to add a child element
+func _element_append_handler(vm: LuauVM) -> int:
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	vm.luaL_checktype(2, vm.LUA_TTABLE)
+	
+	# Get parent element info
+	vm.lua_getfield(1, "_element_id")
+	var parent_element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	# Get child element info
+	vm.lua_getfield(2, "_element_id")
+	var child_element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	vm.lua_getfield(2, "_is_dynamic")
+	vm.lua_pop(1)
+	
+	# Find parent element
+	var parent_element: HTMLParser.HTMLElement = null
+	if parent_element_id == "body":
+		parent_element = dom_parser.find_first("body")
+	else:
+		parent_element = dom_parser.find_by_id(parent_element_id)
+	
+	if not parent_element:
+		return 0
+	
+	# Find child element
+	var child_element = dom_parser.find_by_id(child_element_id)
+	if not child_element:
+		return 0
+	
+	# Add child to parent in DOM tree
+	child_element.parent = parent_element
+	parent_element.children.append(child_element)
+	
+	# If the parent is already rendered, we need to create and add the visual node
+	var parent_dom_node: Node = null
+	if parent_element_id == "body":
+		var main_scene = get_node("/root/Main")
+		if main_scene:
+			parent_dom_node = main_scene.website_container
+	else:
+		parent_dom_node = dom_parser.parse_result.dom_nodes.get(parent_element_id, null)
+	
+	if parent_dom_node:
+		_render_new_element.call_deferred(child_element, parent_dom_node)
+	
+	return 0
+
+# remove() function to remove an element
+func _element_remove_handler(vm: LuauVM) -> int:
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	
+	vm.lua_getfield(1, "_element_id")
+	var element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	# Find the element in DOM
+	var element = dom_parser.find_by_id(element_id)
+	if not element:
+		return 0
+
+	# Remove from parent's children array
+	if element.parent:
+		var parent_children = element.parent.children
+		var idx = parent_children.find(element)
+		if idx >= 0:
+			parent_children.remove_at(idx)
+
+	# Remove the visual node
+	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+	if dom_node:
+		dom_node.queue_free()
+		dom_parser.parse_result.dom_nodes.erase(element_id)
+
+	# Remove from all_elements array
+	var all_elements = dom_parser.parse_result.all_elements
+	var index = all_elements.find(element)
+	if index >= 0:
+		all_elements.remove_at(index)
+
+	# Remove from element_id_registry to avoid memory leaks
+	if element_id_registry.has(element):
+		element_id_registry.erase(element)
+
+	return 0
+
+func _render_new_element(element: HTMLParser.HTMLElement, parent_node: Node) -> void:
+	# Get reference to main scene for rendering
+	var main_scene = get_node("/root/Main")
+	if not main_scene:
+		return
+	
+	# Create the visual node for the element
+	var element_node = await main_scene.create_element_node(element, dom_parser)
+	if not element_node:
+		LuaPrintUtils.lua_print_direct("Failed to create visual node for element: " + str(element))
+		return
+
+	# Set metadata so ul/ol can detect dynamically added li elements
+	element_node.set_meta("html_element", element)
+
+	# Register the DOM node
+	dom_parser.register_dom_node(element, element_node)
+
+	# Add to parent - handle body special case
+	var container_node = parent_node
+	if parent_node is MarginContainer and parent_node.get_child_count() > 0:
+		container_node = parent_node.get_child(0)
+	elif parent_node == main_scene.website_container:
+		container_node = parent_node
+
+	main_scene.safe_add_child(container_node, element_node)
+
+# Timeout management handlers
+func _gurt_set_timeout_handler(vm: LuauVM) -> int:
+	return timeout_manager.set_timeout_handler(vm, self)
+
+func _gurt_clear_timeout_handler(vm: LuauVM) -> int:
+	return timeout_manager.clear_timeout_handler(vm)
 
 # Event system handlers
 func _element_on_event_handler(vm: LuauVM) -> int:

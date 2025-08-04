@@ -590,7 +590,8 @@ var HTML_CONTENT3 = """<head>
 </body>
 """.to_utf8_buffer()
 
-var HTML_CONTENT = """<head>
+var HTML_CONTENT = """
+<head>
 	<title>Lua API Demo</title>
 	<icon src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Lua-Logo.svg/256px-Lua-Logo.svg.png">
 	<meta name="theme-color" content="#000080">
@@ -663,6 +664,38 @@ var HTML_CONTENT = """<head>
 		else
 			gurt.log('Could not find button or event log element')
 		end
+		
+		-- DOM Manipulation Demo
+		gurt.log('Testing DOM manipulation...')
+		
+		-- Create a new div with styling
+		local new_div = gurt.create('div', { style = 'bg-red-500 p-4 rounded-lg mb-4' })
+		
+		-- Create a paragraph with text
+		local new_p = gurt.create('p', { 
+			style = 'text-white font-bold text-lg', 
+			text = 'This element was created dynamically with Lua!' 
+		})
+		
+		-- Append paragraph to div
+		new_div:append(new_p)
+		
+		-- Append div to body
+		gurt.body:append(new_div)
+		
+		-- Create another element to test removal
+		local temp_element = gurt.create('div', {
+			style = 'bg-yellow-400 p-2 rounded text-black',
+			text = 'This will be removed in 3 seconds...'
+		})
+		gurt.body:append(temp_element)
+		
+		local test = gurt.set_timeout(function()
+			print('removed')
+			temp_element:remove()
+		end, 3000)
+		
+		-- gurt.clear_timeout(test)
 	</script>
 </head>
 
@@ -681,5 +714,61 @@ var HTML_CONTENT = """<head>
 	<p id="btnmouse" style="mt-4 p-4 bg-[#f3f4f6] rounded min-h-24">Move mouse over Button</p>
 	
 	<p id="type" style="mt-4 p-4 bg-[#f3f4f6] rounded min-h-24">Type something</p>
+</body>""".to_utf8_buffer()
+
+var HTML_CONTENT_ADD_REMOVE = """<head>
+	<title>Lua List Manipulation Demo</title>
+	<icon src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Lua-Logo.svg/256px-Lua-Logo.svg.png">
+	<meta name="theme-color" content="#000080">
+	<meta name="description" content="Adding and popping list items with GURT Lua API">
+
+	<style>
+		body { bg-[#f8f9fa] p-6 }
+		h1 { text-[#2563eb] text-4xl font-bold }
+		.container { flex flex-row bg-[#ffffff] p-4 rounded-lg shadow-lg }
+		.demo-button { bg-[#3b82f6] text-white px-4 py-2 rounded hover:bg-[#2563eb] cursor-pointer }
+		ul { list-disc pl-6 }
+		li { text-[#111827] py-1 }
+	</style>
+
+	<script>
+		local add_button = gurt.select('#add-button')
+		local pop_button = gurt.select('#pop-button')
+		local list = gurt.select('#item-list')
+		local counter = 1
+
+		gurt.log('List manipulation script started.')
+
+		add_button:on('click', function()
+			local new_item = gurt.create('li', {
+				text = 'Item #' .. counter
+			})
+			list:append(new_item)
+			counter = counter + 1
+		end)
+
+		pop_button:on('click', function()
+			local items = list:get_children()
+			local last = items[#items]
+			if last then
+				last:remove()
+				counter = math.max(1, counter - 1)
+			end
+		end)
+	</script>
+</head>
+
+<body>
+	<h1 id="main-heading">List Manipulation with Lua</h1>
+
+	<div style="container">
+		<p>Use the buttons below to add or remove items from the list:</p>
+		<button id="add-button" style="demo-button inline-block mr-2">Add Item</button>
+		<button id="pop-button" style="demo-button inline-block">Pop Item</button>
+	</div>
+
+	<ul id="item-list" style="mt-4 bg-[#f3f4f6] p-4 rounded min-h-24">
+		<!-- List items will appear here -->
+	</ul>
 </body>
 """.to_utf8_buffer()
