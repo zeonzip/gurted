@@ -27,6 +27,12 @@ static func setup_gurt_api(vm: LuauVM, lua_api, dom_parser: HTMLParser) -> void:
 	vm.lua_setfield(-2, "tostring")
 	vm.lua_pop(1)  # Pop table from stack
 	
+	# Setup Signal API
+	LuaSignalUtils.setup_signal_api(vm)
+	
+	# Setup Time API
+	LuaTimeUtils.setup_time_api(vm)
+	
 	vm.lua_newtable()
 	
 	vm.lua_pushcallable(LuaPrintUtils.lua_print, "gurt.log")
