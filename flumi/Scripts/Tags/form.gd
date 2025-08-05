@@ -1,4 +1,4 @@
 extends VBoxContainer
 
-func init(_element: HTMLParser.HTMLElement) -> void:
+func init(_element: HTMLParser.HTMLElement, _parser: HTMLParser = null) -> void:
 	pass

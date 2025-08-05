@@ -154,6 +154,12 @@ func add_element_methods(vm: LuauVM, index: String = "element") -> void:
 	vm.lua_pushcallable(_element_remove_handler, index + ".remove")
 	vm.lua_setfield(-2, "remove")
 	
+	vm.lua_pushcallable(_element_get_attribute_handler, index + ".getAttribute")
+	vm.lua_setfield(-2, "getAttribute")
+	
+	vm.lua_pushcallable(_element_set_attribute_handler, index + ".setAttribute")
+	vm.lua_setfield(-2, "setAttribute")
+	
 	# Create metatable for property access
 	vm.lua_newtable() # metatable
 	
@@ -350,6 +356,67 @@ func _element_remove_handler(vm: LuauVM) -> int:
 	if element_id_registry.has(element):
 		element_id_registry.erase(element)
 
+	return 0
+
+# getAttribute() function to get element attribute
+func _element_get_attribute_handler(vm: LuauVM) -> int:
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	var attribute_name: String = vm.luaL_checkstring(2)
+	
+	vm.lua_getfield(1, "_element_id")
+	var element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	# Find the element
+	var element: HTMLParser.HTMLElement = null
+	if element_id == "body":
+		element = dom_parser.find_first("body")
+	else:
+		element = dom_parser.find_by_id(element_id)
+	
+	if not element:
+		vm.lua_pushnil()
+		return 1
+	
+	# Get the attribute value
+	var attribute_value = element.get_attribute(attribute_name)
+	if attribute_value.is_empty():
+		vm.lua_pushnil()
+	else:
+		vm.lua_pushstring(attribute_value)
+	
+	return 1
+
+# setAttribute() function to set element attribute
+func _element_set_attribute_handler(vm: LuauVM) -> int:
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	var attribute_name: String = vm.luaL_checkstring(2)
+	var attribute_value: String = vm.luaL_checkstring(3)
+	
+	vm.lua_getfield(1, "_element_id")
+	var element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	# Find the element
+	var element: HTMLParser.HTMLElement = null
+	if element_id == "body":
+		element = dom_parser.find_first("body")
+	else:
+		element = dom_parser.find_by_id(element_id)
+	
+	if not element:
+		return 0
+	
+	if attribute_value == "":
+		element.attributes.erase(attribute_name)
+	else:
+		element.set_attribute(attribute_name, attribute_value)
+	
+	# Trigger visual update by calling init() again
+	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+	if dom_node and dom_node.has_method("init"):
+		dom_node.init(element, dom_parser)
+	
 	return 0
 
 func _element_classlist_add_wrapper(vm: LuauVM) -> int:

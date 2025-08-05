@@ -128,6 +128,12 @@ func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
 			setup_text_input(line_edit, placeholder, value, minlength, maxlength, pattern)
 	
 	apply_input_styles(element, parser)
+	
+	# Handle disabled and readonly attributes
+	if element.has_attribute("disabled"):
+		active_child.set("disabled", true)
+	if element.has_attribute("readonly") and active_child.has_method("set_editable"):
+		active_child.set_editable(false)
 
 func remove_unused_children(keep_child_name: String) -> void:
 	for child in get_children():

@@ -2,7 +2,7 @@ extends Control
 
 const BROWSER_TEXT = preload("res://Scenes/Styles/BrowserText.tres")
 
-func init(element: HTMLParser.HTMLElement) -> void:
+func init(element: HTMLParser.HTMLElement, _parser: HTMLParser = null) -> void:
 	var option_button: OptionButton = $OptionButton
 	
 	var selected_index = -1
@@ -20,14 +20,11 @@ func init(element: HTMLParser.HTMLElement) -> void:
 			option_button.set_item_metadata(option_index, option_value)
 			
 			# Check if this option is selected
-			var is_selected = child_element.get_attribute("selected")
-			if is_selected.length() > 0 and selected_index == -1:
+			if child_element.has_attribute("selected") and selected_index == -1:
 				selected_index = option_index
 			
 			# Check if this option is disabled
-			var is_disabled = child_element.get_attribute("disabled")
-			if is_disabled.length() > 0:
-				option_button.set_item_disabled(option_index, true)
+			option_button.set_item_disabled(option_index, child_element.has_attribute("disabled"))
 			
 			option_index += 1
 	

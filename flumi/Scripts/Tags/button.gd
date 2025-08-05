@@ -8,8 +8,7 @@ func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
 	current_element = element
 	current_parser = parser
 	var button_node: Button = $ButtonNode
-	if element.has_attribute("disabled"):
-		button_node.disabled = true
+	button_node.disabled = element.has_attribute("disabled")
 	
 	var button_text = element.text_content.strip_edges()
 	if button_text.length() == 0:

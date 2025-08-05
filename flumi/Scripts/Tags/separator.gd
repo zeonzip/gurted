@@ -2,7 +2,7 @@ extends Control
 
 var separator_node: Separator
 
-func init(element: HTMLParser.HTMLElement) -> void:
+func init(element: HTMLParser.HTMLElement, _parser: HTMLParser = null) -> void:
 	var direction = element.get_attribute("direction")
 
 	if direction == "vertical":

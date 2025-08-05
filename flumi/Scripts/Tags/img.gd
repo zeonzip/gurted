@@ -1,6 +1,6 @@
 extends TextureRect
 
-func init(element: HTMLParser.HTMLElement) -> void:
+func init(element: HTMLParser.HTMLElement, _parser: HTMLParser = null) -> void:
 	var src = element.get_attribute("src")
 	if !src: return print("Ignoring <img/> tag without \"src\" attribute.")
 	

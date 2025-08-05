@@ -2,7 +2,7 @@ extends Control
 
 const BROWSER_TEXT = preload("res://Scenes/Styles/BrowserText.tres")
 
-func init(element: HTMLParser.HTMLElement) -> void:
+func init(element: HTMLParser.HTMLElement, _parser: HTMLParser = null) -> void:
 	var text_edit: TextEdit = $TextEdit
 	
 	var placeholder = element.get_attribute("placeholder")
@@ -37,12 +37,7 @@ func init(element: HTMLParser.HTMLElement) -> void:
 	# Sync Control size with TextEdit
 	custom_minimum_size = text_edit.custom_minimum_size
 	
-	# Set readonly state
-	if readonly.length() > 0:
-		text_edit.editable = false
-	
-	# Set disabled state
-	if disabled.length() > 0:
+	if element.has_attribute("disabled"):
 		text_edit.editable = false
 		var stylebox = StyleBoxFlat.new()
 		stylebox.bg_color = Color(0.8, 0.8, 0.8, 1.0)
@@ -58,10 +53,22 @@ func init(element: HTMLParser.HTMLElement) -> void:
 		text_edit.add_theme_stylebox_override("normal", stylebox)
 		text_edit.add_theme_stylebox_override("focus", stylebox)
 		text_edit.add_theme_stylebox_override("readonly", stylebox)
+	else:
+		text_edit.remove_theme_stylebox_override("normal")
+		text_edit.remove_theme_stylebox_override("focus")
+		text_edit.remove_theme_stylebox_override("readonly")
+		
+		if element.has_attribute("readonly"):
+			text_edit.editable = false
+		else:
+			text_edit.editable = true
 	
 	# Handle maxlength
 	if maxlength.length() > 0 and maxlength.is_valid_int():
 		var max_len = maxlength.to_int()
+		# Disconnect existing signal if connected to prevent duplicates
+		if text_edit.text_changed.is_connected(_on_text_changed):
+			text_edit.text_changed.disconnect(_on_text_changed)
 		text_edit.text_changed.connect(_on_text_changed.bind(max_len))
 
 func _on_text_changed(max_length: int) -> void:
