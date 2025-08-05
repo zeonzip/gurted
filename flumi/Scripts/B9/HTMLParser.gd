@@ -200,12 +200,30 @@ func parse_inline_style_with_event(style_string: String, event: String = "") -> 
 				CSSParser.parse_utility_class_internal(rule, actual_utility)
 				for property in rule.properties:
 					properties[property] = rule.properties[property]
+			else:
+				# Check if this is a CSS class that might have pseudo-class rules
+				if parse_result.css_parser and parse_result.css_parser.stylesheet:
+					var pseudo_styles = parse_result.css_parser.stylesheet.get_styles_for_element("", event, [utility_name], null)
+					if not pseudo_styles.is_empty():
+						for property in pseudo_styles:
+							properties[property] = pseudo_styles[property]
 		else:
 			if not utility_name.contains(":"):
-				var rule = CSSParser.CSSRule.new()
-				CSSParser.parse_utility_class_internal(rule, utility_name)
-				for property in rule.properties:
-					properties[property] = rule.properties[property]
+				if parse_result.css_parser and parse_result.css_parser.stylesheet:
+					var css_rule = parse_result.css_parser.stylesheet.find_rule_by_selector("." + utility_name)
+					if css_rule:
+						for property in css_rule.properties:
+							properties[property] = css_rule.properties[property]
+					else:
+						var rule = CSSParser.CSSRule.new()
+						CSSParser.parse_utility_class_internal(rule, utility_name)
+						for property in rule.properties:
+							properties[property] = rule.properties[property]
+				else:
+					var rule = CSSParser.CSSRule.new()
+					CSSParser.parse_utility_class_internal(rule, utility_name)
+					for property in rule.properties:
+						properties[property] = rule.properties[property]
 	
 	return properties
 

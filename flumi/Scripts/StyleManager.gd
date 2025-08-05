@@ -126,41 +126,179 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 
 	# Check for margins first and wrap in MarginContainer if needed
 	var has_margin = styles.has("margin") or styles.has("margin-top") or styles.has("margin-right") or styles.has("margin-bottom") or styles.has("margin-left")
+	node = handle_margin_wrapper(node, styles, has_margin)
 	
-	if has_margin:
-		node = apply_margin_wrapper(node, styles)
-	
-	# Apply background color, border radius, borders  
-	var needs_styling = styles.has("background-color") or styles.has("border-radius") or styles.has("border-width") or styles.has("border-top-width") or styles.has("border-right-width") or styles.has("border-bottom-width") or styles.has("border-left-width") or styles.has("border-color")
+	var needs_styling = styles.has("background-color") or styles.has("border-radius") or styles.has("border-width") or styles.has("border-top-width") or styles.has("border-right-width") or styles.has("border-bottom-width") or styles.has("border-left-width") or styles.has("border-color") or styles.has("padding") or styles.has("padding-top") or styles.has("padding-right") or styles.has("padding-bottom") or styles.has("padding-left")
 	
 	if needs_styling:
-		var target_node_for_bg = node if node is FlexContainer else label
+		# If node is a MarginContainer wrapper, get the actual content node for styling
+		var content_node = node
+		if node is MarginContainer and node.name.begins_with("MarginWrapper_"):
+			if node.get_child_count() > 0:
+				content_node = node.get_child(0)
+		
+		var target_node_for_bg = content_node if content_node is FlexContainer else (label if label else content_node)
 		if target_node_for_bg:
-			if styles.has("background-color"):
-				target_node_for_bg.set_meta("custom_css_background_color", styles["background-color"])
-			if styles.has("border-radius"):
-				target_node_for_bg.set_meta("custom_css_border_radius", styles["border-radius"])
+			# Clear existing metadata first to ensure clean state
+			clear_styling_metadata(target_node_for_bg)
 			
-			# Border properties
-			if styles.has("border-width"):
-				target_node_for_bg.set_meta("custom_css_border_width", styles["border-width"])
-			if styles.has("border-color"):
-				target_node_for_bg.set_meta("custom_css_border_color", styles["border-color"])
+			# Set new metadata based on current styles
+			set_styling_metadata(target_node_for_bg, styles)
 			
-			# Individual border sides
-			var border_sides = ["top", "right", "bottom", "left"]
-			for side in border_sides:
-				var width_key = "border-" + side + "-width"
-				if styles.has(width_key):
-					target_node_for_bg.set_meta("custom_css_" + width_key.replace("-", "_"), styles[width_key])
-
+			if target_node_for_bg is FlexContainer:
+				BackgroundUtils.update_background_panel(target_node_for_bg)
+			elif target_node_for_bg is PanelContainer:
+				apply_stylebox_to_panel_container(target_node_for_bg, styles)
+			else:
+				apply_stylebox_to_container_direct(target_node_for_bg, styles)
+			
 			if target_node_for_bg.has_method("add_background_rect"):
 				target_node_for_bg.call_deferred("add_background_rect")
+	else:
+		var content_node = node
+		if node is MarginContainer and node.name.begins_with("MarginWrapper_"):
+			if node.get_child_count() > 0:
+				content_node = node.get_child(0)
+		
+		var target_node_for_bg = content_node if content_node is FlexContainer else (label if label else content_node)
+		if target_node_for_bg:
+			clear_styling_metadata(target_node_for_bg)
+			
+			if target_node_for_bg is FlexContainer:
+				BackgroundUtils.update_background_panel(target_node_for_bg)
+			elif target_node_for_bg is PanelContainer:
+				target_node_for_bg.remove_theme_stylebox_override("panel")
+			else:
+				target_node_for_bg.remove_theme_stylebox_override("panel")
+				target_node_for_bg.remove_theme_stylebox_override("background")
 
 	if label:
 		apply_styles_to_label(label, styles, element, parser)
 
 	return node
+
+static func apply_stylebox_to_panel_container(panel_container: PanelContainer, styles: Dictionary) -> void:
+	var has_visual_styles = BackgroundUtils.needs_background_wrapper(styles)
+	
+	if has_visual_styles:
+		var style_box = BackgroundUtils.create_stylebox_from_styles(styles, panel_container)
+		panel_container.add_theme_stylebox_override("panel", style_box)
+	else:
+		panel_container.remove_theme_stylebox_override("panel")
+		clear_styling_metadata(panel_container)
+
+static func apply_stylebox_to_container_direct(container: Control, styles: Dictionary) -> void:
+	var has_visual_styles = BackgroundUtils.needs_background_wrapper(styles)
+	
+	if has_visual_styles:
+		var style_box = BackgroundUtils.create_stylebox_from_styles(styles, container)
+		
+		container.add_theme_stylebox_override("panel", style_box)
+		container.add_theme_stylebox_override("background", style_box)
+	else:
+		container.remove_theme_stylebox_override("panel")
+		container.remove_theme_stylebox_override("background")
+		clear_styling_metadata(container)
+
+static func set_styling_metadata(node: Control, styles: Dictionary) -> void:
+	# Basic styling properties
+	var basic_properties = [
+		["background-color", "custom_css_background_color"],
+		["border-radius", "custom_css_border_radius"],
+		["border-width", "custom_css_border_width"],
+		["border-color", "custom_css_border_color"]
+	]
+	
+	for prop in basic_properties:
+		if styles.has(prop[0]):
+			node.set_meta(prop[1], styles[prop[0]])
+	
+	# Padding properties
+	var padding_properties = [
+		["padding", "padding"],
+		["padding-top", "padding_top"],
+		["padding-right", "padding_right"],
+		["padding-bottom", "padding_bottom"],
+		["padding-left", "padding_left"]
+	]
+	
+	for prop in padding_properties:
+		if styles.has(prop[0]):
+			node.set_meta(prop[1], styles[prop[0]])
+	
+	# Individual border sides
+	var border_sides = ["top", "right", "bottom", "left"]
+	for side in border_sides:
+		var width_key = "border-" + side + "-width"
+		if styles.has(width_key):
+			node.set_meta("custom_css_" + width_key.replace("-", "_"), styles[width_key])
+
+static func clear_styling_metadata(node: Control) -> void:
+	var metadata_keys = [
+		"custom_css_background_color",
+		"custom_css_border_radius", 
+		"custom_css_border_width",
+		"custom_css_border_color",
+		"padding",
+		"padding_top",
+		"padding_right", 
+		"padding_bottom",
+		"padding_left"
+	]
+	
+	for key in metadata_keys:
+		if node.has_meta(key):
+			node.remove_meta(key)
+
+static func handle_margin_wrapper(node: Control, styles: Dictionary, needs_margin: bool):
+	var current_wrapper = null
+	
+	if node is MarginContainer and node.name.begins_with("MarginWrapper_"):
+		current_wrapper = node
+
+	elif node.get_parent() and node.get_parent() is MarginContainer:
+		var parent = node.get_parent()
+		if parent.name.begins_with("MarginWrapper_"):
+			current_wrapper = parent
+	
+	if needs_margin:
+		if current_wrapper:
+			update_margin_wrapper(current_wrapper, styles)
+			return current_wrapper
+		else:
+			return apply_margin_wrapper(node, styles)
+	else:
+		if current_wrapper:
+			if current_wrapper == node:
+				if node.get_child_count() > 0:
+					var content_node = node.get_child(0)
+					return remove_margin_wrapper(current_wrapper, content_node)
+			else:
+				return remove_margin_wrapper(current_wrapper, node)
+		else:
+			return node
+
+static func update_margin_wrapper(margin_container: MarginContainer, styles: Dictionary) -> void:
+	clear_margin_overrides(margin_container)
+	apply_margin_styles_to_container(margin_container, styles)
+
+static func remove_margin_wrapper(margin_container: MarginContainer, original_node: Control) -> Control:
+	var original_parent = margin_container.get_parent()
+	var node_index = margin_container.get_index()
+	
+	original_node.size_flags_horizontal = margin_container.size_flags_horizontal
+	original_node.size_flags_vertical = margin_container.size_flags_vertical
+	
+	margin_container.remove_child(original_node)
+	
+	if original_parent:
+		original_parent.remove_child(margin_container)
+		original_parent.add_child(original_node)
+		original_parent.move_child(original_node, node_index)
+	
+	margin_container.queue_free()
+	
+	return original_node
 
 static func apply_margin_wrapper(node: Control, styles: Dictionary) -> Control:
 	var margin_container = MarginContainer.new()
@@ -170,35 +308,7 @@ static func apply_margin_wrapper(node: Control, styles: Dictionary) -> Control:
 	margin_container.size_flags_horizontal = node.size_flags_horizontal
 	margin_container.size_flags_vertical = node.size_flags_vertical
 	
-	# Set margin values using theme overrides
-	var general_margin_str = null
-	if styles.has("margin"):
-		general_margin_str = styles["margin"]
-	
-	if general_margin_str != null:
-		var general_margin = parse_size(general_margin_str)
-		if general_margin != null:
-			margin_container.add_theme_constant_override("margin_top", general_margin)
-			margin_container.add_theme_constant_override("margin_right", general_margin)
-			margin_container.add_theme_constant_override("margin_bottom", general_margin)
-			margin_container.add_theme_constant_override("margin_left", general_margin)
-	
-	# Individual margin overrides
-	var margin_sides = [
-		["margin-top", "margin_top"],
-		["margin-right", "margin_right"],
-		["margin-bottom", "margin_bottom"],
-		["margin-left", "margin_left"]
-	]
-	
-	for side_pair in margin_sides:
-		var style_key = side_pair[0]
-		var theme_key = side_pair[1]
-		if styles.has(style_key):
-			var margin_val_str = styles[style_key]
-			var margin_val = parse_size(margin_val_str)
-			if margin_val != null:
-				margin_container.add_theme_constant_override(theme_key, margin_val)
+	apply_margin_styles_to_container(margin_container, styles)
 	
 	# Reset the original node's size flags since they're now handled by the wrapper
 	node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -216,6 +326,37 @@ static func apply_margin_wrapper(node: Control, styles: Dictionary) -> Control:
 		margin_container.add_child(node)
 	
 	return margin_container
+
+static func clear_margin_overrides(margin_container: MarginContainer) -> void:
+	margin_container.remove_theme_constant_override("margin_top")
+	margin_container.remove_theme_constant_override("margin_right")
+	margin_container.remove_theme_constant_override("margin_bottom")
+	margin_container.remove_theme_constant_override("margin_left")
+
+static func apply_margin_styles_to_container(margin_container: MarginContainer, styles: Dictionary) -> void:
+	# Apply general margin first
+	if styles.has("margin"):
+		var general_margin = parse_size(styles["margin"])
+		if general_margin != null:
+			var margin_sides = ["margin_top", "margin_right", "margin_bottom", "margin_left"]
+			for side in margin_sides:
+				margin_container.add_theme_constant_override(side, general_margin)
+	
+	# Apply individual margin overrides
+	var margin_mappings = [
+		["margin-top", "margin_top"],
+		["margin-right", "margin_right"],
+		["margin-bottom", "margin_bottom"],
+		["margin-left", "margin_left"]
+	]
+	
+	for mapping in margin_mappings:
+		var style_key = mapping[0]
+		var theme_key = mapping[1]
+		if styles.has(style_key):
+			var margin_val = parse_size(styles[style_key])
+			if margin_val != null:
+				margin_container.add_theme_constant_override(theme_key, margin_val)
 
 static func apply_styles_to_label(label: Control, styles: Dictionary, element: HTMLParser.HTMLElement, parser, text_override: String = "") -> void:
 	if label is Button:
@@ -359,27 +500,28 @@ static func apply_body_styles(body: HTMLParser.HTMLElement, parser: HTMLParser, 
 		original_parent.move_child(margin_container, container_index)
 		margin_container.add_child(website_container)
 		
-		var margin_val = parse_size(styles["padding"])
+		var padding_val = parse_size(styles["padding"])
 
-		margin_container.add_theme_constant_override("margin_left", margin_val)
-		margin_container.add_theme_constant_override("margin_right", margin_val)
-		margin_container.add_theme_constant_override("margin_top", margin_val)
-		margin_container.add_theme_constant_override("margin_bottom", margin_val)
+		margin_container.add_theme_constant_override("margin_left", padding_val)
+		margin_container.add_theme_constant_override("margin_right", padding_val)
+		margin_container.add_theme_constant_override("margin_top", padding_val)
+		margin_container.add_theme_constant_override("margin_bottom", padding_val)
 		
-		# Apply individual padding values
-		var padding_sides = [
+		# Apply individual padding values using our helper function
+		var padding_mappings = [
 			["padding-top", "margin_top"],
 			["padding-right", "margin_right"], 
 			["padding-bottom", "margin_bottom"],
 			["padding-left", "margin_left"]
 		]
 		
-		for side_pair in padding_sides:
-			var style_key = side_pair[0]
-			var margin_key = side_pair[1]
+		for mapping in padding_mappings:
+			var style_key = mapping[0]
+			var margin_key = mapping[1]
 			if styles.has(style_key):
-				var margin_val2 = parse_size(styles[style_key])
-				margin_container.add_theme_constant_override(margin_key, margin_val2)
+				var margin_val = parse_size(styles[style_key])
+				if margin_val != null:
+					margin_container.add_theme_constant_override(margin_key, margin_val)
 
 static func parse_radius(radius_str: String) -> int:
 	return SizeUtils.parse_radius(radius_str)

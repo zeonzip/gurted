@@ -89,7 +89,7 @@ static func create_stylebox_from_styles(styles: Dictionary = {}, container: Cont
 	if styles.size() > 0:
 		has_padding = styles.has("padding") or styles.has("padding-top") or styles.has("padding-right") or styles.has("padding-bottom") or styles.has("padding-left")
 	elif container:
-		has_padding = container.has_meta("padding") or container.has_meta("padding-top") or container.has_meta("padding-right") or container.has_meta("padding-bottom") or container.has_meta("padding-left")
+		has_padding = container.has_meta("padding") or container.has_meta("padding_top") or container.has_meta("padding_right") or container.has_meta("padding_bottom") or container.has_meta("padding_left")
 	
 	if has_padding:
 		# General padding
@@ -106,27 +106,22 @@ static func create_stylebox_from_styles(styles: Dictionary = {}, container: Cont
 			style_box.content_margin_bottom = padding_val
 		
 		# Individual padding values override general padding
-		var padding_keys = [["padding-left", "content_margin_left"], ["padding-right", "content_margin_right"], ["padding-top", "content_margin_top"], ["padding-bottom", "content_margin_bottom"]]
+		var padding_mappings = [["padding-left", "content_margin_left"], ["padding-right", "content_margin_right"], ["padding-top", "content_margin_top"], ["padding-bottom", "content_margin_bottom"]]
 		
-		for pair in padding_keys:
-			var key = pair[0]
-			var property = pair[1]
-			var val = null
+		for mapping in padding_mappings:
+			var style_key = mapping[0]
+			var property_key = mapping[1]
+			var val = get_style_or_meta_value(styles, container, style_key)
 			
-			if styles.has(key):
-				val = StyleManager.parse_size(styles[key])
-			elif container and container.has_meta(key):
-				val = StyleManager.parse_size(container.get_meta(key))
-			
-			if val:
-				style_box.set(property, val)
+			if val != null:
+				style_box.set(property_key, val)
 	
 	return style_box
 
 # for AutoSizingFlexContainer
 static func update_background_panel(container: Control) -> void:
 	var needs_background = container.has_meta("custom_css_background_color") or container.has_meta("custom_css_border_radius")
-	var needs_padding = container.has_meta("padding") or container.has_meta("padding-top") or container.has_meta("padding-right") or container.has_meta("padding-bottom") or container.has_meta("padding-left")
+	var needs_padding = container.has_meta("padding") or container.has_meta("padding_top") or container.has_meta("padding_right") or container.has_meta("padding_bottom") or container.has_meta("padding_left")
 	var background_panel = get_background_panel(container)
 	
 	if needs_background or needs_padding:
@@ -203,3 +198,10 @@ static func _on_panel_mouse_exited(panel: PanelContainer):
 
 static func needs_background_wrapper(styles: Dictionary) -> bool:
 	return styles.has("background-color") or styles.has("border-radius") or styles.has("padding") or styles.has("padding-top") or styles.has("padding-right") or styles.has("padding-bottom") or styles.has("padding-left") or styles.has("border-width") or styles.has("border-top-width") or styles.has("border-right-width") or styles.has("border-bottom-width") or styles.has("border-left-width") or styles.has("border-color") or styles.has("border-style") or styles.has("border-top-color") or styles.has("border-right-color") or styles.has("border-bottom-color") or styles.has("border-left-color")
+
+static func get_style_or_meta_value(styles: Dictionary, container: Control, key: String):
+	if styles.has(key):
+		return StyleManager.parse_size(styles[key])
+	elif container and container.has_meta(key):
+		return StyleManager.parse_size(container.get_meta(key))
+	return null

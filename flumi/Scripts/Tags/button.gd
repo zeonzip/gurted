@@ -1,5 +1,5 @@
 class_name HTMLButton
-extends Control
+extends HBoxContainer
 
 var current_element: HTMLParser.HTMLElement
 var current_parser: HTMLParser
@@ -18,26 +18,17 @@ func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
 	if button_text.length() > 0:
 		button_node.text = button_text
 	
-	var natural_size = button_node.get_theme_default_font().get_string_size(
-		button_node.text, 
-		HORIZONTAL_ALIGNMENT_LEFT, 
-		-1, 
-		button_node.get_theme_default_font_size()
-	) + Vector2(20, 10)  # Add padding
-	
-	# Force our container to use the natural size
-	custom_minimum_size = natural_size
+	# Set container to shrink to fit content
 	size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	
-	# Make button node fill the container
-	button_node.custom_minimum_size = Vector2.ZERO
-	button_node.size_flags_horizontal = Control.SIZE_FILL
-	button_node.size_flags_vertical = Control.SIZE_FILL
+	# Let button size itself naturally
+	button_node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	button_node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	
-	apply_button_styles(element, parser, natural_size)
+	apply_button_styles(element, parser)
 
-func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser, natural_size: Vector2) -> void:
+func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	if not element or not parser:
 		return
 
@@ -50,6 +41,11 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser, na
 		var cursor_shape = StyleManager.get_cursor_shape_from_type(styles["cursor"])
 		mouse_default_cursor_shape = cursor_shape
 		button_node.mouse_default_cursor_shape = cursor_shape
+	
+	if styles.has("font-size"):
+		var font_size = int(styles["font-size"])
+		print("SETTING FONT SIZE: ", font_size, " FOR BUTTON NAME: ", element.tag_name)
+		button_node.add_theme_font_size_override("font_size", font_size)
 	
 	# Apply text color with state-dependent colors
 	apply_button_text_color(button_node, styles, hover_styles, active_styles)
@@ -87,12 +83,7 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser, na
 				# Fallback: if hover is defined but active isn't, use hover for active
 				active_color = hover_color
 			
-		apply_button_color_with_states(button_node, normal_color, hover_color, active_color)
-	
-	# Apply corner radius
-	if styles.has("border-radius"):
-		var radius = StyleManager.parse_radius(styles["border-radius"])
-		apply_button_radius(button_node, radius)
+		apply_button_color_with_states(button_node, normal_color, hover_color, active_color, styles)
 
 	var width = null
 	var height = null
@@ -102,16 +93,10 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser, na
 	if styles.has("height"):
 		height = SizingUtils.parse_size_value(styles["height"])
 
-	# Only apply size flags if there's explicit sizing
+	# Apply explicit sizing if provided
 	if width != null or height != null:
-		apply_size_and_flags(self, width, height)
-		apply_size_and_flags(button_node, width, height, false)
-	else:
-		# Keep the natural sizing we set earlier
-		custom_minimum_size = natural_size
-		# Also ensure the ButtonNode doesn't override our size
-		button_node.custom_minimum_size = Vector2.ZERO
-		button_node.anchors_preset = Control.PRESET_FULL_RECT
+		apply_size_and_flags(button_node, width, height)
+		# Container will automatically resize to fit the button
 
 func apply_button_text_color(button: Button, normal_styles: Dictionary, hover_styles: Dictionary, active_styles: Dictionary) -> void:
 	var normal_color = normal_styles.get("color", Color.WHITE)
@@ -126,16 +111,23 @@ func apply_button_text_color(button: Button, normal_styles: Dictionary, hover_st
 	if button.disabled:
 		button.add_theme_color_override("font_disabled_color", normal_color)
 
-func apply_button_color_with_states(button: Button, normal_color: Color, hover_color: Color, active_color: Color) -> void:
+func apply_button_color_with_states(button: Button, normal_color: Color, hover_color: Color, active_color: Color, styles: Dictionary = {}) -> void:
 	var style_normal = StyleBoxFlat.new()
 	var style_hover = StyleBoxFlat.new()
 	var style_pressed = StyleBoxFlat.new()
 	
 	var radius: int = 0
+	if styles.has("border-radius"):
+		radius = StyleManager.parse_radius(styles["border-radius"])
 	
 	style_normal.set_corner_radius_all(radius)
 	style_hover.set_corner_radius_all(radius)
 	style_pressed.set_corner_radius_all(radius)
+	
+	# Apply padding to all style boxes
+	apply_padding_to_stylebox(style_normal, styles)
+	apply_padding_to_stylebox(style_hover, styles)
+	apply_padding_to_stylebox(style_pressed, styles)
 
 	# Set normal color
 	style_normal.bg_color = normal_color
@@ -161,28 +153,49 @@ func apply_button_color_with_states(button: Button, normal_color: Color, hover_c
 	button.add_theme_stylebox_override("pressed", style_pressed)
 	
 func apply_button_radius(button: Button, radius: int) -> void:
-	var style_normal = button.get_theme_stylebox("normal")
-	var style_hover = button.get_theme_stylebox("hover")
-	var style_pressed = button.get_theme_stylebox("pressed")
+	# Radius is now handled in create_button_stylebox
+	# This method is kept for backward compatibility but is deprecated
+	pass
 
-	style_normal.set_corner_radius_all(radius)
-	style_hover.set_corner_radius_all(radius)
-	style_pressed.set_corner_radius_all(radius)
 
-	button.add_theme_stylebox_override("normal", style_normal)
-	button.add_theme_stylebox_override("hover", style_hover)
-	button.add_theme_stylebox_override("pressed", style_pressed)
+func apply_padding_to_stylebox(style_box: StyleBoxFlat, styles: Dictionary) -> void:
+	# Apply general padding first
+	if styles.has("padding"):
+		var padding_val = StyleManager.parse_size(styles["padding"])
+		if padding_val != null:
+			style_box.content_margin_top = padding_val
+			style_box.content_margin_right = padding_val
+			style_box.content_margin_bottom = padding_val
+			style_box.content_margin_left = padding_val
+	
+	# Apply individual padding overrides
+	if styles.has("padding-top"):
+		var padding_val = StyleManager.parse_size(styles["padding-top"])
+		if padding_val != null:
+			style_box.content_margin_top = padding_val
+	
+	if styles.has("padding-right"):
+		var padding_val = StyleManager.parse_size(styles["padding-right"])
+		if padding_val != null:
+			style_box.content_margin_right = padding_val
+	
+	if styles.has("padding-bottom"):
+		var padding_val = StyleManager.parse_size(styles["padding-bottom"])
+		if padding_val != null:
+			style_box.content_margin_bottom = padding_val
+	
+	if styles.has("padding-left"):
+		var padding_val = StyleManager.parse_size(styles["padding-left"])
+		if padding_val != null:
+			style_box.content_margin_left = padding_val
 
-func apply_size_and_flags(ctrl: Control, width: Variant, height: Variant, reset_layout := false) -> void:
+func apply_size_and_flags(ctrl: Control, width: Variant, height: Variant) -> void:
 	if width != null or height != null:
 		ctrl.custom_minimum_size = Vector2(
-			width if width != null else ctrl.custom_minimum_size.x,
-			height if height != null else ctrl.custom_minimum_size.y
+			width if width != null else 0,
+			height if height != null else 0
 		)
 		if width != null:
 			ctrl.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		if height != null:
 			ctrl.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	if reset_layout:
-		ctrl.position = Vector2.ZERO
-		ctrl.anchors_preset = Control.PRESET_FULL_RECT

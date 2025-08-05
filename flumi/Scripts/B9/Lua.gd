@@ -214,6 +214,25 @@ func _element_index_handler(vm: LuauVM) -> int:
 					index += 1
 			
 			return 1
+		"classList":
+			# Create classList object with add, remove, toggle methods
+			vm.lua_newtable()
+			
+			# Add methods to classList using the utility class
+			vm.lua_pushcallable(_element_classlist_add_wrapper, "classList.add")
+			vm.lua_setfield(-2, "add")
+			
+			vm.lua_pushcallable(_element_classlist_remove_wrapper, "classList.remove")
+			vm.lua_setfield(-2, "remove")
+			
+			vm.lua_pushcallable(_element_classlist_toggle_wrapper, "classList.toggle")
+			vm.lua_setfield(-2, "toggle")
+			
+			# Store element reference for the classList methods
+			vm.lua_getfield(1, "_element_id")
+			vm.lua_setfield(-2, "_element_id")
+			
+			return 1
 		_:
 			# Fall back to checking the original table for methods
 			vm.lua_pushvalue(1) # Push the original table
@@ -332,6 +351,15 @@ func _element_remove_handler(vm: LuauVM) -> int:
 		element_id_registry.erase(element)
 
 	return 0
+
+func _element_classlist_add_wrapper(vm: LuauVM) -> int:
+	return LuaClassListUtils.element_classlist_add_handler(vm, dom_parser)
+
+func _element_classlist_remove_wrapper(vm: LuauVM) -> int:
+	return LuaClassListUtils.element_classlist_remove_handler(vm, dom_parser)
+
+func _element_classlist_toggle_wrapper(vm: LuauVM) -> int:
+	return LuaClassListUtils.element_classlist_toggle_handler(vm, dom_parser)
 
 func _render_new_element(element: HTMLParser.HTMLElement, parent_node: Node) -> void:
 	# Get reference to main scene for rendering

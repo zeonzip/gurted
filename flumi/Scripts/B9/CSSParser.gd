@@ -75,6 +75,16 @@ class CSSStylesheet:
 	func add_rule(rule: CSSRule):
 		rules.append(rule)
 	
+	func find_rule_by_selector(selector: String) -> CSSRule:
+		for rule in rules:
+			if rule.selector == selector and rule.event_prefix == "":
+				return rule
+		
+		for rule in rules:
+			if rule.selector == selector:
+				return rule
+		return null
+	
 	func get_styles_for_element(tag_name: String, event: String = "", class_names: Array[String] = [], element: HTMLParser.HTMLElement = null) -> Dictionary:
 		var styles = {}
 		
@@ -362,8 +372,13 @@ func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
 		if utility_name.begins_with(prefix):
 			var actual_utility = utility_name.substr(prefix.length())
 			var pseudo_rule = CSSRule.new()
-			pseudo_rule.selector = rule.selector + ":" + pseudo
-			pseudo_rule.init(pseudo_rule.selector)
+			
+			pseudo_rule.selector = rule.selector
+			pseudo_rule.event_prefix = pseudo
+			pseudo_rule.selector_type = "simple"
+			pseudo_rule.selector_parts = [rule.selector]
+			pseudo_rule.calculate_specificity()
+			
 			parse_utility_class_internal(pseudo_rule, actual_utility)
 			stylesheet.add_rule(pseudo_rule)
 			return
@@ -374,10 +389,19 @@ func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
 # Parses a utility class (e.g. "text-red-500") and adds properties to the rule (e.g. "color: red")
 # Used as a translation layer for Tailwind-like utility classes, as it becomes easier to manage these programmatically
 static func parse_utility_class_internal(rule: CSSRule, utility_name: String) -> void:
-	# Handle color classes like text-[#ff0000]
+	# Handle font size classes like text-[16px] or color classes like text-[#ff0000]
 	if utility_name.begins_with("text-[") and utility_name.ends_with("]"):
-		var color_value = SizeUtils.extract_bracket_content(utility_name, 5)  # after 'text-'
-		var parsed_color = ColorUtils.parse_color(color_value)
+		var bracket_content = SizeUtils.extract_bracket_content(utility_name, 5)  # after 'text-'
+		
+		# Check if it's a font size by looking for size units or being a valid number
+		if bracket_content.ends_with("px") or bracket_content.ends_with("em") or bracket_content.ends_with("rem") or bracket_content.is_valid_int() or bracket_content.is_valid_float():
+			var font_size_value = SizingUtils.parse_size_value(bracket_content)
+			if font_size_value != null and typeof(font_size_value) != TYPE_STRING:
+				rule.properties["font-size"] = font_size_value
+				return
+		
+		# Parse as color
+		var parsed_color = ColorUtils.parse_color(bracket_content)
 		rule.properties["color"] = parsed_color
 		return
 	

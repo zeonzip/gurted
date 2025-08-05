@@ -38,6 +38,9 @@ static func init_patterns():
 			"^border-(t|r|b|l)-\\[.*\\]$",  # custom individual border sides (e.g., border-t-[2px])
 			"^border-(t|r|b|l)-(white|black|transparent|slate-\\d+|gray-\\d+|red-\\d+|green-\\d+|blue-\\d+|yellow-\\d+)$",  # individual border side colors
 			"^border-(white|black|transparent|slate-\\d+|gray-\\d+|red-\\d+|green-\\d+|blue-\\d+|yellow-\\d+)$",  # border colors
+			"^opacity-\\[.*\\]$",  # custom opacity values
+			"^z-\\[.*\\]$",  # custom z-index values
+			"^cursor-[a-zA-Z-]+$",  # cursor types
 			"^(hover|active):",  # pseudo classes
 		]
 		for pattern in utility_patterns:

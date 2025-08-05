@@ -21,7 +21,7 @@ code { text-xl font-mono }
 a { text-[#1a0dab] }
 pre { text-xl font-mono }
 
-button { bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] }
+button { text-[16px] bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] }
 button[disabled] { bg-[#666666] text-[#999999] cursor-not-allowed }
 """
 
@@ -100,7 +100,7 @@ var HTML_CONTENT2 = """<head>
 
 </body>
 """.to_utf8_buffer()
-var HTML_CONTENTbv = """<head>
+var HTML_CONTENTvv = """<head>
 	<title>My cool web</title>
 	<icon src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png\">
 
@@ -599,9 +599,10 @@ var HTML_CONTENT = """
 	
 	<style>
 		body { bg-[#f8f9fa] p-6 }
-		h1 { text-[#2563eb] text-4xl font-bold }
+		h1 { text-[#2563eb] text-2xl font-bold }
 		.container { bg-[#ffffff] p-4 rounded-lg shadow-lg }
 		.demo-button { bg-[#3b82f6] text-white px-4 py-2 rounded hover:bg-[#2563eb] }
+		.fancy { bg-green-500 text-red-500 p-2 rounded-full mt-2 mb-2 text-2xl hover:bg-red-300 hover:text-[#2563eb] }
 	</style>
 	
 	<script>
@@ -696,6 +697,21 @@ var HTML_CONTENT = """
 		end, 3000)
 		
 		-- gurt.clearTimeout(test)
+		
+		local addBtn = gurt.select('#add-class')
+		local removeBtn = gurt.select('#remove-class')
+		local btnTarget = gurt.select('#btnTarget')
+
+		addBtn:on('click', function()
+			btnTarget.classList:add('fancy')
+			-- btnTarget.classList:toggle('fancy')
+			print('Class added')
+		end)
+
+		removeBtn:on('click', function()
+			btnTarget.classList:remove('fancy')
+			print('Class removed')
+		end)
 	</script>
 </head>
 
@@ -714,6 +730,14 @@ var HTML_CONTENT = """
 	<p id="btnmouse" style="mt-4 p-4 bg-[#f3f4f6] rounded min-h-24">Move mouse over Button</p>
 	
 	<p id="type" style="mt-4 p-4 bg-[#f3f4f6] rounded min-h-24">Type something</p>
+	
+	<div style="mt-6 flex gap-4 items-center">
+	<div style="text-lg font-semibold">Style Controls:</div>
+	<button id="add-class" style="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Class</button>
+	<button id="remove-class" style="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Remove Class</button>
+</div>
+	<button id="btnTarget" style="bg-gray-600">Button</button>
+
 </body>""".to_utf8_buffer()
 
 var HTML_CONTENT_ADD_REMOVE = """<head>
