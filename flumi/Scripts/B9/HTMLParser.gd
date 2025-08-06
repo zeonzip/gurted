@@ -142,7 +142,7 @@ func get_element_styles_with_inheritance(element: HTMLElement, event: String = "
 	
 	var styles = {}
 	
-	var class_names = get_css_class_names(element)
+	var class_names = extract_class_names(element)
 	styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event, class_names, element))
 	# Apply inline styles (higher priority) - force override CSS rules
 	var inline_style = element.get_attribute("style")
@@ -169,7 +169,7 @@ func get_element_styles_internal(element: HTMLElement, event: String = "") -> Di
 	
 	# Apply CSS rules
 	if parse_result.css_parser:
-		var class_names = get_css_class_names(element)
+		var class_names = extract_class_names(element)
 		styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event, class_names, element))
 	
 	# Apply inline styles (higher priority) - force override CSS rules
@@ -227,18 +227,7 @@ func parse_inline_style_with_event(style_string: String, event: String = "") -> 
 	
 	return properties
 
-func get_css_class_names(element: HTMLElement) -> Array[String]:
-	var class_names: Array[String] = []
-	var class_attr = element.get_attribute("class")
-	if class_attr.length() > 0:
-		var classes = class_attr.split(" ")
-		for cls in classes:
-			cls = cls.strip_edges()
-			if cls.length() > 0:
-				class_names.append(cls)
-	return class_names
-
-func extract_class_names_from_style(element: HTMLElement) -> Array[String]:
+static func extract_class_names(element: HTMLElement) -> Array[String]:
 	var class_names: Array[String] = []
 	var style_attr = element.get_attribute("style")
 	if style_attr.length() > 0:
@@ -281,8 +270,10 @@ func find_all_by_class(tag: String, the_class_name: String) -> Array[HTMLElement
 	
 	var results: Array[HTMLElement] = []
 	for element in parse_result.all_elements:
-		if element.tag_name == tag and element.get_class_name() == the_class_name:
-			results.append(element)
+		if element.tag_name == tag:
+			var class_names = extract_class_names(element)
+			if the_class_name in class_names:
+				results.append(element)
 	
 	return results
 

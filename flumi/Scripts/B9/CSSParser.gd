@@ -112,7 +112,7 @@ class CSSStylesheet:
 		
 		match rule.selector_type:
 			"simple":
-				return matches_simple_selector(rule.selector_parts[0], tag_name, cls_names)
+				return matches_simple_selector_with_element(rule.selector_parts[0], element)
 			"descendant":
 				return matches_descendant_selector(rule.selector_parts, element)
 			"child":
@@ -130,8 +130,25 @@ class CSSStylesheet:
 		if selector.begins_with("."):
 			var cls = selector.substr(1)
 			return cls in cls_names
+		elif selector.begins_with("#"):
+			# need access to the element to check its ID
+			return false  # will be handled by matches_simple_selector_with_element
 		else:
 			return selector == tag_name
+	
+	func matches_simple_selector_with_element(selector: String, element: HTMLParser.HTMLElement) -> bool:
+		if not element:
+			return false
+			
+		if selector.begins_with("."):
+			var cls = selector.substr(1)
+			var cls_names = HTMLParser.extract_class_names(element)
+			return cls in cls_names
+		elif selector.begins_with("#"):
+			var element_id = selector.substr(1)
+			return element.get_attribute("id") == element_id
+		else:
+			return selector == element.tag_name
 	
 	func matches_descendant_selector(parts: Array, element: HTMLParser.HTMLElement) -> bool:
 		if not element or parts.size() < 2:
@@ -139,7 +156,7 @@ class CSSStylesheet:
 		
 		# Last part should match current element
 		var last_part = parts[-1].strip_edges()
-		if not matches_simple_selector(last_part, element.tag_name, get_element_class_names(element)):
+		if not matches_simple_selector_with_element(last_part, element):
 			return false
 		
 		# Check ancestors for remaining parts
@@ -148,7 +165,7 @@ class CSSStylesheet:
 		
 		while current_element and part_index >= 0:
 			var part = parts[part_index].strip_edges()
-			if matches_simple_selector(part, current_element.tag_name, get_element_class_names(current_element)):
+			if matches_simple_selector_with_element(part, current_element):
 				part_index -= 1
 				if part_index < 0:
 					return true
@@ -164,11 +181,11 @@ class CSSStylesheet:
 		var parent_part = parts[0].strip_edges()
 		
 		# Element must match the child part
-		if not matches_simple_selector(child_part, element.tag_name, get_element_class_names(element)):
+		if not matches_simple_selector_with_element(child_part, element):
 			return false
 		
 		# Parent must match the parent part
-		return matches_simple_selector(parent_part, element.parent.tag_name, get_element_class_names(element.parent))
+		return matches_simple_selector_with_element(parent_part, element.parent)
 	
 	func matches_adjacent_sibling_selector(parts: Array, element: HTMLParser.HTMLElement) -> bool:
 		if not element or not element.parent or parts.size() != 2:
@@ -177,7 +194,7 @@ class CSSStylesheet:
 		var second_part = parts[1].strip_edges()
 		var first_part = parts[0].strip_edges()
 		
-		if not matches_simple_selector(second_part, element.tag_name, get_element_class_names(element)):
+		if not matches_simple_selector_with_element(second_part, element):
 			return false
 		
 		# Find previous sibling
@@ -187,7 +204,7 @@ class CSSStylesheet:
 			return false
 		
 		var prev_sibling = siblings[element_index - 1]
-		return matches_simple_selector(first_part, prev_sibling.tag_name, get_element_class_names(prev_sibling))
+		return matches_simple_selector_with_element(first_part, prev_sibling)
 	
 	func matches_general_sibling_selector(parts: Array, element: HTMLParser.HTMLElement) -> bool:
 		if not element or not element.parent or parts.size() != 2:
@@ -196,7 +213,7 @@ class CSSStylesheet:
 		var second_part = parts[1].strip_edges()
 		var first_part = parts[0].strip_edges()
 		
-		if not matches_simple_selector(second_part, element.tag_name, get_element_class_names(element)):
+		if not matches_simple_selector_with_element(second_part, element):
 			return false
 		
 		# Check all previous siblings
@@ -205,7 +222,7 @@ class CSSStylesheet:
 		
 		for i in range(element_index):
 			var sibling = siblings[i]
-			if matches_simple_selector(first_part, sibling.tag_name, get_element_class_names(sibling)):
+			if matches_simple_selector_with_element(first_part, sibling):
 				return true
 		
 		return false
@@ -218,7 +235,7 @@ class CSSStylesheet:
 		var attribute_part = parts[1].strip_edges()
 		
 		# Check if element matches
-		if element_part != "" and not matches_simple_selector(element_part, tag_name, cls_names):
+		if element_part != "" and not matches_simple_selector_with_element(element_part, element):
 			return false
 		
 		# Parse attribute condition
@@ -261,17 +278,6 @@ class CSSStylesheet:
 			attr_value = attr_value.substr(1, attr_value.length() - 2)
 		
 		return {"name": attr_name, "value": attr_value}
-	
-	func get_element_class_names(element: HTMLParser.HTMLElement) -> Array[String]:
-		var class_names: Array[String] = []
-		var class_attr = element.get_attribute("class")
-		if class_attr.length() > 0:
-			var classes = class_attr.split(" ")
-			for cls in classes:
-				cls = cls.strip_edges()
-				if cls.length() > 0:
-					class_names.append(cls)
-		return class_names
 
 var stylesheet: CSSStylesheet
 var css_text: String

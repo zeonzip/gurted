@@ -43,21 +43,18 @@ func get_or_assign_element_id(element: HTMLParser.HTMLElement) -> String:
 func _gurt_select_handler(vm: LuauVM) -> int:
 	var selector: String = vm.luaL_checkstring(1)
 	
-	var element_id = ""
-	if selector.begins_with("#"):
-		element_id = selector.substr(1)
-	else:
+	var element = SelectorUtils.find_first_matching(selector, dom_parser.parse_result.all_elements)
+	if not element:
 		vm.lua_pushnil()
 		return 1
 	
-	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
-	if not dom_node:
-		vm.lua_pushnil()
-		return 1
+	var element_id = get_or_assign_element_id(element)
 	
 	vm.lua_newtable()
 	vm.lua_pushstring(element_id)
 	vm.lua_setfield(-2, "_element_id")
+	vm.lua_pushstring(element.tag_name)
+	vm.lua_setfield(-2, "_tag_name")
 	
 	add_element_methods(vm)
 	return 1
@@ -66,26 +63,7 @@ func _gurt_select_handler(vm: LuauVM) -> int:
 func _gurt_select_all_handler(vm: LuauVM) -> int:
 	var selector: String = vm.luaL_checkstring(1)
 	
-	var elements: Array[HTMLParser.HTMLElement] = []
-	 
-	# Handle different selector types
-	if selector.begins_with("#"):
-		# ID selector - find single element
-		var element_id = selector.substr(1)
-		var element = dom_parser.find_by_id(element_id)
-		if element:
-			elements.append(element)
-			LuaPrintUtils.lua_print_direct("WARNING: Using ID selector in select_all is not recommended, use select instead.")
-	elif selector.begins_with("."):
-		# Class selector - find all elements with class
-		var cls = selector.substr(1)
-		for element in dom_parser.parse_result.all_elements:
-			var element_classes = CSSParser.smart_split_utility_classes(element.get_attribute("style"))
-			if cls in element_classes:
-				elements.append(element)
-	else:
-		# Tag selector - find all elements with tag name
-		elements = dom_parser.find_all(selector)
+	var elements = SelectorUtils.find_all_matching(selector, dom_parser.parse_result.all_elements)
 	
 	vm.lua_newtable()
 	var index = 1

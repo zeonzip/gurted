@@ -823,7 +823,11 @@ var HTML_CONTENT = """<head>
 		local mySignal = Signal.new()
 		local dataSignal = Signal.new()
 		local userActionSignal = Signal.new()
-
+		print(".container > div: ", gurt.selectAll('.container > div'))
+		print(".container div: ", gurt.selectAll('.container div'))
+		print("button[disabled]: ", gurt.selectAll('button[disabled]'))
+		print(".container: ", gurt.selectAll('.container'))
+		print("#log-area: ", gurt.selectAll('#log-area'))
 		-- Get UI elements
 		local logArea = gurt.select('#log-area')
 		local statusDisplay = gurt.select('#status-display')
@@ -984,6 +988,8 @@ var HTML_CONTENT = """<head>
 				<li><strong>Argument Passing:</strong> Signals can pass multiple arguments to connected callbacks</li>
 			</ul>
 		</div>
+	<button disabled="true">Test</button>
+	<button disabled="true">Test2</button>
 	</div>
 </body>
 """.to_utf8_buffer()
