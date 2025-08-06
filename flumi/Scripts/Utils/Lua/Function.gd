@@ -33,6 +33,9 @@ static func setup_gurt_api(vm: LuauVM, lua_api, dom_parser: HTMLParser) -> void:
 	# Setup Time API
 	LuaTimeUtils.setup_time_api(vm)
 	
+	# Setup Clipboard API
+	LuaClipboardUtils.setup_clipboard_api(vm)
+	
 	vm.lua_newtable()
 	
 	vm.lua_pushcallable(LuaPrintUtils.lua_print, "gurt.log")
