@@ -138,21 +138,21 @@ func add_element_methods(vm: LuauVM, index: String = "element") -> void:
 	vm.lua_pushcallable(_element_set_attribute_handler, index + ".setAttribute")
 	vm.lua_setfield(-2, "setAttribute")
 	
-	# Create metatable for property access
-	vm.lua_newtable() # metatable
+	LuaDOMUtils.add_enhanced_element_methods(vm, self, index)
 	
-	# __index method for property getters
-	vm.lua_pushcallable(_element_index_handler, index + ".__index")
+	vm.lua_newtable()
+	
+	vm.lua_pushcallable(_index_handler, index + ".__index")
 	vm.lua_setfield(-2, "__index")
 	
-	# __newindex method for property setters
 	vm.lua_pushcallable(_element_newindex_handler, index + ".__newindex")
 	vm.lua_setfield(-2, "__newindex")
 	
-	# Set metatable on element table
 	vm.lua_setmetatable(-2)
 
-# Property access handlers
+func _index_handler(vm: LuauVM) -> int:
+	return LuaDOMUtils._index_handler(vm, self)
+
 func _element_index_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)
 	var key: String = vm.luaL_checkstring(2)
@@ -405,6 +405,35 @@ func _element_classlist_remove_wrapper(vm: LuauVM) -> int:
 
 func _element_classlist_toggle_wrapper(vm: LuauVM) -> int:
 	return LuaClassListUtils.element_classlist_toggle_handler(vm, dom_parser)
+
+# DOM manipulation wrapper functions
+func _element_insert_before_wrapper(vm: LuauVM) -> int:
+	return LuaDOMUtils.insert_before_handler(vm, dom_parser, self)
+
+func _element_insert_after_wrapper(vm: LuauVM) -> int:
+	return LuaDOMUtils.insert_after_handler(vm, dom_parser, self)
+
+func _element_replace_wrapper(vm: LuauVM) -> int:
+	return LuaDOMUtils.replace_handler(vm, dom_parser, self)
+
+func _element_clone_wrapper(vm: LuauVM) -> int:
+	return LuaDOMUtils.clone_handler(vm, dom_parser, self)
+
+# DOM traversal property wrapper functions
+func _get_element_parent_wrapper(vm: LuauVM, lua_api: LuaAPI) -> int:
+	return LuaDOMUtils.get_element_parent_handler(vm, dom_parser, lua_api)
+
+func _get_element_next_sibling_wrapper(vm: LuauVM, lua_api: LuaAPI) -> int:
+	return LuaDOMUtils.get_element_next_sibling_handler(vm, dom_parser, lua_api)
+
+func _get_element_previous_sibling_wrapper(vm: LuauVM, lua_api: LuaAPI) -> int:
+	return LuaDOMUtils.get_element_previous_sibling_handler(vm, dom_parser, lua_api)
+
+func _get_element_first_child_wrapper(vm: LuauVM, lua_api: LuaAPI) -> int:
+	return LuaDOMUtils.get_element_first_child_handler(vm, dom_parser, lua_api)
+
+func _get_element_last_child_wrapper(vm: LuauVM, lua_api: LuaAPI) -> int:
+	return LuaDOMUtils.get_element_last_child_handler(vm, dom_parser, lua_api)
 
 func _render_new_element(element: HTMLParser.HTMLElement, parent_node: Node) -> void:
 	# Get reference to main scene for rendering

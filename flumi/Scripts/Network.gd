@@ -4,6 +4,9 @@ func fetch_image(url: String) -> ImageTexture:
 	var http_request = HTTPRequest.new()
 	add_child(http_request)
 	
+	if url.is_empty():
+		return null
+	
 	var error = http_request.request(url)
 	if error != OK:
 		print("Error making HTTP request: ", error)
