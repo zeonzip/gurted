@@ -332,11 +332,11 @@ func process_fonts() -> void:
 	var font_elements = find_all("font")
 	
 	for font_element in font_elements:
-		var name = font_element.get_attribute("name")
+		var name_str = font_element.get_attribute("name")
 		var src = font_element.get_attribute("src")
 		var weight = font_element.get_attribute("weight", "400")
 		
-		if name and src:
+		if name_str and src:
 			FontManager.register_font(name, src, weight)
 
 func get_meta_content(name_: String) -> String:

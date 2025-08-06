@@ -85,13 +85,13 @@ class CSSStylesheet:
 				return rule
 		return null
 	
-	func get_styles_for_element(tag_name: String, event: String = "", class_names: Array[String] = [], element: HTMLParser.HTMLElement = null) -> Dictionary:
+	func get_styles_for_element(event: String = "", element: HTMLParser.HTMLElement = null) -> Dictionary:
 		var styles = {}
 		
 		# Sort rules by specificity
 		var applicable_rules: Array[CSSRule] = []
 		for rule in rules:
-			if selector_matches(rule, tag_name, event, class_names, element):
+			if selector_matches(rule, event, element):
 				applicable_rules.append(rule)
 		
 		applicable_rules.sort_custom(func(a, b): return a.specificity < b.specificity)
@@ -103,7 +103,7 @@ class CSSStylesheet:
 		
 		return styles
 	
-	func selector_matches(rule: CSSRule, tag_name: String, event: String = "", cls_names: Array[String] = [], element: HTMLParser.HTMLElement = null) -> bool:
+	func selector_matches(rule: CSSRule, event: String = "", element: HTMLParser.HTMLElement = null) -> bool:
 		if rule.event_prefix.length() > 0:
 			if rule.event_prefix != event:
 				return false
@@ -122,7 +122,7 @@ class CSSStylesheet:
 			"general_sibling":
 				return matches_general_sibling_selector(rule.selector_parts, element)
 			"attribute":
-				return matches_attribute_selector(rule.selector_parts, tag_name, cls_names, element)
+				return matches_attribute_selector(rule.selector_parts, element)
 		
 		return false
 	
@@ -227,7 +227,7 @@ class CSSStylesheet:
 		
 		return false
 	
-	func matches_attribute_selector(parts: Array, tag_name: String, cls_names: Array[String], element: HTMLParser.HTMLElement) -> bool:
+	func matches_attribute_selector(parts: Array, element: HTMLParser.HTMLElement) -> bool:
 		if not element or parts.size() != 2:
 			return false
 		
@@ -914,24 +914,25 @@ static func smart_split_utility_classes(style_string: String) -> Array[String]:
 	var in_brackets = false
 	
 	for i in range(style_string.length()):
-		var char = style_string[i]
+		# char
+		var c = style_string[i]
 		
-		if char == "[":
+		if c == "[":
 			bracket_depth += 1
 			in_brackets = true
-			current_class += char
-		elif char == "]":
+			current_class += c
+		elif c == "]":
 			bracket_depth -= 1
 			if bracket_depth == 0:
 				in_brackets = false
-			current_class += char
-		elif char == " " and not in_brackets:
+			current_class += c
+		elif c == " " and not in_brackets:
 			# Split here
 			if current_class.strip_edges().length() > 0:
 				result.append(current_class.strip_edges())
 			current_class = ""
 		else:
-			current_class += char
+			current_class += c
 	
 	# Add the last class if any
 	if current_class.strip_edges().length() > 0:
