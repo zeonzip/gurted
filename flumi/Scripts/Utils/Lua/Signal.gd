@@ -46,7 +46,7 @@ class LuaSignal:
 		vm.lua_pop(1) # Pop callbacks table
 		connections.clear()
 	
-	func fire_signal(args: Array, signal_table_ref: int = -1) -> void:
+	func fire_signal(args: Array) -> void:
 		for connection in connections:
 			var vm = connection.vm as LuauVM
 			# Get the callback function from our custom storage
@@ -173,7 +173,7 @@ static func signal_fire_handler(vm: LuauVM) -> int:
 		args.append(vm.lua_tovariant(i))
 	
 	# Fire the signal with the signal table reference
-	lua_signal.fire_signal(args, lua_signal.signal_table_ref)
+	lua_signal.fire_signal(args)
 	
 	return 0
 

@@ -1,6 +1,6 @@
 extends Control
 
-func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
+func init(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	# This is mainly for cases where <option> appears outside of <select>
 	var label = RichTextLabel.new()
 	label.bbcode_enabled = true

@@ -6,8 +6,9 @@ const BROWSER_TEXT: Theme = preload("res://Scenes/Styles/BrowserText.tres")
 var custom_hex_input: LineEdit
 var _file_text_content: String = ""
 var _file_binary_content: PackedByteArray = PackedByteArray()
+var _file_info: Dictionary = {}
 
-func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
+func init(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	var color_picker_button: ColorPickerButton = $ColorPickerButton
 	var picker: ColorPicker = color_picker_button.get_picker()
 
@@ -60,7 +61,7 @@ func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
 	# Define which child should be active for each input type
 	var active_child_map = {
 		"checkbox": "CheckBox",
-		"radio": "RadioButton", 
+		"radio": "CheckBox", 
 		"color": "ColorPickerButton",
 		"password": "LineEdit",
 		"date": "DateButton",
@@ -71,6 +72,9 @@ func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
 	
 	var active_child_name = active_child_map.get(input_type, "LineEdit")
 	remove_unused_children(active_child_name)
+	
+	if not has_node(active_child_name):
+		return
 	
 	var active_child = get_node(active_child_name)
 	active_child.visible = true
@@ -134,6 +138,18 @@ func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
 		active_child.set("disabled", true)
 	if element.has_attribute("readonly") and active_child.has_method("set_editable"):
 		active_child.set_editable(false)
+	
+	# Enable focus mode for text inputs to support change events on focus lost
+	if active_child is LineEdit:
+		active_child.focus_mode = Control.FOCUS_ALL
+	
+	if input_type == "file":
+		var file_dialog = active_child.get_node("FileDialog")
+		parser.register_dom_node(element, file_dialog)
+	elif input_type == "date":
+		parser.register_dom_node(element, active_child)
+	else:
+		parser.register_dom_node(element, active_child)
 
 func remove_unused_children(keep_child_name: String) -> void:
 	for child in get_children():
@@ -289,16 +305,72 @@ func _on_file_selected(path: String) -> void:
 	var file_name = path.get_file()
 	file_label.text = file_name
 	
-	var file = FileAccess.open(path, FileAccess.READ)
+	_process_file_data(path)
+
+func _process_file_data(file_path: String) -> void:
+	var file_name = file_path.get_file()
+	var file_extension = file_path.get_extension().to_lower()
+	var file_size = 0
+	var mime_type = _get_mime_type(file_extension)
+	var is_image = _is_image_file(file_extension)
+	var is_text = _is_text_file(file_extension)
+	
+	# Read file contents
+	var file = FileAccess.open(file_path, FileAccess.READ)
 	if file:
-		_file_text_content = file.get_as_text()
-		file.close()
-		
-		file = FileAccess.open(path, FileAccess.READ)
+		file_size = file.get_length()
 		_file_binary_content = file.get_buffer(file.get_length())
 		file.close()
-		
-		# TODO: when adding Lua, make these actually usable
+	
+	_file_info = {
+		"fileName": file_name,
+		"size": file_size,
+		"type": mime_type,
+		"binary": _file_binary_content,
+		"isImage": is_image,
+		"isText": is_text
+	}
+	
+	# Add text content only for text files
+	if is_text:
+		_file_text_content = _file_binary_content.get_string_from_utf8()
+		_file_info["text"] = _file_text_content
+	
+	# Add base64 data URL for images
+	if is_image:
+		var base64_data = Marshalls.raw_to_base64(_file_binary_content)
+		_file_info["dataURL"] = "data:" + mime_type + ";base64," + base64_data
+
+func get_file_info() -> Dictionary:
+	return _file_info
+
+func _get_mime_type(extension: String) -> String:
+	match extension:
+		"png": return "image/png"
+		"jpg", "jpeg": return "image/jpeg" 
+		"gif": return "image/gif"
+		"webp": return "image/webp"
+		"svg": return "image/svg+xml"
+		"bmp": return "image/bmp"
+		"txt": return "text/plain"
+		"html", "htm": return "text/html"
+		"css": return "text/css"
+		"js": return "application/javascript"
+		"json": return "application/json"
+		"pdf": return "application/pdf"
+		"mp3": return "audio/mpeg"
+		"wav": return "audio/wav"
+		"ogg": return "audio/ogg"
+		"mp4": return "video/mp4"
+		"avi": return "video/x-msvideo"
+		"mov": return "video/quicktime"
+		_: return "application/octet-stream"
+
+func _is_image_file(extension: String) -> bool:
+	return extension in ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"]
+
+func _is_text_file(extension: String) -> bool:
+	return extension in ["txt", "html", "htm", "css", "js", "json", "xml", "csv", "md", "gd"]
 
 func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	if not element or not parser:

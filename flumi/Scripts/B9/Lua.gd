@@ -10,6 +10,7 @@ class EventSubscription:
 	var lua_api: LuaAPI
 	var connected_signal: String = ""
 	var connected_node: Node = null
+	var callback_func: Callable
 
 var dom_parser: HTMLParser
 var event_subscriptions: Dictionary = {}
@@ -489,6 +490,8 @@ func _element_on_event_handler(vm: LuauVM) -> int:
 	
 	var signal_node = get_dom_node(dom_node, "signal")
 	var success = LuaEventUtils.connect_element_event(signal_node, event_name, subscription)
+	if not success:
+		print("ERROR: Failed to connect ", event_name, " event for ", element_id)
 	
 	return _handle_subscription_result(vm, subscription, success)
 
@@ -641,6 +644,11 @@ func _execute_lua_callback(subscription: EventSubscription, args: Array = []) ->
 	else:
 		subscription.vm.lua_pop(1)
 
+func _execute_input_event_callback(subscription: EventSubscription, event_data: Dictionary) -> void:
+	if not event_subscriptions.has(subscription.id):
+		return
+	_execute_lua_callback(subscription, [event_data])
+
 # Global input processing
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
@@ -699,6 +707,108 @@ func _handle_mousemove_event(mouse_event: InputEventMouseMotion, subscription: E
 		}
 		_execute_lua_callback(subscription, [mouse_info])
 
+# Input event handlers
+func _on_input_text_changed(new_text: String, subscription: EventSubscription) -> void:
+	_execute_input_event_callback(subscription, {"value": new_text})
+
+func _on_input_focus_lost(subscription: EventSubscription) -> void:
+	if not event_subscriptions.has(subscription.id):
+		return
+	
+	# Get the current text value from the input node
+	var dom_node = dom_parser.parse_result.dom_nodes.get(subscription.element_id, null)
+	if dom_node:
+		var current_text = ""
+		if dom_node.has_method("get_text"):
+			current_text = dom_node.get_text()
+		elif "text" in dom_node:
+			current_text = dom_node.text
+		
+		var event_info = {"value": current_text}
+		_execute_lua_callback(subscription, [event_info])
+
+func _on_input_value_changed(new_value, subscription: EventSubscription) -> void:
+	_execute_input_event_callback(subscription, {"value": new_value})
+
+func _on_input_color_changed(new_color: Color, subscription: EventSubscription) -> void:
+	_execute_input_event_callback(subscription, {"value": "#" + new_color.to_html(false)})
+
+func _on_input_toggled(pressed: bool, subscription: EventSubscription) -> void:
+	_execute_input_event_callback(subscription, {"value": pressed})
+
+func _on_input_item_selected(index: int, subscription: EventSubscription) -> void:
+	if not event_subscriptions.has(subscription.id):
+		return
+	
+	# Get value from OptionButton
+	var dom_node = dom_parser.parse_result.dom_nodes.get(subscription.element_id, null)
+	var value = ""
+	var text = ""
+	
+	if dom_node and dom_node is OptionButton:
+		var option_button = dom_node as OptionButton
+		text = option_button.get_item_text(index)
+		# Get actual value attribute (stored as metadata)
+		var metadata = option_button.get_item_metadata(index)
+		value = str(metadata) if metadata != null else text
+	
+	var event_info = {"index": index, "value": value, "text": text}
+	_execute_lua_callback(subscription, [event_info])
+
+func _on_file_selected(file_path: String, subscription: EventSubscription) -> void:
+	if not event_subscriptions.has(subscription.id):
+		return
+	
+	var dom_node = dom_parser.parse_result.dom_nodes.get(subscription.element_id, null)
+	
+	if dom_node:
+		var file_container = dom_node.get_parent() # FileContainer (HBoxContainer)
+		if file_container:
+			var input_element = file_container.get_parent() # Input Control
+			if input_element and input_element.has_method("get_file_info"):
+				var file_info = input_element.get_file_info()
+				if not file_info.is_empty():
+					_execute_lua_callback(subscription, [file_info])
+					return
+	
+	# Fallback
+	var file_name = file_path.get_file()
+	_execute_lua_callback(subscription, [{"fileName": file_name}])
+
+func _on_date_selected_text(date_text: String, subscription: EventSubscription) -> void:
+	if not event_subscriptions.has(subscription.id):
+		return
+
+	var event_info = {"value": date_text}
+	_execute_lua_callback(subscription, [event_info])
+
+func _on_form_submit(subscription: EventSubscription) -> void:
+	if not event_subscriptions.has(subscription.id):
+		return
+	
+	# Find parent form
+	var form_data = {}
+	var element = dom_parser.find_by_id(subscription.element_id)
+	if element:
+		var form_element = element.parent
+		while form_element and form_element.tag_name != "form":
+			form_element = form_element.parent
+		
+		if form_element:
+			var form_dom_node = dom_parser.parse_result.dom_nodes.get(form_element.get_attribute("id"), null)
+			if form_dom_node and form_dom_node.has_method("submit_form"):
+				form_data = form_dom_node.submit_form()
+	
+	var event_info = {"data": form_data}
+	_execute_lua_callback(subscription, [event_info])
+
+func _on_text_submit(text: String, subscription: EventSubscription) -> void:
+	if not event_subscriptions.has(subscription.id):
+		return
+	
+	var event_info = {"value": text}
+	_execute_lua_callback(subscription, [event_info])
+
 # DOM node utilities
 func get_dom_node(node: Node, purpose: String = "general") -> Node:
 	if not node:
@@ -717,6 +827,10 @@ func get_dom_node(node: Node, purpose: String = "general") -> Node:
 				return node.get("rich_text_label")
 			elif node.get_node_or_null("RichTextLabel"):
 				return node.get_node_or_null("RichTextLabel")
+			elif node is LineEdit or node is TextEdit or node is SpinBox or node is HSlider:
+				return node
+			elif node is CheckBox or node is ColorPickerButton or node is OptionButton:
+				return node
 			else:
 				return node
 		"text":

@@ -4,7 +4,7 @@ extends HBoxContainer
 var current_element: HTMLParser.HTMLElement
 var current_parser: HTMLParser
 
-func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
+func init(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	current_element = element
 	current_parser = parser
 	var button_node: Button = $ButtonNode
@@ -26,6 +26,8 @@ func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
 	button_node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	
 	apply_button_styles(element, parser)
+	
+	parser.register_dom_node(element, button_node)
 
 func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	if not element or not parser:
@@ -150,12 +152,6 @@ func apply_button_color_with_states(button: Button, normal_color: Color, hover_c
 	button.add_theme_stylebox_override("normal", style_normal)
 	button.add_theme_stylebox_override("hover", style_hover)
 	button.add_theme_stylebox_override("pressed", style_pressed)
-	
-func apply_button_radius(button: Button, radius: int) -> void:
-	# Radius is now handled in create_button_stylebox
-	# This method is kept for backward compatibility but is deprecated
-	pass
-
 
 func apply_padding_to_stylebox(style_box: StyleBoxFlat, styles: Dictionary) -> void:
 	# Apply general padding first

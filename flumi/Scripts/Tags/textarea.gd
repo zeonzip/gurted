@@ -2,7 +2,7 @@ extends Control
 
 const BROWSER_TEXT = preload("res://Scenes/Styles/BrowserText.tres")
 
-func init(element: HTMLParser.HTMLElement, _parser: HTMLParser = null) -> void:
+func init(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	var text_edit: TextEdit = $TextEdit
 	
 	var placeholder = element.get_attribute("placeholder")
@@ -10,8 +10,6 @@ func init(element: HTMLParser.HTMLElement, _parser: HTMLParser = null) -> void:
 	var rows = element.get_attribute("rows")
 	var cols = element.get_attribute("cols")
 	var maxlength = element.get_attribute("maxlength")
-	var readonly = element.get_attribute("readonly")
-	var disabled = element.get_attribute("disabled")
 	
 	# Set placeholder text
 	text_edit.placeholder_text = placeholder
@@ -70,6 +68,11 @@ func init(element: HTMLParser.HTMLElement, _parser: HTMLParser = null) -> void:
 		if text_edit.text_changed.is_connected(_on_text_changed):
 			text_edit.text_changed.disconnect(_on_text_changed)
 		text_edit.text_changed.connect(_on_text_changed.bind(max_len))
+	
+	# Enable focus mode for textarea to support change events on focus lost
+	text_edit.focus_mode = Control.FOCUS_ALL
+	
+	parser.register_dom_node(element, text_edit)
 
 func _on_text_changed(max_length: int) -> void:
 	var text_edit = $TextEdit as TextEdit

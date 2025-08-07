@@ -1,7 +1,7 @@
 class_name HTMLP
 extends RichTextLabel
 
-func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
+func init(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	text = "[font_size=24]%s[/font_size]" % element.get_bbcode_formatted_text(parser)
 	
 	# Allow mouse events to pass through to parent containers for hover effects while keeping text selection

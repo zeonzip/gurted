@@ -2,7 +2,7 @@ extends Control
 
 const BROWSER_TEXT = preload("res://Scenes/Styles/BrowserText.tres")
 
-func init(element: HTMLParser.HTMLElement, _parser: HTMLParser = null) -> void:
+func init(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	var option_button: OptionButton = $OptionButton
 	
 	var selected_index = -1
@@ -14,7 +14,9 @@ func init(element: HTMLParser.HTMLElement, _parser: HTMLParser = null) -> void:
 			var option_text = child_element.text_content.strip_edges()
 			var option_value = child_element.get_attribute("value")
 
-			option_value = option_text
+			# If no value attribute is specified, use the text content as the value
+			if option_value.is_empty():
+				option_value = option_text
 			
 			option_button.add_item(option_text, option_index)
 			option_button.set_item_metadata(option_index, option_value)
@@ -33,3 +35,5 @@ func init(element: HTMLParser.HTMLElement, _parser: HTMLParser = null) -> void:
 		option_button.selected = selected_index
 	
 	custom_minimum_size = option_button.size
+	
+	parser.register_dom_node(element, option_button)

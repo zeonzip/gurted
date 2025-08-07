@@ -361,7 +361,7 @@ static func handle_visual_replacement(old_child_element_id: String, new_child_el
 	if old_position >= 0:
 		var parent_dom_node: Node = null
 		if parent_element_id == "body":
-			var main_scene = lua_api.get_node("/root/Main")
+			var main_scene = lua_api.get_main_scene()
 			if main_scene:
 				parent_dom_node = main_scene.website_container
 		else:

@@ -39,7 +39,7 @@ static func load_web_font(font_info: Dictionary) -> void:
 	
 	http_request.timeout = 30.0
 	
-	http_request.request_completed.connect(func(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray):
+	http_request.request_completed.connect(func(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray):
 		if response_code == 200:
 
 			if body.size() > 0:

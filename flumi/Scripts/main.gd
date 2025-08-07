@@ -128,7 +128,9 @@ func render() -> void:
 			for inline_element in inline_elements:
 				var inline_node = await create_element_node(inline_element, parser)
 				if inline_node:
-					parser.register_dom_node(inline_element, inline_node)
+					# Input elements register their own DOM nodes in their init() function
+					if inline_element.tag_name not in ["input", "textarea", "select", "button"]:
+						parser.register_dom_node(inline_element, inline_node)
 					
 					safe_add_child(hbox, inline_node)
 					# Handle hyperlinks for all inline elements
@@ -142,7 +144,9 @@ func render() -> void:
 		
 		var element_node = await create_element_node(element, parser)
 		if element_node:
-			parser.register_dom_node(element, element_node)
+			# Input elements register their own DOM nodes in their init() function
+			if element.tag_name not in ["input", "textarea", "select", "button"]:
+				parser.register_dom_node(element, element_node)
 			
 			# ul/ol handle their own adding
 			if element.tag_name != "ul" and element.tag_name != "ol":
@@ -277,21 +281,23 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 			if not child_element.is_inline_element() or is_flex_container:
 				var child_node = await create_element_node(child_element, parser)
 				if child_node and is_instance_valid(container_for_children):
-					parser.register_dom_node(child_element, child_node)
+					# Input elements register their own DOM nodes in their init() function
+					if child_element.tag_name not in ["input", "textarea", "select", "button"]:
+						parser.register_dom_node(child_element, child_node)
 					safe_add_child(container_for_children, child_node)
 
 	return final_node
 
-func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> Control:
+func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLParser) -> Control:
 	var node: Control = null
 	
 	match element.tag_name:
 		"p":
 			node = P.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"pre":
 			node = PRE.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"h1", "h2", "h3", "h4", "h5", "h6":
 			match element.tag_name:
 				"h1": node = H1.instantiate()
@@ -300,16 +306,16 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 				"h4": node = H4.instantiate()
 				"h5": node = H5.instantiate()
 				"h6": node = H6.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"br":
 			node = BR.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"img":
 			node = IMG.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"separator":
 			node = SEPARATOR.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"form":
 			var form_styles = parser.get_element_styles_with_inheritance(element, "", [])
 			var is_flex_form = form_styles.has("display") and ("flex" in form_styles["display"])
@@ -319,7 +325,7 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 				return null
 			else:
 				node = FORM.instantiate()
-				node.init(element)
+				node.init(element, parser)
 				
 				# Manually process children for non-flex forms
 				for child_element in element.children:
@@ -350,13 +356,13 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			node.init(element)
 		"select":
 			node = SELECT.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"option":
 			node = OPTION.instantiate()
 			node.init(element, parser)
 		"textarea":
 			node = TEXTAREA.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"div":
 			var styles = parser.get_element_styles_with_inheritance(element, "", [])
 			var hover_styles = parser.get_element_styles_with_inheritance(element, "hover", [])
@@ -366,13 +372,13 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 				node = BackgroundUtils.create_panel_container_with_background(styles, hover_styles)
 			else:
 				node = DIV.instantiate()
-				node.init(element)
+				node.init(element, parser)
 			
 			var has_only_text = is_text_only_element(element)
 			
 			if has_only_text:
 				var p_node = P.instantiate()
-				p_node.init(element)
+				p_node.init(element, parser)
 				
 				var container_for_children = node
 				if node is PanelContainer and node.get_child_count() > 0:

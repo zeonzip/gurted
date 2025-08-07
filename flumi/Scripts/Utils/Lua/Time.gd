@@ -64,7 +64,7 @@ static func time_date_handler(vm: LuauVM) -> int:
 static func time_sleep_handler(vm: LuauVM) -> int:
 	vm.luaL_checknumber(1)
 	var seconds = vm.lua_tonumber(1)
-	var milliseconds = int(seconds * 1000)
+	var _milliseconds = int(seconds * 1000)
 	
 	# TODO: implement a proper sleep function
 
@@ -81,10 +81,10 @@ static func time_benchmark_handler(vm: LuauVM) -> int:
 		var error_msg = vm.lua_tostring(-1)
 		vm.lua_pop(1)
 		
-		var end_time = Time.get_ticks_msec()
-		var elapsed_ms = end_time - start_time
+		var end = Time.get_ticks_msec()
+		var elapsed = end - start_time
 		
-		vm.lua_pushnumber(elapsed_ms / 1000.0)
+		vm.lua_pushnumber(elapsed / 1000.0)
 		vm.lua_pushstring("Error: " + error_msg)
 		return 2
 	

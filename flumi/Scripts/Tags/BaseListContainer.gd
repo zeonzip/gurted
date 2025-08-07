@@ -12,7 +12,7 @@ func _ready():
 	child_entered_tree.connect(_on_child_added)
 	child_exiting_tree.connect(_on_child_removed)
 
-func init(element: HTMLParser.HTMLElement, parser: HTMLParser = null) -> void:
+func init(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	list_type = element.get_attribute("type").to_lower()
 	if list_type == "": 
 		list_type = "disc" if not is_ordered else "decimal"
@@ -67,7 +67,7 @@ func calculate_marker_width(element: HTMLParser.HTMLElement) -> float:
 	
 	return max(width, 20.0 if not is_ordered else 30.0)
 
-func create_li_node(element: HTMLParser.HTMLElement, index: int, parser: HTMLParser = null) -> Control:
+func create_li_node(element: HTMLParser.HTMLElement, index: int, parser: HTMLParser) -> Control:
 	var li_container = HBoxContainer.new()
 	
 	# Create marker

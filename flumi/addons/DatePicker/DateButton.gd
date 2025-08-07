@@ -1,6 +1,8 @@
 class_name DateButton
 extends Button
 
+signal date_selected(date_text: String)
+
 var calendar: Calendar
 var calendar_control: Control
 
@@ -54,11 +56,19 @@ func parse_date_string(date_string: String) -> Dictionary:
 
 func update_button_text() -> void:
 	var date = calendar.selected
-	text = "%d/%d/%d" % [date.month, date.day, date.year]
+	if date and date.has("month") and date.has("day") and date.has("year"):
+		text = "%02d/%02d/%04d" % [date.month, date.day, date.year]
+		date_selected.emit(text)
+	else:
+		text = "mm/dd/yyyy"
 
 func _on_date_selected():
 	var date = calendar.selected
-	text = "%02d/%02d/%04d" % [date.month, date.day, date.year]
+	if date and date.has("month") and date.has("day") and date.has("year"):
+		text = "%02d/%02d/%04d" % [date.month, date.day, date.year]
+		date_selected.emit(text)
+	else:
+		text = "mm/dd/yyyy"
 
 func _on_button_pressed():
 	if calendar.is_visible():

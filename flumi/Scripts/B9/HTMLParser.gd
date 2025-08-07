@@ -34,7 +34,7 @@ class HTMLElement:
 	func get_preserved_text() -> String:
 		return text_content
 	
-	func get_bbcode_formatted_text(parser: HTMLParser = null) -> String:
+	func get_bbcode_formatted_text(parser: HTMLParser) -> String:
 		var styles = {}
 		if parser != null:
 			styles = parser.get_element_styles_with_inheritance(self, "", [])
@@ -142,8 +142,7 @@ func get_element_styles_with_inheritance(element: HTMLElement, event: String = "
 	
 	var styles = {}
 	
-	var class_names = extract_class_names(element)
-	styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event, class_names, element))
+	styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(event, element))
 	# Apply inline styles (higher priority) - force override CSS rules
 	var inline_style = element.get_attribute("style")
 	if inline_style.length() > 0:
@@ -169,8 +168,7 @@ func get_element_styles_internal(element: HTMLElement, event: String = "") -> Di
 	
 	# Apply CSS rules
 	if parse_result.css_parser:
-		var class_names = extract_class_names(element)
-		styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(element.tag_name, event, class_names, element))
+		styles.merge(parse_result.css_parser.stylesheet.get_styles_for_element(event, element))
 	
 	# Apply inline styles (higher priority) - force override CSS rules
 	var inline_style = element.get_attribute("style")
@@ -203,7 +201,7 @@ func parse_inline_style_with_event(style_string: String, event: String = "") -> 
 			else:
 				# Check if this is a CSS class that might have pseudo-class rules
 				if parse_result.css_parser and parse_result.css_parser.stylesheet:
-					var pseudo_styles = parse_result.css_parser.stylesheet.get_styles_for_element("", event, [utility_name], null)
+					var pseudo_styles = parse_result.css_parser.stylesheet.get_styles_for_element(event, null)
 					if not pseudo_styles.is_empty():
 						for property in pseudo_styles:
 							properties[property] = pseudo_styles[property]
@@ -287,7 +285,7 @@ func find_by_id(element_id: String) -> HTMLElement:
 	
 	return null
 
-func register_dom_node(element: HTMLElement, node: Control) -> void:
+func register_dom_node(element: HTMLElement, node) -> void:
 	var element_id = element.get_id()
 	if element_id.length() > 0:
 		parse_result.dom_nodes[element_id] = node
