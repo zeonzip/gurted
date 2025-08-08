@@ -1,6 +1,9 @@
 class_name LuaAPI
 extends Node
 
+var threaded_vm: ThreadedLuaVM
+var script_start_time: float = 0.0
+
 class EventSubscription:
 	var id: int
 	var element_id: String
@@ -17,12 +20,15 @@ var event_subscriptions: Dictionary = {}
 var next_subscription_id: int = 1
 var next_callback_ref: int = 1
 
-var timeout_manager: LuaTimeoutManager
 var element_id_counter: int = 1
 var element_id_registry: Dictionary = {}
 
 func _init():
 	timeout_manager = LuaTimeoutManager.new()
+	threaded_vm = ThreadedLuaVM.new()
+	threaded_vm.script_completed.connect(_on_threaded_script_completed)
+	threaded_vm.dom_operation_request.connect(_handle_dom_operation)
+	threaded_vm.print_output.connect(_on_print_output)
 
 func get_or_assign_element_id(element: HTMLParser.HTMLElement) -> String:
 	var existing_id = element.get_attribute("id")
@@ -57,7 +63,7 @@ func _gurt_select_handler(vm: LuauVM) -> int:
 	vm.lua_pushstring(element.tag_name)
 	vm.lua_setfield(-2, "_tag_name")
 	
-	add_element_methods(vm)
+	LuaDOMUtils.add_element_methods(vm, self)
 	return 1
 
 # selectAll() function to find multiple elements
@@ -79,7 +85,7 @@ func _gurt_select_all_handler(vm: LuauVM) -> int:
 		vm.lua_pushstring(element.tag_name)
 		vm.lua_setfield(-2, "_tag_name")
 		
-		add_element_methods(vm)
+		LuaDOMUtils.add_element_methods(vm, self)
 		
 		# Add to array at index
 		vm.lua_rawseti(-2, index)
@@ -119,355 +125,22 @@ func _gurt_create_handler(vm: LuauVM) -> int:
 	vm.lua_pushboolean(true)
 	vm.lua_setfield(-2, "_is_dynamic")
 	
-	add_element_methods(vm)
+	LuaDOMUtils.add_element_methods(vm, self)
 	return 1
 
-func add_element_methods(vm: LuauVM, index: String = "element") -> void:
-	# Add methods directly to element table first
-	vm.lua_pushcallable(_element_on_event_handler, index + ".on")
-	vm.lua_setfield(-2, "on")
-	
-	vm.lua_pushcallable(_element_append_handler, index + ".append")
-	vm.lua_setfield(-2, "append")
-	
-	vm.lua_pushcallable(_element_remove_handler, index + ".remove")
-	vm.lua_setfield(-2, "remove")
-	
-	vm.lua_pushcallable(_element_get_attribute_handler, index + ".getAttribute")
-	vm.lua_setfield(-2, "getAttribute")
-	
-	vm.lua_pushcallable(_element_set_attribute_handler, index + ".setAttribute")
-	vm.lua_setfield(-2, "setAttribute")
-	
-	LuaDOMUtils.add_enhanced_element_methods(vm, self, index)
-	
-	vm.lua_newtable()
-	
-	vm.lua_pushcallable(_index_handler, index + ".__index")
-	vm.lua_setfield(-2, "__index")
-	
-	vm.lua_pushcallable(_element_newindex_handler, index + ".__newindex")
-	vm.lua_setfield(-2, "__newindex")
-	
-	vm.lua_setmetatable(-2)
+var timeout_manager: LuaTimeoutManager
 
-func _index_handler(vm: LuauVM) -> int:
-	return LuaDOMUtils._index_handler(vm, self)
-
-func _element_index_handler(vm: LuauVM) -> int:
-	vm.luaL_checktype(1, vm.LUA_TTABLE)
-	var key: String = vm.luaL_checkstring(2)
-	
-	vm.lua_getfield(1, "_element_id")
-	var element_id: String = vm.lua_tostring(-1)
-	vm.lua_pop(1)
-	
-	match key:
-		"text":
-			var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
-			var text = ""
-			
-			var text_node = get_dom_node(dom_node, "text")
-			if text_node:
-				if text_node.has_method("get_text"):
-					text = text_node.get_text()
-				else:
-					text = text_node.text
-			
-			vm.lua_pushstring(text)
-			return 1
-		"children":
-			# Find the element
-			var element: HTMLParser.HTMLElement = null
-			if element_id == "body":
-				element = dom_parser.find_first("body")
-			else:
-				element = dom_parser.find_by_id(element_id)
-			
-			vm.lua_newtable()
-			var index = 1
-			
-			if element:
-				for child in element.children:
-					vm.lua_newtable()
-					vm.lua_pushstring(child.tag_name)
-					vm.lua_setfield(-2, "tagName")
-					vm.lua_pushstring(child.get_text_content())
-					vm.lua_setfield(-2, "text")
-					
-					vm.lua_rawseti(-2, index)
-					index += 1
-			
-			return 1
-		"classList":
-			# Create classList object with add, remove, toggle methods
-			vm.lua_newtable()
-			
-			# Add methods to classList using the utility class
-			vm.lua_pushcallable(_element_classlist_add_wrapper, "classList.add")
-			vm.lua_setfield(-2, "add")
-			
-			vm.lua_pushcallable(_element_classlist_remove_wrapper, "classList.remove")
-			vm.lua_setfield(-2, "remove")
-			
-			vm.lua_pushcallable(_element_classlist_toggle_wrapper, "classList.toggle")
-			vm.lua_setfield(-2, "toggle")
-			
-			# Store element reference for the classList methods
-			vm.lua_getfield(1, "_element_id")
-			vm.lua_setfield(-2, "_element_id")
-			
-			return 1
-		_:
-			# Fall back to checking the original table for methods
-			vm.lua_pushvalue(1) # Push the original table
-			vm.lua_pushstring(key) # Push the key
-			vm.lua_rawget(-2) # Get table[key] without triggering metamethods
-			vm.lua_remove(-2) # Remove the table, leaving just the result
-			return 1
-
-func _element_newindex_handler(vm: LuauVM) -> int:
-	vm.luaL_checktype(1, vm.LUA_TTABLE)
-	var key: String = vm.luaL_checkstring(2)
-	var value = vm.lua_tovariant(3)
-	
-	vm.lua_getfield(1, "_element_id")
-	var element_id: String = vm.lua_tostring(-1)
-	vm.lua_pop(1)
-	
-	match key:
-		"text":
-			var text: String = str(value)
-			var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
-			var text_node = get_dom_node(dom_node, "text")
-			if text_node:
-				text_node.text = text
-		_:
-			# Ignore unknown properties
-			pass
-	
-	return 0
-
-# append() function to add a child element
-func _element_append_handler(vm: LuauVM) -> int:
-	vm.luaL_checktype(1, vm.LUA_TTABLE)
-	vm.luaL_checktype(2, vm.LUA_TTABLE)
-	
-	# Get parent element info
-	vm.lua_getfield(1, "_element_id")
-	var parent_element_id: String = vm.lua_tostring(-1)
-	vm.lua_pop(1)
-	
-	# Get child element info
-	vm.lua_getfield(2, "_element_id")
-	var child_element_id: String = vm.lua_tostring(-1)
-	vm.lua_pop(1)
-	
-	vm.lua_getfield(2, "_is_dynamic")
-	vm.lua_pop(1)
-	
-	# Find parent element
-	var parent_element: HTMLParser.HTMLElement = null
-	if parent_element_id == "body":
-		parent_element = dom_parser.find_first("body")
-	else:
-		parent_element = dom_parser.find_by_id(parent_element_id)
-	
-	if not parent_element:
-		return 0
-	
-	# Find child element
-	var child_element = dom_parser.find_by_id(child_element_id)
-	if not child_element:
-		return 0
-	
-	# Add child to parent in DOM tree
-	child_element.parent = parent_element
-	parent_element.children.append(child_element)
-	
-	# If the parent is already rendered, we need to create and add the visual node
-	var parent_dom_node: Node = null
-	if parent_element_id == "body":
-		var main_scene = get_node("/root/Main")
-		if main_scene:
-			parent_dom_node = main_scene.website_container
-	else:
-		parent_dom_node = dom_parser.parse_result.dom_nodes.get(parent_element_id, null)
-	
-	if parent_dom_node:
-		_render_new_element.call_deferred(child_element, parent_dom_node)
-	
-	return 0
-
-# remove() function to remove an element
-func _element_remove_handler(vm: LuauVM) -> int:
-	vm.luaL_checktype(1, vm.LUA_TTABLE)
-	
-	vm.lua_getfield(1, "_element_id")
-	var element_id: String = vm.lua_tostring(-1)
-	vm.lua_pop(1)
-	
-	# Find the element in DOM
-	var element = dom_parser.find_by_id(element_id)
-	if not element:
-		return 0
-
-	# Remove from parent's children array
-	if element.parent:
-		var parent_children = element.parent.children
-		var idx = parent_children.find(element)
-		if idx >= 0:
-			parent_children.remove_at(idx)
-
-	# Remove the visual node
-	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
-	if dom_node:
-		dom_node.queue_free()
-		dom_parser.parse_result.dom_nodes.erase(element_id)
-
-	# Remove from all_elements array
-	var all_elements = dom_parser.parse_result.all_elements
-	var index = all_elements.find(element)
-	if index >= 0:
-		all_elements.remove_at(index)
-
-	# Remove from element_id_registry to avoid memory leaks
-	if element_id_registry.has(element):
-		element_id_registry.erase(element)
-
-	return 0
-
-# getAttribute() function to get element attribute
-func _element_get_attribute_handler(vm: LuauVM) -> int:
-	vm.luaL_checktype(1, vm.LUA_TTABLE)
-	var attribute_name: String = vm.luaL_checkstring(2)
-	
-	vm.lua_getfield(1, "_element_id")
-	var element_id: String = vm.lua_tostring(-1)
-	vm.lua_pop(1)
-	
-	# Find the element
-	var element: HTMLParser.HTMLElement = null
-	if element_id == "body":
-		element = dom_parser.find_first("body")
-	else:
-		element = dom_parser.find_by_id(element_id)
-	
-	if not element:
-		vm.lua_pushnil()
-		return 1
-	
-	# Get the attribute value
-	var attribute_value = element.get_attribute(attribute_name)
-	if attribute_value.is_empty():
-		vm.lua_pushnil()
-	else:
-		vm.lua_pushstring(attribute_value)
-	
-	return 1
-
-# setAttribute() function to set element attribute
-func _element_set_attribute_handler(vm: LuauVM) -> int:
-	vm.luaL_checktype(1, vm.LUA_TTABLE)
-	var attribute_name: String = vm.luaL_checkstring(2)
-	var attribute_value: String = vm.luaL_checkstring(3)
-	
-	vm.lua_getfield(1, "_element_id")
-	var element_id: String = vm.lua_tostring(-1)
-	vm.lua_pop(1)
-	
-	# Find the element
-	var element: HTMLParser.HTMLElement = null
-	if element_id == "body":
-		element = dom_parser.find_first("body")
-	else:
-		element = dom_parser.find_by_id(element_id)
-	
-	if not element:
-		return 0
-	
-	if attribute_value == "":
-		element.attributes.erase(attribute_name)
-	else:
-		element.set_attribute(attribute_name, attribute_value)
-	
-	# Trigger visual update by calling init() again
-	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
-	if dom_node and dom_node.has_method("init"):
-		dom_node.init(element, dom_parser)
-	
-	return 0
-
-func _element_classlist_add_wrapper(vm: LuauVM) -> int:
-	return LuaClassListUtils.element_classlist_add_handler(vm, dom_parser)
-
-func _element_classlist_remove_wrapper(vm: LuauVM) -> int:
-	return LuaClassListUtils.element_classlist_remove_handler(vm, dom_parser)
-
-func _element_classlist_toggle_wrapper(vm: LuauVM) -> int:
-	return LuaClassListUtils.element_classlist_toggle_handler(vm, dom_parser)
-
-# DOM manipulation wrapper functions
-func _element_insert_before_wrapper(vm: LuauVM) -> int:
-	return LuaDOMUtils.insert_before_handler(vm, dom_parser, self)
-
-func _element_insert_after_wrapper(vm: LuauVM) -> int:
-	return LuaDOMUtils.insert_after_handler(vm, dom_parser, self)
-
-func _element_replace_wrapper(vm: LuauVM) -> int:
-	return LuaDOMUtils.replace_handler(vm, dom_parser, self)
-
-func _element_clone_wrapper(vm: LuauVM) -> int:
-	return LuaDOMUtils.clone_handler(vm, dom_parser, self)
-
-# DOM traversal property wrapper functions
-func _get_element_parent_wrapper(vm: LuauVM, lua_api: LuaAPI) -> int:
-	return LuaDOMUtils.get_element_parent_handler(vm, dom_parser, lua_api)
-
-func _get_element_next_sibling_wrapper(vm: LuauVM, lua_api: LuaAPI) -> int:
-	return LuaDOMUtils.get_element_next_sibling_handler(vm, dom_parser, lua_api)
-
-func _get_element_previous_sibling_wrapper(vm: LuauVM, lua_api: LuaAPI) -> int:
-	return LuaDOMUtils.get_element_previous_sibling_handler(vm, dom_parser, lua_api)
-
-func _get_element_first_child_wrapper(vm: LuauVM, lua_api: LuaAPI) -> int:
-	return LuaDOMUtils.get_element_first_child_handler(vm, dom_parser, lua_api)
-
-func _get_element_last_child_wrapper(vm: LuauVM, lua_api: LuaAPI) -> int:
-	return LuaDOMUtils.get_element_last_child_handler(vm, dom_parser, lua_api)
-
-func _render_new_element(element: HTMLParser.HTMLElement, parent_node: Node) -> void:
-	# Get reference to main scene for rendering
-	var main_scene = get_node("/root/Main")
-	if not main_scene:
-		return
-	
-	# Create the visual node for the element
-	var element_node = await main_scene.create_element_node(element, dom_parser)
-	if not element_node:
-		LuaPrintUtils.lua_print_direct("Failed to create visual node for element: " + str(element))
-		return
-
-	# Set metadata so ul/ol can detect dynamically added li elements
-	element_node.set_meta("html_element", element)
-
-	# Register the DOM node
-	dom_parser.register_dom_node(element, element_node)
-
-	# Add to parent - handle body special case
-	var container_node = parent_node
-	if parent_node is MarginContainer and parent_node.get_child_count() > 0:
-		container_node = parent_node.get_child(0)
-	elif parent_node == main_scene.website_container:
-		container_node = parent_node
-
-	main_scene.safe_add_child(container_node, element_node)
+func _ensure_timeout_manager():
+	if not timeout_manager:
+		timeout_manager = LuaTimeoutManager.new()
 
 # Timeout management handlers
 func _gurt_set_timeout_handler(vm: LuauVM) -> int:
-	return timeout_manager.set_timeout_handler(vm, self)
+	_ensure_timeout_manager()
+	return timeout_manager.set_threaded_timeout_handler(vm, self, threaded_vm)
 
 func _gurt_clear_timeout_handler(vm: LuauVM) -> int:
+	_ensure_timeout_manager()
 	return timeout_manager.clear_timeout_handler(vm)
 
 # Event system handlers
@@ -480,20 +153,22 @@ func _element_on_event_handler(vm: LuauVM) -> int:
 	var element_id: String = vm.lua_tostring(-1)
 	vm.lua_pop(1)
 	
-	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
-	if not dom_node:
-		vm.lua_pushnil()
-		return 1
-	
+	# Create a proper subscription with real ID
 	var subscription = _create_subscription(vm, element_id, event_name)
 	event_subscriptions[subscription.id] = subscription
 	
-	var signal_node = get_dom_node(dom_node, "signal")
-	var success = LuaEventUtils.connect_element_event(signal_node, event_name, subscription)
-	if not success:
-		print("ERROR: Failed to connect ", event_name, " event for ", element_id)
+	# Register the event on main thread
+	call_deferred("_register_event_on_main_thread", element_id, event_name, subscription.callback_ref, subscription.id)
 	
-	return _handle_subscription_result(vm, subscription, success)
+	# Return subscription with proper unsubscribe method
+	vm.lua_newtable()
+	vm.lua_pushinteger(subscription.id)
+	vm.lua_setfield(-2, "_subscription_id")
+	
+	vm.lua_pushcallable(_subscription_unsubscribe_handler, "subscription.unsubscribe")
+	vm.lua_setfield(-2, "unsubscribe")
+	
+	return 1
 
 func _body_on_event_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)
@@ -565,13 +240,7 @@ func _on_event_triggered(subscription: EventSubscription) -> void:
 	if not event_subscriptions.has(subscription.id):
 		return
 	
-	subscription.vm.lua_rawgeti(subscription.vm.LUA_REGISTRYINDEX, subscription.callback_ref)
-	if subscription.vm.lua_isfunction(-1):
-		if subscription.vm.lua_pcall(0, 0, 0) != subscription.vm.LUA_OK:
-			print("GURT ERROR in event callback: ", subscription.vm.lua_tostring(-1))
-			subscription.vm.lua_pop(1)
-	else:
-		subscription.vm.lua_pop(1)
+	_execute_lua_callback(subscription)
 
 func _on_gui_input_click(event: InputEvent, subscription: EventSubscription) -> void:
 	if not event_subscriptions.has(subscription.id):
@@ -618,31 +287,18 @@ func _on_focus_gui_input(event: InputEvent, subscription: EventSubscription) -> 
 			if subscription.event_name == "focusin":
 				_execute_lua_callback(subscription)
 
+func _handle_body_event(subscription: EventSubscription, event_name: String, event_data: Dictionary = {}) -> void:
+	if event_subscriptions.has(subscription.id) and subscription.event_name == event_name:
+		_execute_lua_callback(subscription, [event_data])
+
 func _on_body_mouse_enter(subscription: EventSubscription) -> void:
-	if not event_subscriptions.has(subscription.id):
-		return
-	
-	if subscription.event_name == "mouseenter":
-		_execute_lua_callback(subscription)
+	_handle_body_event(subscription, "mouseenter", {})
 
 func _on_body_mouse_exit(subscription: EventSubscription) -> void:
-	if not event_subscriptions.has(subscription.id):
-		return
-	
-	if subscription.event_name == "mouseexit":
-		_execute_lua_callback(subscription)
+	_handle_body_event(subscription, "mouseexit", {})
 
 func _execute_lua_callback(subscription: EventSubscription, args: Array = []) -> void:
-	subscription.vm.lua_rawgeti(subscription.vm.LUA_REGISTRYINDEX, subscription.callback_ref)
-	if subscription.vm.lua_isfunction(-1):
-		for arg in args:
-			subscription.vm.lua_pushvariant(arg)
-		
-		if subscription.vm.lua_pcall(args.size(), 0, 0) != subscription.vm.LUA_OK:
-			print("GURT ERROR in callback: ", subscription.vm.lua_tostring(-1))
-			subscription.vm.lua_pop(1)
-	else:
-		subscription.vm.lua_pop(1)
+	threaded_vm.execute_callback_async(subscription.callback_ref, args)
 
 func _execute_input_event_callback(subscription: EventSubscription, event_data: Dictionary) -> void:
 	if not event_subscriptions.has(subscription.id):
@@ -814,12 +470,17 @@ func get_dom_node(node: Node, purpose: String = "general") -> Node:
 	if not node:
 		return null
 	
-	if node is MarginContainer: 
+	if node is MarginContainer and node.get_child_count() > 0: 
 		node = node.get_child(0)
+	
+	if not node:
+		return null
 	
 	match purpose:
 		"signal":
 			if node is HTMLButton:
+				return node.get_node_or_null("ButtonNode")
+			elif node is HBoxContainer and node.get_node_or_null("ButtonNode"):
 				return node.get_node_or_null("ButtonNode")
 			elif node is RichTextLabel:
 				return node
@@ -860,12 +521,185 @@ func get_dom_node(node: Node, purpose: String = "general") -> Node:
 
 # Main execution function
 func execute_lua_script(code: String, vm: LuauVM):
-	vm.open_libraries([vm.LUA_BASE_LIB, vm.LUA_BIT32_LIB,
-			vm.LUA_COROUTINE_LIB, vm.LUA_MATH_LIB, vm.LUA_UTF8_LIB,
-			vm.LUA_TABLE_LIB, vm.LUA_STRING_LIB, vm.LUA_VECTOR_LIB])
+	if not threaded_vm.lua_thread or not threaded_vm.lua_thread.is_alive():
+		# Start the thread if it's not running
+		threaded_vm.start_lua_thread(dom_parser, self)
 	
-	LuaFunctionUtils.setup_gurt_api(vm, self, dom_parser)
+	script_start_time = Time.get_ticks_msec() / 1000.0
+	threaded_vm.execute_script_async(code)
+
+
+
+func _on_threaded_script_completed(result: Dictionary):
+	var execution_time = (Time.get_ticks_msec() / 1000.0) - script_start_time
+
+func _on_print_output(message: String):
+	LuaPrintUtils.lua_print_direct(message)
+
+func kill_script_execution():
+	threaded_vm.stop_lua_thread()
+	# Restart a fresh thread for future scripts
+	threaded_vm.start_lua_thread(dom_parser, self)
+
+func is_script_hanging() -> bool:
+	return threaded_vm.lua_thread != null and threaded_vm.lua_thread.is_alive()
+
+func get_script_runtime() -> float:
+	if script_start_time > 0 and is_script_hanging():
+		return (Time.get_ticks_msec() / 1000.0) - script_start_time
+	return 0.0
+
+func _handle_dom_operation(operation: Dictionary):
+	match operation.type:
+		"register_event":
+			_handle_event_registration(operation)
+		"register_body_event":
+			_handle_body_event_registration(operation)
+		"set_text":
+			_handle_text_setting(operation)
+		"get_text":
+			_handle_text_getting(operation)
+		"append_element":
+			LuaDOMUtils.handle_element_append(operation, dom_parser, self)
+		"add_class":
+			LuaClassListUtils.handle_add_class(operation, dom_parser)
+		"remove_class":
+			LuaClassListUtils.handle_remove_class(operation, dom_parser)
+		"toggle_class":
+			LuaClassListUtils.handle_toggle_class(operation, dom_parser)
+		"remove_element":
+			LuaDOMUtils.handle_element_remove(operation, dom_parser)
+		"insert_before":
+			LuaDOMUtils.handle_insert_before(operation, dom_parser, self)
+		"insert_after":
+			LuaDOMUtils.handle_insert_after(operation, dom_parser, self)
+		"replace_child":
+			LuaDOMUtils.handle_replace_child(operation, dom_parser, self)
+		_:
+			pass # Unknown operation type, ignore
+
+func _handle_event_registration(operation: Dictionary):
+	var selector: String = operation.selector
+	var event_name: String = operation.event_name
+	var callback_ref: int = operation.callback_ref
 	
-	if vm.lua_dostring(code) != vm.LUA_OK:
-		print("LUA ERROR: ", vm.lua_tostring(-1))
-		vm.lua_pop(1)
+	var element = SelectorUtils.find_first_matching(selector, dom_parser.parse_result.all_elements)
+	if not element:
+		return
+	
+	var element_id = get_or_assign_element_id(element)
+	
+	# Create subscription for threaded callback
+	var subscription = EventSubscription.new()
+	subscription.id = next_subscription_id
+	next_subscription_id += 1
+	subscription.element_id = element_id
+	subscription.event_name = event_name
+	subscription.callback_ref = callback_ref
+	subscription.vm = threaded_vm.lua_vm if threaded_vm else null
+	subscription.lua_api = self
+	
+	event_subscriptions[subscription.id] = subscription
+	
+	# Connect to DOM element
+	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+	if dom_node:
+		var signal_node = get_dom_node(dom_node, "signal")
+		LuaEventUtils.connect_element_event(signal_node, event_name, subscription)
+
+func _handle_text_setting(operation: Dictionary):
+	var selector: String = operation.selector
+	var text: String = operation.text
+	
+	var element = SelectorUtils.find_first_matching(selector, dom_parser.parse_result.all_elements)
+	if element:
+		# Always update the HTML element's text content first
+		element.text_content = text
+		
+		# If the element has a DOM node, update it too
+		var element_id = get_or_assign_element_id(element)
+		var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+		if dom_node:
+			var text_node = get_dom_node(dom_node, "text")
+			if text_node:
+				if text_node.has_method("set_text"):
+					text_node.set_text(text)
+				elif "text" in text_node:
+					text_node.text = text
+
+func _handle_text_getting(operation: Dictionary):
+	var selector: String = operation.selector
+	
+	var element = SelectorUtils.find_first_matching(selector, dom_parser.parse_result.all_elements)
+	if element:
+		# Return the element's cached text content from the HTML element
+		# This avoids the need for a callback system since we have the text cached
+		return element.text_content
+	return ""
+
+func _handle_body_event_registration(operation: Dictionary):
+	var event_name: String = operation.event_name
+	var callback_ref: int = operation.callback_ref
+	var subscription_id: int = operation.get("subscription_id", -1)
+	
+	# Use provided subscription_id or generate a new one
+	if subscription_id == -1:
+		subscription_id = next_subscription_id
+		next_subscription_id += 1
+	
+	# Create subscription for threaded callback
+	var subscription = EventSubscription.new()
+	subscription.id = subscription_id
+	subscription.element_id = "body"
+	subscription.event_name = event_name
+	subscription.callback_ref = callback_ref
+	subscription.vm = threaded_vm.lua_vm if threaded_vm else null
+	subscription.lua_api = self
+	
+	event_subscriptions[subscription.id] = subscription
+	
+	# Connect to body events
+	LuaEventUtils.connect_body_event(event_name, subscription, self)
+
+func _register_event_on_main_thread(element_id: String, event_name: String, callback_ref: int, subscription_id: int = -1):
+	# This runs on the main thread - safe to access DOM nodes
+	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+	if not dom_node:
+		return
+	
+	# Use provided subscription_id or generate a new one
+	if subscription_id == -1:
+		subscription_id = next_subscription_id
+		next_subscription_id += 1
+	
+	# Create subscription using the threaded VM's callback reference
+	var subscription = EventSubscription.new()
+	subscription.id = subscription_id
+	subscription.element_id = element_id
+	subscription.event_name = event_name
+	subscription.callback_ref = callback_ref
+	subscription.vm = threaded_vm.lua_vm if threaded_vm else null
+	subscription.lua_api = self
+	
+	event_subscriptions[subscription.id] = subscription
+	
+	var signal_node = get_dom_node(dom_node, "signal")
+	LuaEventUtils.connect_element_event(signal_node, event_name, subscription)
+
+func _unsubscribe_event_on_main_thread(subscription_id: int):
+	# This runs on the main thread - safe to cleanup event subscriptions
+	var subscription = event_subscriptions.get(subscription_id, null)
+	if subscription:
+		LuaEventUtils.disconnect_subscription(subscription, self)
+		event_subscriptions.erase(subscription_id)
+		
+		# Clean up Lua callback reference
+		if subscription.callback_ref and subscription.vm:
+			subscription.vm.lua_pushnil()
+			subscription.vm.lua_rawseti(subscription.vm.LUA_REGISTRYINDEX, subscription.callback_ref)
+
+func _notification(what: int):
+	if what == NOTIFICATION_PREDELETE:
+		if timeout_manager:
+			timeout_manager.cleanup_all_timeouts()
+		threaded_vm.stop_lua_thread()

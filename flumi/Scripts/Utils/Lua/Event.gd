@@ -9,7 +9,6 @@ static func is_date_button(node: Node) -> bool:
 
 static func connect_element_event(signal_node: Node, event_name: String, subscription) -> bool:
 	if not signal_node:
-		print("ERROR: Signal node is null for event: ", event_name)
 		return false
 	
 	match event_name:
@@ -151,7 +150,6 @@ static func connect_element_event(signal_node: Node, event_name: String, subscri
 				subscription.callback_func = callback  # Store for later disconnect
 				return true
 			else:
-				print("ERROR: No text_changed signal found for input event on ", signal_node.get_class())
 				return false
 		"submit":
 			# For form elements - look for a submit button or form container

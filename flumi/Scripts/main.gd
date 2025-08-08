@@ -102,12 +102,9 @@ func render() -> void:
 		parser.register_dom_node(body, website_container)
 	
 	var scripts = parser.find_all("script")
-	var lua_vm = null
 	var lua_api = null
 	if scripts.size() > 0:
-		lua_vm = LuauVM.new()
 		lua_api = LuaAPI.new()
-		add_child(lua_vm)
 		add_child(lua_api)
 
 	var i = 0
@@ -163,8 +160,8 @@ func render() -> void:
 		
 		i += 1
 	
-	if scripts.size() > 0 and lua_vm and lua_api:
-		parser.process_scripts(lua_api, lua_vm)
+	if scripts.size() > 0 and lua_api:
+		parser.process_scripts(lua_api, null)
 
 static func safe_add_child(parent: Node, child: Node) -> void:
 	if child.get_parent():
@@ -353,7 +350,7 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			return node
 		"li":
 			node = P.instantiate()
-			node.init(element)
+			node.init(element, parser)
 		"select":
 			node = SELECT.instantiate()
 			node.init(element, parser)

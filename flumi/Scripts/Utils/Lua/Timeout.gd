@@ -3,6 +3,7 @@ extends RefCounted
 
 var active_timeouts: Dictionary = {}
 var next_timeout_id: int = 1
+var threaded_vm: ThreadedLuaVM = null
 
 class TimeoutInfo:
 	var id: int
@@ -58,6 +59,20 @@ func set_timeout_handler(vm: LuauVM, parent_node: Node) -> int:
 	vm.lua_pushinteger(timeout_id)
 	return 1
 
+func set_threaded_timeout_handler(vm: LuauVM, parent_node: Node, threaded_vm_ref: ThreadedLuaVM) -> int:
+	threaded_vm = threaded_vm_ref
+	return set_timeout_handler(vm, parent_node)
+
+func _create_timer_on_main_thread(timeout_info: TimeoutInfo, delay_ms: int, parent_node: Node):
+	var timer = Timer.new()
+	timer.wait_time = delay_ms / 1000.0
+	timer.one_shot = true
+	timer.timeout.connect(_on_timeout_triggered.bind(timeout_info))
+	
+	timeout_info.timer = timer
+	parent_node.add_child(timer)
+	timer.start()
+
 func clear_timeout_handler(vm: LuauVM) -> int:
 	var timeout_id: int = vm.luaL_checkint(1)
 	
@@ -68,14 +83,6 @@ func clear_timeout_handler(vm: LuauVM) -> int:
 			timeout_info.timer.stop()
 			timeout_info.timer.queue_free()
 		
-		# Clean up callback reference
-		vm.lua_pushstring("GURT_TIMEOUTS")
-		vm.lua_rawget(vm.LUA_REGISTRYINDEX)
-		if not vm.lua_isnil(-1):
-			vm.lua_pushinteger(timeout_info.callback_ref)
-			vm.lua_pushnil()
-			vm.lua_rawset(-3)
-		vm.lua_pop(1)
 		
 		# Remove from active timeouts
 		active_timeouts.erase(timeout_id)
@@ -86,29 +93,10 @@ func _on_timeout_triggered(timeout_info: TimeoutInfo) -> void:
 	if not active_timeouts.has(timeout_info.id):
 		return
 	
-	# Execute the callback
-	timeout_info.vm.lua_pushstring("GURT_TIMEOUTS")
-	timeout_info.vm.lua_rawget(timeout_info.vm.LUA_REGISTRYINDEX)
-	timeout_info.vm.lua_pushinteger(timeout_info.callback_ref)
-	timeout_info.vm.lua_rawget(-2)
-	timeout_info.vm.lua_remove(-2)
+	if threaded_vm:
+		_execute_threaded_timeout_callback(timeout_info.id)
 	
-	if timeout_info.vm.lua_isfunction(-1):
-		if timeout_info.vm.lua_pcall(0, 0, 0) != timeout_info.vm.LUA_OK:
-			print("GURT ERROR in timeout callback: ", timeout_info.vm.lua_tostring(-1))
-			timeout_info.vm.lua_pop(1)
-	else:
-		timeout_info.vm.lua_pop(1)
-	
-	# Clean up timeout
 	timeout_info.timer.queue_free()
-	timeout_info.vm.lua_pushstring("GURT_TIMEOUTS")
-	timeout_info.vm.lua_rawget(timeout_info.vm.LUA_REGISTRYINDEX)
-	if not timeout_info.vm.lua_isnil(-1):
-		timeout_info.vm.lua_pushinteger(timeout_info.callback_ref)
-		timeout_info.vm.lua_pushnil()
-		timeout_info.vm.lua_rawset(-3)
-	timeout_info.vm.lua_pop(1)
 	active_timeouts.erase(timeout_info.id)
 
 func cleanup_all_timeouts():
@@ -129,3 +117,9 @@ func cleanup_all_timeouts():
 				timeout_info.vm.lua_rawset(-3)
 			timeout_info.vm.lua_pop(1)
 	active_timeouts.clear()
+
+func _execute_threaded_timeout_callback(timeout_id: int) -> void:
+	if threaded_vm and threaded_vm.lua_thread and threaded_vm.lua_thread.is_alive():
+		threaded_vm.execute_timeout_callback_async(timeout_id)
+	else:
+		active_timeouts.erase(timeout_id)

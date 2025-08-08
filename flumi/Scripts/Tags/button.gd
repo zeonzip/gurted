@@ -27,7 +27,7 @@ func init(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	
 	apply_button_styles(element, parser)
 	
-	parser.register_dom_node(element, button_node)
+	parser.register_dom_node(element, self)
 
 func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 	if not element or not parser:

@@ -61,7 +61,6 @@ class LuaSignal:
 				
 				# Call the function
 				if vm.lua_pcall(args.size(), 0, 0) != vm.LUA_OK:
-					print("GURT ERROR in Signal callback: ", vm.lua_tostring(-1))
 					vm.lua_pop(1)
 				# Pop the callbacks table
 				vm.lua_pop(1)

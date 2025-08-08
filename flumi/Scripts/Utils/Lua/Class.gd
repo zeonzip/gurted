@@ -16,17 +16,22 @@ static func element_classlist_add_handler(vm: LuauVM, dom_parser: HTMLParser) ->
 		return 0
 	
 	# Get classes
+	var classes_to_add = [css_class]
+	
 	var current_style = element.get_attribute("style", "")
 	var style_classes = CSSParser.smart_split_utility_classes(current_style) if current_style.length() > 0 else []
 	
 	# Add new css_class if not already present
-	if css_class not in style_classes:
-		style_classes.append(css_class)
+	var changed = false
+	for class_to_add in classes_to_add:
+		if class_to_add not in style_classes:
+			style_classes.append(class_to_add)
+			changed = true
+	
+	if changed:
 		var new_style_attr = " ".join(style_classes)
 		element.set_attribute("style", new_style_attr)
 		trigger_element_restyle(element, dom_parser)
-	else:
-		print("DEBUG: classList.add - Class already exists")
 	
 	return 0
 
@@ -43,25 +48,26 @@ static func element_classlist_remove_handler(vm: LuauVM, dom_parser: HTMLParser)
 	if not element:
 		return 0
 	
-	# Get style attribute
+	var classes_to_remove = [css_class]
+	
 	var current_style = element.get_attribute("style", "")
-	if current_style.length() == 0:
-		return 0
+	var style_classes = CSSParser.smart_split_utility_classes(current_style) if current_style.length() > 0 else []
 	
-	var style_classes = CSSParser.smart_split_utility_classes(current_style)
-	var clean_classes = []
-	for style_cls in style_classes:
-		if style_cls != css_class:
-			clean_classes.append(style_cls)
+	# Remove classes if present
+	var changed = false
+	for class_to_remove in classes_to_remove:
+		if class_to_remove in style_classes:
+			style_classes.erase(class_to_remove)
+			changed = true
 	
-	# Update style attribute
-	if clean_classes.size() > 0:
-		var new_style_attr = " ".join(clean_classes)
-		element.set_attribute("style", new_style_attr)
-	else:
-		element.attributes.erase("style")
+	if changed:
+		var new_style_attr = " ".join(style_classes) if style_classes.size() > 0 else ""
+		if new_style_attr.length() > 0:
+			element.set_attribute("style", new_style_attr)
+		else:
+			element.attributes.erase("style")
+		trigger_element_restyle(element, dom_parser)
 	
-	trigger_element_restyle(element, dom_parser)
 	return 0
 
 static func element_classlist_toggle_handler(vm: LuauVM, dom_parser: HTMLParser) -> int:
@@ -78,33 +84,110 @@ static func element_classlist_toggle_handler(vm: LuauVM, dom_parser: HTMLParser)
 		vm.lua_pushboolean(false)
 		return 1
 	
-	# Get style attribute
+	var utility_classes = [css_class]
+	
 	var current_style = element.get_attribute("style", "")
 	var style_classes = CSSParser.smart_split_utility_classes(current_style) if current_style.length() > 0 else []
 	
-	var has_css_class = css_class in style_classes
+	var has_all_classes = true
+	for utility_class in utility_classes:
+		if utility_class not in style_classes:
+			has_all_classes = false
+			break
 	
-	if has_css_class:
-		# Remove css_class
-		var new_classes = []
-		for style_cls in style_classes:
-			if style_cls != css_class:
-				new_classes.append(style_cls)
-		
-		if new_classes.size() > 0:
-			element.set_attribute("style", " ".join(new_classes))
-		else:
-			element.attributes.erase("style")
-		
+	if has_all_classes:
+		# Remove all utility classes
+		for utility_class in utility_classes:
+			style_classes.erase(utility_class)
 		vm.lua_pushboolean(false)
 	else:
-		# Add css_class
-		style_classes.append(css_class)
-		element.set_attribute("style", " ".join(style_classes))
+		for utility_class in utility_classes:
+			if utility_class not in style_classes:
+				style_classes.append(utility_class)
 		vm.lua_pushboolean(true)
+	
+	if style_classes.size() > 0:
+		var new_style_attr = " ".join(style_classes)
+		element.set_attribute("style", new_style_attr)
+	else:
+		element.attributes.erase("style")
 	
 	trigger_element_restyle(element, dom_parser)
 	return 1
+
+# DOM operation handlers for class management
+static func handle_add_class(operation: Dictionary, dom_parser: HTMLParser) -> void:
+	var element_id: String = operation.element_id
+	var cls: String = operation.class_name
+	
+	var element = dom_parser.find_by_id(element_id) if element_id != "body" else dom_parser.find_first("body")
+	if element:
+		# Use the original working logic from LuaClassListUtils
+		var current_style = element.get_attribute("style", "")
+		var style_classes = CSSParser.smart_split_utility_classes(current_style) if current_style.length() > 0 else []
+		
+		# Add new class if not already present  
+		if cls not in style_classes:
+			style_classes.append(cls)
+			var new_style_attr = " ".join(style_classes)
+			element.set_attribute("style", new_style_attr)
+			trigger_element_restyle(element, dom_parser)
+
+static func handle_remove_class(operation: Dictionary, dom_parser: HTMLParser) -> void:
+	var element_id: String = operation.element_id
+	var cls: String = operation.class_name
+	
+	var element = dom_parser.find_by_id(element_id) if element_id != "body" else dom_parser.find_first("body")
+	if element:
+		# Use the original working logic from LuaClassListUtils
+		var current_style = element.get_attribute("style", "")
+		if current_style.length() == 0:
+			return
+		
+		var style_classes = CSSParser.smart_split_utility_classes(current_style)
+		var clean_classes = []
+		for style_cls in style_classes:
+			if style_cls != cls:
+				clean_classes.append(style_cls)
+		
+		# Update style attribute
+		if clean_classes.size() > 0:
+			var new_style_attr = " ".join(clean_classes)
+			element.set_attribute("style", new_style_attr)
+		else:
+			element.attributes.erase("style")
+		
+		trigger_element_restyle(element, dom_parser)
+
+static func handle_toggle_class(operation: Dictionary, dom_parser: HTMLParser) -> void:
+	var element_id: String = operation.element_id
+	var cls: String = operation.class_name
+	
+	var element = dom_parser.find_by_id(element_id) if element_id != "body" else dom_parser.find_first("body")
+	if element:
+		# Use the original working logic from LuaClassListUtils
+		var current_style = element.get_attribute("style", "")
+		var style_classes = CSSParser.smart_split_utility_classes(current_style) if current_style.length() > 0 else []
+		
+		var has_class = cls in style_classes
+		
+		if has_class:
+			# Remove class
+			var new_classes = []
+			for style_cls in style_classes:
+				if style_cls != cls:
+					new_classes.append(style_cls)
+			
+			if new_classes.size() > 0:
+				element.set_attribute("style", " ".join(new_classes))
+			else:
+				element.attributes.erase("style")
+		else:
+			# Add class
+			style_classes.append(cls)
+			element.set_attribute("style", " ".join(style_classes))
+		
+		trigger_element_restyle(element, dom_parser)
 
 static func trigger_element_restyle(element: HTMLParser.HTMLElement, dom_parser: HTMLParser) -> void:
 	# Find DOM node for element

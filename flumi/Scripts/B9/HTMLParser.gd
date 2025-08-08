@@ -354,8 +354,8 @@ func get_all_scripts() -> Array[String]:
 	return get_attribute_values("script", "src")
 
 func process_scripts(lua_api: LuaAPI, lua_vm) -> void:
-	if not lua_api or not lua_vm:
-		print("Warning: Lua API or VM not available for script processing")
+	if not lua_api:
+		print("Warning: Lua API not available for script processing")
 		return
 	
 	lua_api.dom_parser = self

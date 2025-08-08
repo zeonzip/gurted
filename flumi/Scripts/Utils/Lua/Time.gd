@@ -64,12 +64,13 @@ static func time_date_handler(vm: LuauVM) -> int:
 static func time_sleep_handler(vm: LuauVM) -> int:
 	vm.luaL_checknumber(1)
 	var seconds = vm.lua_tonumber(1)
-	var _milliseconds = int(seconds * 1000)
 	
-	# TODO: implement a proper sleep function
-
-	vm.lua_pushnumber(seconds)
-	return 1
+	if seconds > 0:
+		var target_time = Time.get_ticks_msec() + (seconds * 1000.0)
+		while Time.get_ticks_msec() < target_time:
+			OS.delay_msec(1)
+			
+	return 0
 
 static func time_benchmark_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TFUNCTION)
