@@ -14,8 +14,6 @@ static func parse_size(val):
 	if val.ends_with("%") or (val.ends_with("]") and "%" in val):
 		var clean_val = val.replace("[", "").replace("]", "")
 		return clean_val
-	if val == "full":
-		return null
 	return float(val)
 
 static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement, parser: HTMLParser) -> Control:
@@ -34,6 +32,8 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 
 	if element.tag_name == "input":
 		apply_input_border_styles(node, styles)
+	elif element.tag_name == "img":
+		apply_image_styles(node, styles)
 
 	# Unified font applying for label and button
 	if target and styles.has("font-family") and styles["font-family"] not in ["sans-serif", "serif", "monospace"]:
@@ -89,8 +89,14 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 				if not element_styles.has("height"):
 					node.size_flags_vertical = orig_v_flag
 		else:
-			# regular controls
-			SizingUtils.apply_regular_control_sizing(node, width, height, styles)
+			if element.tag_name == "img" and SizingUtils.is_percentage(width) and SizingUtils.is_percentage(height):
+				node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				node.size_flags_vertical = Control.SIZE_EXPAND_FILL
+				# Clear any hardcoded sizing
+				node.custom_minimum_size = Vector2.ZERO
+			else:
+				# regular controls
+				SizingUtils.apply_regular_control_sizing(node, width, height, styles)
 
 	if label and label != node:
 		label.anchors_preset = Control.PRESET_FULL_RECT
@@ -627,3 +633,21 @@ static func apply_input_border_styles(input_node: Control, styles: Dictionary) -
 			control.add_theme_stylebox_override("focus", style_box)
 		elif control is Button:
 			control.add_theme_stylebox_override("normal", style_box)
+
+static func apply_image_styles(image_node: Control, styles: Dictionary) -> void:
+	if not image_node is TextureRect:
+		return
+	
+	var texture_rect = image_node as TextureRect
+	
+	if styles.has("object-fit"):
+		var object_fit = styles["object-fit"]
+		match object_fit:
+			"none":
+				texture_rect.stretch_mode = TextureRect.STRETCH_KEEP
+			"fill":
+				texture_rect.stretch_mode = TextureRect.STRETCH_SCALE
+			"contain":
+				texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+			"cover":
+				texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED

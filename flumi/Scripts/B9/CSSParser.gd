@@ -890,6 +890,13 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 			rule.properties["opacity"] = val.to_int() / 100.0
 		return
 
+	# Handle object-fit classes for images
+	match utility_name:
+		"object-none": rule.properties["object-fit"] = "none"; return
+		"object-fill": rule.properties["object-fit"] = "fill"; return
+		"object-contain": rule.properties["object-fit"] = "contain"; return
+		"object-cover": rule.properties["object-fit"] = "cover"; return
+
 	# Handle more utility classes as needed
 	# Add more cases here for other utilities
 
