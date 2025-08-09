@@ -325,6 +325,12 @@ func _setup_additional_lua_apis():
 	
 	# Setup Clipboard API for threaded execution
 	LuaClipboardUtils.setup_clipboard_api(lua_vm)
+	
+	# Setup Network API for threaded execution
+	LuaNetworkUtils.setup_network_api(lua_vm)
+	
+	# Setup JSON API for threaded execution
+	LuaJSONUtils.setup_json_api(lua_vm)
 
 func _threaded_table_tostring_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)
