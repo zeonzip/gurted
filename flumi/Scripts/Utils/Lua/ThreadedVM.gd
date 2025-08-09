@@ -122,10 +122,7 @@ func _lua_thread_worker():
 	lua_vm.lua_setfield(-2, "sleep")
 	lua_vm.lua_setglobal("Time")
 	
-	# Setup GURT API with thread-safe versions
 	_setup_threaded_gurt_api()
-	
-	# Setup additional API functions that are needed in callbacks
 	_setup_additional_lua_apis()
 	
 	while not should_exit:
@@ -320,17 +317,11 @@ func _setup_additional_lua_apis():
 	lua_vm.lua_setfield(-2, "tostring")
 	lua_vm.lua_pop(1)  # Pop table from stack
 	
-	# Setup Signal API for threaded execution
 	LuaSignalUtils.setup_signal_api(lua_vm)
-	
-	# Setup Clipboard API for threaded execution
 	LuaClipboardUtils.setup_clipboard_api(lua_vm)
-	
-	# Setup Network API for threaded execution
 	LuaNetworkUtils.setup_network_api(lua_vm)
-	
-	# Setup JSON API for threaded execution
 	LuaJSONUtils.setup_json_api(lua_vm)
+	LuaWebSocketUtils.setup_websocket_api(lua_vm)
 
 func _threaded_table_tostring_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)
