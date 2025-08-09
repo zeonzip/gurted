@@ -474,7 +474,7 @@ func _threaded_body_on_handler(vm: LuauVM) -> int:
 	vm.lua_pushinteger(subscription_id)
 	vm.lua_setfield(-2, "_subscription_id")
 	
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_unsubscribe_wrapper"), "subscription.unsubscribe")
+	vm.lua_pushcallable(LuaDOMUtils._unsubscribe_wrapper, "subscription.unsubscribe")
 	vm.lua_setfield(-2, "unsubscribe")
 	return 1
 

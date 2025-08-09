@@ -477,36 +477,42 @@ static func create_element_wrapper(vm: LuauVM, element: HTMLParser.HTMLElement, 
 static func add_element_methods(vm: LuauVM, lua_api: LuaAPI) -> void:
 	vm.set_meta("lua_api", lua_api)
 	
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_element_on_wrapper"), "element.on")
+	vm.lua_pushcallable(LuaDOMUtils._element_on_wrapper, "element.on")
 	vm.lua_setfield(-2, "on")
 	
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_element_append_wrapper"), "element.append")
+	vm.lua_pushcallable(LuaDOMUtils._element_append_wrapper, "element.append")
 	vm.lua_setfield(-2, "append")
 	
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_element_set_text_wrapper"), "element.setText")
+	vm.lua_pushcallable(LuaDOMUtils._element_set_text_wrapper, "element.setText")
 	vm.lua_setfield(-2, "setText")
 	
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_element_remove_wrapper"), "element.remove")
+	vm.lua_pushcallable(LuaDOMUtils._element_remove_wrapper, "element.remove")
 	vm.lua_setfield(-2, "remove")
 	
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_element_insert_before_wrapper"), "element.insertBefore")
+	vm.lua_pushcallable(LuaDOMUtils._element_insert_before_wrapper, "element.insertBefore")
 	vm.lua_setfield(-2, "insertBefore")
 	
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_element_insert_after_wrapper"), "element.insertAfter")
+	vm.lua_pushcallable(LuaDOMUtils._element_insert_after_wrapper, "element.insertAfter")
 	vm.lua_setfield(-2, "insertAfter")
 	
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_element_replace_wrapper"), "element.replace")
+	vm.lua_pushcallable(LuaDOMUtils._element_replace_wrapper, "element.replace")
 	vm.lua_setfield(-2, "replace")
 	
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_element_clone_wrapper"), "element.clone")
+	vm.lua_pushcallable(LuaDOMUtils._element_clone_wrapper, "element.clone")
 	vm.lua_setfield(-2, "clone")
+
+	vm.lua_pushcallable(LuaDOMUtils._element_get_attribute_wrapper, "element.getAttribute")
+	vm.lua_setfield(-2, "getAttribute")
+	
+	vm.lua_pushcallable(LuaDOMUtils._element_set_attribute_wrapper, "element.setAttribute")
+	vm.lua_setfield(-2, "setAttribute")
 	
 	_add_classlist_support(vm, lua_api)
 	
 	vm.lua_newtable()
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_element_index_wrapper"), "element.__index")
+	vm.lua_pushcallable(LuaDOMUtils._element_index_wrapper, "element.__index")
 	vm.lua_setfield(-2, "__index")
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_element_newindex_wrapper"), "element.__newindex")
+	vm.lua_pushcallable(LuaDOMUtils._element_newindex_wrapper, "element.__newindex")
 	vm.lua_setfield(-2, "__newindex")
 	vm.lua_setmetatable(-2)
 
@@ -538,7 +544,7 @@ static func _element_on_wrapper(vm: LuauVM) -> int:
 	vm.lua_pushinteger(subscription_id)
 	vm.lua_setfield(-2, "_subscription_id")
 	
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_unsubscribe_wrapper"), "subscription.unsubscribe")
+	vm.lua_pushcallable(LuaDOMUtils._unsubscribe_wrapper, "subscription.unsubscribe")
 	vm.lua_setfield(-2, "unsubscribe")
 	return 1
 
@@ -743,6 +749,77 @@ static func _element_clone_wrapper(vm: LuauVM) -> int:
 	vm.lua_pushnil()
 	return 1
 
+static func _element_get_attribute_wrapper(vm: LuauVM) -> int:
+	var lua_api = vm.get_meta("lua_api") as LuaAPI
+	if not lua_api:
+		vm.lua_pushnil()
+		return 1
+	
+	# Get element ID from self table
+	vm.luaL_checktype(1, vm.LUA_TTABLE)  # element
+	var attribute_name: String = vm.luaL_checkstring(2)  # attribute name
+	
+	vm.lua_getfield(1, "_element_id")
+	var element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	# Find the element
+	var element: HTMLParser.HTMLElement = null
+	if element_id == "body":
+		element = lua_api.dom_parser.find_first("body")
+	else:
+		element = lua_api.dom_parser.find_by_id(element_id)
+	
+	if not element:
+		vm.lua_pushnil()
+		return 1
+	
+	# Get the attribute value
+	var attribute_value = element.get_attribute(attribute_name)
+	if attribute_value.is_empty():
+		vm.lua_pushnil()
+	else:
+		vm.lua_pushstring(attribute_value)
+	
+	return 1
+
+static func _element_set_attribute_wrapper(vm: LuauVM) -> int:
+	var lua_api = vm.get_meta("lua_api") as LuaAPI
+	if not lua_api:
+		return 0
+	
+	# Get element ID from self table
+	vm.luaL_checktype(1, vm.LUA_TTABLE)  # element
+	var attribute_name: String = vm.luaL_checkstring(2)  # attribute name
+	var attribute_value: String = vm.luaL_checkstring(3)  # attribute value
+	
+	vm.lua_getfield(1, "_element_id")
+	var element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	# Find the element
+	var element: HTMLParser.HTMLElement = null
+	if element_id == "body":
+		element = lua_api.dom_parser.find_first("body")
+	else:
+		element = lua_api.dom_parser.find_by_id(element_id)
+	
+	if not element:
+		return 0
+	
+	# Handle removing attribute when value is empty
+	if attribute_value == "":
+		element.attributes.erase(attribute_name)
+	else:
+		element.set_attribute(attribute_name, attribute_value)
+	
+	# Trigger visual update by calling init() again for DOM nodes (must be on main thread)
+	var dom_node = lua_api.dom_parser.parse_result.dom_nodes.get(element_id, null)
+	if dom_node and dom_node.has_method("init"):
+		dom_node.call_deferred("init", element, lua_api.dom_parser)
+	
+	return 0
+
 static func _element_index_wrapper(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)
 	var key: String = vm.luaL_checkstring(2)
@@ -820,13 +897,13 @@ static func _add_classlist_support(vm: LuauVM, lua_api: LuaAPI) -> void:
 	vm.lua_setfield(-2, "_element_id")  # Store it in classList table
 	
 	# Add classList methods
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_classlist_add_wrapper"), "classList.add")
+	vm.lua_pushcallable(LuaDOMUtils._classlist_add_wrapper, "classList.add")
 	vm.lua_setfield(-2, "add")
 	
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_classlist_remove_wrapper"), "classList.remove")
+	vm.lua_pushcallable(LuaDOMUtils._classlist_remove_wrapper, "classList.remove")
 	vm.lua_setfield(-2, "remove")
 	
-	vm.lua_pushcallable(Callable(LuaDOMUtils, "_classlist_toggle_wrapper"), "classList.toggle")
+	vm.lua_pushcallable(LuaDOMUtils._classlist_toggle_wrapper, "classList.toggle")
 	vm.lua_setfield(-2, "toggle")
 	
 	# Set classList on the element
