@@ -204,6 +204,10 @@ func _execute_timeout_in_thread(timeout_id: int):
 	if not lua_vm:
 		return
 	
+	# Check if this is an interval by looking at the timeout manager
+	var timeout_info = lua_api.timeout_manager.active_timeouts.get(timeout_id, null)
+	var is_interval = timeout_info != null and timeout_info.is_interval
+	
 	# Retrieve timeout callback from the special timeout registry
 	lua_vm.lua_pushstring("GURT_THREADED_TIMEOUTS")
 	lua_vm.lua_rawget(lua_vm.LUA_REGISTRYINDEX)
@@ -213,14 +217,15 @@ func _execute_timeout_in_thread(timeout_id: int):
 		if lua_vm.lua_isfunction(-1):
 			lua_vm.lua_remove(-2) # Remove the table, keep the function
 			if _call_lua_function_with_args([]):
-				# Clean up the callback from registry after execution
-				lua_vm.lua_pushstring("GURT_THREADED_TIMEOUTS")
-				lua_vm.lua_rawget(lua_vm.LUA_REGISTRYINDEX)
-				if not lua_vm.lua_isnil(-1):
-					lua_vm.lua_pushinteger(timeout_id)
-					lua_vm.lua_pushnil()
-					lua_vm.lua_rawset(-3)
-				lua_vm.lua_pop(1)
+				# Only clean up the callback if it's a timeout (not an interval)
+				if not is_interval:
+					lua_vm.lua_pushstring("GURT_THREADED_TIMEOUTS")
+					lua_vm.lua_rawget(lua_vm.LUA_REGISTRYINDEX)
+					if not lua_vm.lua_isnil(-1):
+						lua_vm.lua_pushinteger(timeout_id)
+						lua_vm.lua_pushnil()
+						lua_vm.lua_rawset(-3)
+					lua_vm.lua_pop(1)
 				return
 		else:
 			lua_vm.lua_pop(1) # Pop non-function value
@@ -293,6 +298,12 @@ func _setup_threaded_gurt_api():
 	
 	lua_vm.lua_pushcallable(_threaded_clear_timeout_handler, "gurt.clearTimeout")
 	lua_vm.lua_setfield(-2, "clearTimeout")
+	
+	lua_vm.lua_pushcallable(_threaded_set_interval_handler, "gurt.setInterval")
+	lua_vm.lua_setfield(-2, "setInterval")
+	
+	lua_vm.lua_pushcallable(_threaded_clear_interval_handler, "gurt.clearInterval")
+	lua_vm.lua_setfield(-2, "clearInterval")
 	
 	# Add body element access
 	var body_element = dom_parser.find_first("body")
@@ -407,6 +418,39 @@ func _threaded_clear_timeout_handler(vm: LuauVM) -> int:
 	# Delegate to Lua API timeout system
 	return lua_api._gurt_clear_timeout_handler(vm)
 
+func _threaded_set_interval_handler(vm: LuauVM) -> int:
+	vm.luaL_checktype(1, vm.LUA_TFUNCTION)
+	var delay_ms: int = vm.luaL_checkint(2)
+	
+	# Generate a unique interval ID
+	var interval_id = lua_api.timeout_manager.next_timeout_id
+	lua_api.timeout_manager.next_timeout_id += 1
+	
+	# Store the callback in THIS threaded VM's registry (same as timeout)
+	vm.lua_pushstring("GURT_THREADED_TIMEOUTS")
+	vm.lua_rawget(vm.LUA_REGISTRYINDEX)
+	if vm.lua_isnil(-1):
+		vm.lua_pop(1)
+		vm.lua_newtable()
+		vm.lua_pushstring("GURT_THREADED_TIMEOUTS")
+		vm.lua_pushvalue(-2)
+		vm.lua_rawset(vm.LUA_REGISTRYINDEX)
+	
+	vm.lua_pushinteger(interval_id)
+	vm.lua_pushvalue(1)  # Copy the callback function
+	vm.lua_rawset(-3)
+	vm.lua_pop(1)
+	
+	# Create interval info and send timer creation command to main thread
+	call_deferred("_create_threaded_interval", interval_id, delay_ms)
+	
+	vm.lua_pushinteger(interval_id)
+	return 1
+
+func _threaded_clear_interval_handler(vm: LuauVM) -> int:
+	# Delegate to Lua API timeout system (clearInterval works same as clearTimeout)
+	return lua_api._gurt_clear_interval_handler(vm)
+
 func _threaded_gurt_select_handler(vm: LuauVM) -> int:
 	var selector: String = vm.luaL_checkstring(1)
 	
@@ -483,7 +527,7 @@ func _create_threaded_timeout(timeout_id: int, delay_ms: int):
 	lua_api._ensure_timeout_manager()
 	
 	# Create timeout info for threaded execution
-	var timeout_info = lua_api.timeout_manager.TimeoutInfo.new(timeout_id, timeout_id, lua_vm, lua_api.timeout_manager)
+	var timeout_info = lua_api.timeout_manager.TimeoutInfo.new(timeout_id, timeout_id, lua_vm, lua_api.timeout_manager, false, delay_ms)
 	lua_api.timeout_manager.active_timeouts[timeout_id] = timeout_info
 	lua_api.timeout_manager.threaded_vm = self
 	
@@ -491,6 +535,24 @@ func _create_threaded_timeout(timeout_id: int, delay_ms: int):
 	var timer = Timer.new()
 	timer.wait_time = delay_ms / 1000.0
 	timer.one_shot = true
+	timer.timeout.connect(lua_api.timeout_manager._on_timeout_triggered.bind(timeout_info))
+	
+	timeout_info.timer = timer
+	lua_api.add_child(timer)
+	timer.start()
+
+func _create_threaded_interval(interval_id: int, delay_ms: int):
+	# Ensure timeout manager exists
+	lua_api._ensure_timeout_manager()
+	
+	# Create interval info for threaded execution
+	var timeout_info = lua_api.timeout_manager.TimeoutInfo.new(interval_id, interval_id, lua_vm, lua_api.timeout_manager, true, delay_ms)
+	lua_api.timeout_manager.active_timeouts[interval_id] = timeout_info
+	lua_api.timeout_manager.threaded_vm = self
+	
+	var timer = Timer.new()
+	timer.wait_time = delay_ms / 1000.0
+	timer.one_shot = false  # Repeating timer for intervals
 	timer.timeout.connect(lua_api.timeout_manager._on_timeout_triggered.bind(timeout_info))
 	
 	timeout_info.timer = timer

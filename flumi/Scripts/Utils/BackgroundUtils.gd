@@ -158,6 +158,7 @@ static func create_panel_container_with_background(styles: Dictionary, hover_sty
 	vbox.name = "VBoxContainer"
 	# Allow mouse events to pass through to the parent PanelContainer
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	panel_container.add_child(vbox)
 	
 	var style_box = create_stylebox_from_styles(styles)

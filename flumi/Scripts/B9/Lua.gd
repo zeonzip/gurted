@@ -143,6 +143,14 @@ func _gurt_clear_timeout_handler(vm: LuauVM) -> int:
 	_ensure_timeout_manager()
 	return timeout_manager.clear_timeout_handler(vm)
 
+func _gurt_set_interval_handler(vm: LuauVM) -> int:
+	_ensure_timeout_manager()
+	return timeout_manager.set_threaded_interval_handler(vm, self, threaded_vm)
+
+func _gurt_clear_interval_handler(vm: LuauVM) -> int:
+	_ensure_timeout_manager()
+	return timeout_manager.clear_interval_handler(vm)
+
 # Event system handlers
 func _element_on_event_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)
