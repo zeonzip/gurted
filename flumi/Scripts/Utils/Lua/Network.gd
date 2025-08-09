@@ -19,8 +19,15 @@ static func _lua_fetch_handler(vm: LuauVM) -> int:
 	
 	# Set request options
 	var headers_array: PackedStringArray = []
+	
+	var has_user_agent = false
 	for header_name in headers:
+		if str(header_name).to_lower() == "user-agent":
+			has_user_agent = true
 		headers_array.append(str(header_name) + ": " + str(headers[header_name]))
+	
+	if not has_user_agent:
+		headers_array.append("User-Agent: " + UserAgent.get_user_agent())
 	
 	var response_data = make_http_request(url, method, headers_array, body)
 	

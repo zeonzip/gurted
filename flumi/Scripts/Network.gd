@@ -7,7 +7,10 @@ func fetch_image(url: String) -> ImageTexture:
 	if url.is_empty():
 		return null
 	
-	var error = http_request.request(url)
+	var request_headers = PackedStringArray()
+	request_headers.append("User-Agent: " + UserAgent.get_user_agent())
+	
+	var error = http_request.request(url, request_headers)
 	if error != OK:
 		print("Error making HTTP request: ", error)
 		http_request.queue_free()

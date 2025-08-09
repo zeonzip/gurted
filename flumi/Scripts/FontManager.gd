@@ -60,7 +60,10 @@ static func load_web_font(font_info: Dictionary) -> void:
 			temp_parent.queue_free()
 	)
 	
-	http_request.request(src)
+	var headers = PackedStringArray()
+	headers.append("User-Agent: " + UserAgent.get_user_agent())
+	
+	http_request.request(src, headers)
 
 static func get_font(family_name: String) -> Font:
 	if family_name == "sans-serif":
