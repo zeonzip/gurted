@@ -908,6 +908,10 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		for property in transform_properties:
 			rule.properties[property] = transform_properties[property]
 		return
+	
+	if utility_name in ["transition", "transition-colors", "transition-opacity", "transition-transform"]:
+		rule.properties[utility_name] = "200ms"
+		return
 
 	# Handle more utility classes as needed
 	# Add more cases here for other utilities

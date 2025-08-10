@@ -43,8 +43,9 @@ static func init_patterns():
 			"^cursor-[a-zA-Z-]+$",  # cursor types
 			"^scale-(x-|y-)?\\d+$",  # scale utilities like scale-100, scale-x-75, scale-y-150
 			"^scale-(x-|y-)?\\[.*\\]$",  # custom scale values like scale-[1.5], scale-x-[2.0]
-			"^rotate-(x-|y-)?\\d+$",  # rotation utilities like rotate-45, rotate-x-90, rotate-y-180
-			"^rotate-(x-|y-)?\\[.*\\]$",  # custom rotation values like rotate-[45deg], rotate-x-[90deg], rotate-y-[3.5rad]
+			"^rotate-\\d+$",  # rotation utilities like rotate-45, rotate-90
+			"^rotate-\\[.*\\]$",  # custom rotation values like rotate-[45deg], rotate-[3.5rad]
+			"^transition(-colors|-opacity|-transform)?$",  # transition utilities
 			"^(hover|active):",  # pseudo classes
 		]
 		for pattern in utility_patterns:

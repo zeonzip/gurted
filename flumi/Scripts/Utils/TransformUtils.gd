@@ -132,26 +132,12 @@ static func parse_scale_utility(utility_name: String) -> Dictionary:
 static func parse_rotation_utility(utility_name: String) -> Dictionary:
 	var result = {}
 	
-	if utility_name.begins_with("rotate-x-"):
-		var val = utility_name.substr(9)  # after "rotate-x-"
-		if val.begins_with("[") and val.ends_with("]"):
-			val = val.substr(1, val.length() - 2)
-		var rotation = parse_rotation(val)
-		result["rotate-x"] = rotation
-		return result
-	elif utility_name.begins_with("rotate-y-"):
-		var val = utility_name.substr(9)  # after "rotate-y-"
-		if val.begins_with("[") and val.ends_with("]"):
-			val = val.substr(1, val.length() - 2)
-		var rotation = parse_rotation(val)
-		result["rotate-y"] = rotation
-		return result
-	elif utility_name.begins_with("rotate-"):
+	if utility_name.begins_with("rotate-"):
 		var val = utility_name.substr(7)  # after "rotate-"
 		if val.begins_with("[") and val.ends_with("]"):
 			val = val.substr(1, val.length() - 2)
 		var rotation = parse_rotation(val)
-		result["rotate-z"] = rotation  # Default rotation is around Z-axis
+		result["rotate"] = rotation
 		return result
 	
 	return result

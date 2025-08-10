@@ -23,6 +23,8 @@ TODO:
 Issues:
 1. **< br />** counts as 1 element in **WebsiteContainer**, therefore despite being (0,0) in size, it counts as double in spacing
 2. **Tween** API doesn't modify CSS, it operates independently at Godot level.
+3. Certain properties like `scale` and `rotate` don't apply to the `active` pseudo-class because they rely on mouse_enter and mouse_exit events
+4. `<div style="bg-[#3b82f6] w-[100px] h-[100px] flex hover:scale-110 transition hover:rotate-45">Box</div>` something like this has the "Box" text (presumably the PanelContainer) as the target of the hover, not the div itself (which has the w/h size)
 
 Notes:
 - **< input />** is sort-of inline in normal web. We render it as a block element (new-line).

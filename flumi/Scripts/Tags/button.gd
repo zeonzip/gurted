@@ -51,6 +51,9 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 	# Apply text color with state-dependent colors
 	apply_button_text_color(button_node, styles, hover_styles, active_styles)
 	
+	# Apply transform properties with hover support
+	apply_button_transforms(button_node, styles, hover_styles)
+	
 	# Apply background color (hover: + active:)
 	if styles.has("background-color"):
 		var normal_color: Color = styles["background-color"]
@@ -194,3 +197,52 @@ func apply_size_and_flags(ctrl: Control, width: Variant, height: Variant) -> voi
 			ctrl.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		if height != null:
 			ctrl.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+
+func apply_button_transforms(button: Button, normal_styles: Dictionary, hover_styles: Dictionary) -> void:
+	# Apply normal transforms to the parent HBoxContainer (self)
+	StyleManager.apply_transform_properties_direct(self, normal_styles)
+	
+	# Set pivot point to center of the container
+	self.pivot_offset = self.size / 2
+	
+	# Set up hover transforms if present
+	var has_hover_transforms = hover_styles.has("scale-x") or hover_styles.has("scale-y") or hover_styles.has("rotate")
+	if has_hover_transforms:
+		# Store original and hover values
+		var original_scale = Vector2(
+			normal_styles.get("scale-x", 1.0),
+			normal_styles.get("scale-y", 1.0)
+		)
+		var original_rotation = normal_styles.get("rotate", 0.0)
+		
+		var hover_scale = Vector2(
+			hover_styles.get("scale-x", original_scale.x),
+			hover_styles.get("scale-y", original_scale.y)
+		)
+		var hover_rotation = hover_styles.get("rotate", original_rotation)
+		
+		# Get transition duration
+		var duration = StyleManager.get_transition_duration(normal_styles)
+		if duration == 0:
+			duration = StyleManager.get_transition_duration(hover_styles)
+		
+		# Connect hover events to the button but apply transforms to self
+		button.mouse_entered.connect(func():
+			# Update pivot point in case size changed
+			self.pivot_offset = self.size / 2
+			if duration > 0:
+				StyleManager.animate_transform(self, hover_scale, hover_rotation, duration)
+			else:
+				self.scale = hover_scale
+				self.rotation = hover_rotation
+		)
+		
+		button.mouse_exited.connect(func():
+			# Update pivot point in case size changed
+			self.pivot_offset = self.size / 2
+			if duration > 0:
+				StyleManager.animate_transform(self, original_scale, original_rotation, duration)
+			else:
+				self.scale = original_scale
+				self.rotation = original_rotation
+		)

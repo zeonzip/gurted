@@ -680,67 +680,58 @@ static func apply_transform_properties(node: Control, styles: Dictionary) -> voi
 		apply_transform_properties_direct(node, styles)
 
 static func apply_transform_properties_direct(node: Control, styles: Dictionary) -> void:
-	var has_transform = false
-	var scale_x = 1.0
-	var scale_y = 1.0
-	var rotation_z = 0.0
+	var scale_x = styles.get("scale-x", 1.0)
+	var scale_y = styles.get("scale-y", 1.0)
+	var rotation = styles.get("rotate", 0.0)
 	
-	# Check for scale properties
-	if styles.has("scale-x"):
-		scale_x = styles["scale-x"]
-		has_transform = true
-	if styles.has("scale-y"):
-		scale_y = styles["scale-y"]
-		has_transform = true
-	
-	# Check for rotation properties (prioritize Z-axis for 2D)
-	if styles.has("rotate-z"):
-		rotation_z = styles["rotate-z"]
-		has_transform = true
-	elif styles.has("rotate-x"):
-		rotation_z = styles["rotate-x"]
-		has_transform = true
-	elif styles.has("rotate-y"):
-		rotation_z = styles["rotate-y"]
-		has_transform = true
+	var has_transform = scale_x != 1.0 or scale_y != 1.0 or rotation != 0.0
+	var duration = get_transition_duration(styles)
 	
 	if has_transform:
-		# Set metadata flag to tell FlexContainer to preserve transforms
 		node.set_meta("css_transform_applied", true)
-		node.set_meta("pending_scale", Vector2(scale_x, scale_y))
-		node.set_meta("pending_rotation", rotation_z)
 		
-		# Apply immediately
-		node.scale = Vector2(scale_x, scale_y)
-		node.rotation = rotation_z
+		# Set pivot point to center
+		node.pivot_offset = node.size / 2
 		
-		# Reapply after FlexContainer layout using timer
-		var timer = Timer.new()
-		timer.wait_time = 0.1
-		timer.one_shot = true
-		timer.autostart = true
-		var main_scene = Engine.get_main_loop().current_scene
-		if main_scene:
-			timer.timeout.connect(func(): _reapply_transforms(node))
-			main_scene.add_child(timer)
+		if duration > 0:
+			animate_transform(node, Vector2(scale_x, scale_y), rotation, duration)
+		else:
+			node.scale = Vector2(scale_x, scale_y)
+			node.rotation = rotation
+			await_and_restore_transform(node, Vector2(scale_x, scale_y), rotation)
 	else:
-		# Reset transforms to default when no transforms are specified
-		node.scale = Vector2.ONE
-		node.rotation = 0.0
+		if duration > 0:
+			animate_transform(node, Vector2.ONE, 0.0, duration)
+		else:
+			node.scale = Vector2.ONE
+			node.rotation = 0.0
 		if node.has_meta("css_transform_applied"):
 			node.remove_meta("css_transform_applied")
 
-static func _reapply_transforms(node: Control) -> void:
-	if not is_instance_valid(node):
-		return
+static func get_transition_duration(styles: Dictionary) -> float:
+	if styles.has("transition-transform"):
+		return parse_transition_duration(styles["transition-transform"])
+	elif styles.has("transition"):
+		return parse_transition_duration(styles["transition"])
+	return 0.0
+
+static func parse_transition_duration(value: String) -> float:
+	if value.ends_with("ms"):
+		return float(value.replace("ms", "")) / 1000.0
+	elif value.ends_with("s"):
+		return float(value.replace("s", ""))
+	return float(value) if value.is_valid_float() else 0.0
+
+static func animate_transform(node: Control, target_scale: Vector2, target_rotation: float, duration: float) -> void:
+	var tween = node.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(node, "scale", target_scale, duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(node, "rotation", target_rotation, duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+
+static func await_and_restore_transform(node: Control, target_scale: Vector2, target_rotation: float) -> void:
+	var tree = Engine.get_main_loop()
 	
-	if node.has_meta("pending_scale"):
-		node.scale = node.get_meta("pending_scale")
-	
-	if node.has_meta("pending_rotation"):
-		node.rotation = node.get_meta("pending_rotation")
-	
-	if node.has_meta("pending_scale"):
-		node.remove_meta("pending_scale")
-	if node.has_meta("pending_rotation"):
-		node.remove_meta("pending_rotation")
+	await tree.process_frame
+	node.scale = target_scale
+	node.rotation = target_rotation
+	node.pivot_offset = node.size / 2

@@ -2636,12 +2636,13 @@ var HTML_CONTENT_TRANSFORM_TEST = """<head>
 		<div style="demo-item">
 			<h2>Hover Effect</h2>
 			<div style="description">Hover to see scale effect</div>
-			<div style="demo-box hover:scale-110">Box</div>
+			<div style="demo-box hover:scale-110 transition hover:rotate-45">Box</div>
 			<div style="code-block">hover:scale-110</div>
 		</div>
-
 	</div>
-
+	
+	<button style="hover:scale-110 transition">Button</button>
+	
 	<div style="bg-white p-6 rounded-xl shadow-lg mt-8 max-w-4xl mx-auto">
 		<h2>📝 Transform Utility Reference</h2>
 		<div style="text-[#475569]">
