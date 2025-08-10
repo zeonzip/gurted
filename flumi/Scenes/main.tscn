@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://bytm7bt2s4ak8"]
+[gd_scene load_steps=28 format=3 uid="uid://bytm7bt2s4ak8"]
 
 [ext_resource type="Script" uid="uid://bg5iqnwic1rio" path="res://Scripts/main.gd" id="1_8q3xr"]
 [ext_resource type="Texture2D" uid="uid://df1m4j7uxi63v" path="res://Assets/Icons/chevron-down.svg" id="2_6bp64"]
@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D" uid="uid://cehbtwq6gq0cn" path="res://Assets/Icons/plus.svg" id="5_ynf5e"]
 [ext_resource type="Script" uid="uid://bgqglerkcylxx" path="res://addons/SmoothScroll/SmoothScrollContainer.gd" id="10_d1ilt"]
 [ext_resource type="Script" uid="uid://b7h0k2h2qwlqv" path="res://addons/SmoothScroll/scroll_damper/expo_scroll_damper.gd" id="11_6iyac"]
+[ext_resource type="PackedScene" uid="uid://b7w3dqcvof88f" path="res://Scenes/Tags/audio.tscn" id="12_6iyac"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_344ge"]
 
@@ -221,6 +222,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 22
+
+[node name="Audio" parent="VBoxContainer/ScrollContainer/WebsiteContainer" instance=ExtResource("12_6iyac")]
+layout_mode = 2
 
 [node name="WebsiteBackground" type="Panel" parent="."]
 unique_name_in_owner = true
