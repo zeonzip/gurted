@@ -182,6 +182,8 @@ static func setup_panel_hover_support(panel: PanelContainer, normal_styles: Dict
 	# Store references for the hover handlers
 	panel.set_meta("normal_stylebox", normal_stylebox)
 	panel.set_meta("hover_stylebox", hover_stylebox)
+	panel.set_meta("normal_styles", normal_styles.duplicate(true))
+	panel.set_meta("hover_styles", merged_hover_styles.duplicate(true))
 	
 	# Connect mouse events
 	panel.mouse_entered.connect(_on_panel_mouse_entered.bind(panel))
@@ -191,11 +193,28 @@ static func _on_panel_mouse_entered(panel: PanelContainer):
 	if panel.has_meta("hover_stylebox"):
 		var hover_stylebox = panel.get_meta("hover_stylebox")
 		panel.add_theme_stylebox_override("panel", hover_stylebox)
+	
+	if panel.has_meta("hover_styles"):
+		var hover_styles = panel.get_meta("hover_styles")
+		var transform_target = find_transform_target_for_panel(panel)
+		StyleManager.apply_transform_properties_direct(transform_target, hover_styles)
 
 static func _on_panel_mouse_exited(panel: PanelContainer):
 	if panel.has_meta("normal_stylebox"):
 		var normal_stylebox = panel.get_meta("normal_stylebox")
 		panel.add_theme_stylebox_override("panel", normal_stylebox)
+	
+	if panel.has_meta("normal_styles"):
+		var normal_styles = panel.get_meta("normal_styles")
+		var transform_target = find_transform_target_for_panel(panel)
+		StyleManager.apply_transform_properties_direct(transform_target, normal_styles)
+
+static func find_transform_target_for_panel(panel: PanelContainer) -> Control:
+	var parent = panel.get_parent()
+	if parent and parent is FlexContainer:
+		return parent
+	
+	return panel
 
 static func needs_background_wrapper(styles: Dictionary) -> bool:
 	return styles.has("background-color") or styles.has("border-radius") or styles.has("padding") or styles.has("padding-top") or styles.has("padding-right") or styles.has("padding-bottom") or styles.has("padding-left") or styles.has("border-width") or styles.has("border-top-width") or styles.has("border-right-width") or styles.has("border-bottom-width") or styles.has("border-left-width") or styles.has("border-color") or styles.has("border-style") or styles.has("border-top-color") or styles.has("border-right-color") or styles.has("border-bottom-color") or styles.has("border-left-color")

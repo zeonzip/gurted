@@ -181,6 +181,14 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 	if label:
 		apply_styles_to_label(label, styles, element, parser)
 
+	var transform_target = node
+	
+	if node is MarginContainer and node.name.begins_with("MarginWrapper_"):
+		if node.get_child_count() > 0:
+			transform_target = node.get_child(0)
+	
+	apply_transform_properties(transform_target, styles)
+
 	return node
 
 static func apply_stylebox_to_panel_container(panel_container: PanelContainer, styles: Dictionary) -> void:
@@ -651,3 +659,88 @@ static func apply_image_styles(image_node: Control, styles: Dictionary) -> void:
 				texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
 			"cover":
 				texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+
+static func apply_transform_properties(node: Control, styles: Dictionary) -> void:
+	if node is FlexContainer:
+		var has_panel_children = false
+		for child in node.get_children():
+			if child is PanelContainer:
+				has_panel_children = true
+				break
+		
+		if has_panel_children:
+			apply_transform_properties_direct(node, styles)
+		else:
+			for child in node.get_children():
+				if child is RichTextLabel or child is Control:
+					apply_transform_properties_direct(child, styles)
+					return
+			apply_transform_properties_direct(node, styles)
+	else:
+		apply_transform_properties_direct(node, styles)
+
+static func apply_transform_properties_direct(node: Control, styles: Dictionary) -> void:
+	var has_transform = false
+	var scale_x = 1.0
+	var scale_y = 1.0
+	var rotation_z = 0.0
+	
+	# Check for scale properties
+	if styles.has("scale-x"):
+		scale_x = styles["scale-x"]
+		has_transform = true
+	if styles.has("scale-y"):
+		scale_y = styles["scale-y"]
+		has_transform = true
+	
+	# Check for rotation properties (prioritize Z-axis for 2D)
+	if styles.has("rotate-z"):
+		rotation_z = styles["rotate-z"]
+		has_transform = true
+	elif styles.has("rotate-x"):
+		rotation_z = styles["rotate-x"]
+		has_transform = true
+	elif styles.has("rotate-y"):
+		rotation_z = styles["rotate-y"]
+		has_transform = true
+	
+	if has_transform:
+		# Set metadata flag to tell FlexContainer to preserve transforms
+		node.set_meta("css_transform_applied", true)
+		node.set_meta("pending_scale", Vector2(scale_x, scale_y))
+		node.set_meta("pending_rotation", rotation_z)
+		
+		# Apply immediately
+		node.scale = Vector2(scale_x, scale_y)
+		node.rotation = rotation_z
+		
+		# Reapply after FlexContainer layout using timer
+		var timer = Timer.new()
+		timer.wait_time = 0.1
+		timer.one_shot = true
+		timer.autostart = true
+		var main_scene = Engine.get_main_loop().current_scene
+		if main_scene:
+			timer.timeout.connect(func(): _reapply_transforms(node))
+			main_scene.add_child(timer)
+	else:
+		# Reset transforms to default when no transforms are specified
+		node.scale = Vector2.ONE
+		node.rotation = 0.0
+		if node.has_meta("css_transform_applied"):
+			node.remove_meta("css_transform_applied")
+
+static func _reapply_transforms(node: Control) -> void:
+	if not is_instance_valid(node):
+		return
+	
+	if node.has_meta("pending_scale"):
+		node.scale = node.get_meta("pending_scale")
+	
+	if node.has_meta("pending_rotation"):
+		node.rotation = node.get_meta("pending_rotation")
+	
+	if node.has_meta("pending_scale"):
+		node.remove_meta("pending_scale")
+	if node.has_meta("pending_rotation"):
+		node.remove_meta("pending_rotation")

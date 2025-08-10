@@ -897,6 +897,18 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		"object-contain": rule.properties["object-fit"] = "contain"; return
 		"object-cover": rule.properties["object-fit"] = "cover"; return
 
+	if utility_name.begins_with("scale-") or utility_name.begins_with("scale-x-") or utility_name.begins_with("scale-y-"):
+		var transform_properties = TransformUtils.parse_scale_utility(utility_name)
+		for property in transform_properties:
+			rule.properties[property] = transform_properties[property]
+		return
+	
+	if utility_name.begins_with("rotate-") or utility_name.begins_with("rotate-x-") or utility_name.begins_with("rotate-y-"):
+		var transform_properties = TransformUtils.parse_rotation_utility(utility_name)
+		for property in transform_properties:
+			rule.properties[property] = transform_properties[property]
+		return
+
 	# Handle more utility classes as needed
 	# Add more cases here for other utilities
 
