@@ -507,6 +507,9 @@ static func add_element_methods(vm: LuauVM, lua_api: LuaAPI) -> void:
 	vm.lua_pushcallable(LuaDOMUtils._element_set_attribute_wrapper, "element.setAttribute")
 	vm.lua_setfield(-2, "setAttribute")
 	
+	vm.lua_pushcallable(LuaDOMUtils._element_create_tween_wrapper, "element.createTween")
+	vm.lua_setfield(-2, "createTween")
+	
 	_add_classlist_support(vm, lua_api)
 	
 	vm.lua_newtable()
@@ -1015,6 +1018,14 @@ static func _element_newindex_wrapper(vm: LuauVM) -> int:
 			vm.lua_pushvalue(3)
 			vm.lua_rawset(1)
 			return 0
+
+static func _element_create_tween_wrapper(vm: LuauVM) -> int:
+	var lua_api = vm.get_meta("lua_api") as LuaAPI
+	if not lua_api:
+		vm.lua_pushnil()
+		return 1
+	
+	return LuaTweenUtils.create_element_tween(vm, lua_api)
 
 static func _unsubscribe_wrapper(vm: LuauVM) -> int:
 	# Get subscription ID from the subscription table

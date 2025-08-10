@@ -22,6 +22,7 @@ TODO:
 
 Issues:
 1. **< br />** counts as 1 element in **WebsiteContainer**, therefore despite being (0,0) in size, it counts as double in spacing
+2. **Tween** API doesn't modify CSS, it operates independently at Godot level.
 
 Notes:
 - **< input />** is sort-of inline in normal web. We render it as a block element (new-line).
