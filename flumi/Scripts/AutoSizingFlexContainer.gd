@@ -88,6 +88,8 @@ func _resort() -> void:
 	
 	if not auto_size_width:
 		available_width = calculate_available_dimension(true)
+	elif flex_wrap == FlexContainer.FlexWrap.Wrap:
+		available_width = get_parent_or_fallback_size(true)
 	
 	if not auto_size_height:
 		available_height = calculate_available_dimension(false)
@@ -115,7 +117,15 @@ func _resort() -> void:
 	# Construct the new minimum size for this container
 	var new_min_size = custom_minimum_size
 	if auto_size_width:
-		new_min_size.x = needed_size.x
+		# If flex wrap is enabled, constrain width to parent's available space
+		if flex_wrap == FlexContainer.FlexWrap.Wrap:
+			var parent_width = get_parent_or_fallback_size(true)
+			if not is_nan(parent_width) and parent_width > 0:
+				new_min_size.x = min(needed_size.x, parent_width)
+			else:
+				new_min_size.x = needed_size.x
+		else:
+			new_min_size.x = needed_size.x
 	else:
 		# For w-full, ensure minimum size matches the needed size
 		new_min_size.x = needed_size.x
