@@ -14,14 +14,22 @@ static func connect_element_event(signal_node: Node, event_name: String, subscri
 	match event_name:
 		"click":
 			if signal_node.has_signal("pressed"):
-				signal_node.pressed.connect(subscription.lua_api._on_event_triggered.bind(subscription))
+				var wrapper = func(): 
+					LuaAudioUtils.mark_user_event()
+					subscription.lua_api._on_event_triggered(subscription)
+				signal_node.pressed.connect(wrapper)
 				subscription.connected_signal = "pressed"
 				subscription.connected_node = signal_node if signal_node != subscription.lua_api.get_dom_node(signal_node.get_parent(), "signal") else null
+				subscription.wrapper_func = wrapper
 				return true
 			elif signal_node is Control:
-				signal_node.gui_input.connect(subscription.lua_api._on_gui_input_click.bind(subscription))
+				var wrapper = func(event: InputEvent):
+					LuaAudioUtils.mark_user_event() 
+					subscription.lua_api._on_gui_input_click(subscription, event)
+				signal_node.gui_input.connect(wrapper)
 				subscription.connected_signal = "gui_input"
 				subscription.connected_node = signal_node
+				subscription.wrapper_func = wrapper
 				return true
 		"mousedown", "mouseup":
 			if signal_node is Control:
@@ -212,10 +220,16 @@ static func disconnect_subscription(subscription, lua_api) -> void:
 		match subscription.connected_signal:
 			"pressed":
 				if target_node.has_signal("pressed"):
-					target_node.pressed.disconnect(lua_api._on_event_triggered.bind(subscription))
+					if subscription.has("wrapper_func") and subscription.wrapper_func:
+						target_node.pressed.disconnect(subscription.wrapper_func)
+					else:
+						target_node.pressed.disconnect(lua_api._on_event_triggered.bind(subscription))
 			"gui_input":
 				if target_node.has_signal("gui_input"):
-					target_node.gui_input.disconnect(lua_api._on_gui_input_click.bind(subscription))
+					if subscription.has("wrapper_func") and subscription.wrapper_func:
+						target_node.gui_input.disconnect(subscription.wrapper_func)
+					else:
+						target_node.gui_input.disconnect(lua_api._on_gui_input_click.bind(subscription))
 			"gui_input_mouse":
 				if target_node.has_signal("gui_input"):
 					target_node.gui_input.disconnect(lua_api._on_gui_input_mouse_universal.bind(target_node))

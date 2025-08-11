@@ -14,6 +14,7 @@ class EventSubscription:
 	var connected_signal: String = ""
 	var connected_node: Node = null
 	var callback_func: Callable
+	var wrapper_func: Callable
 
 var dom_parser: HTMLParser
 var event_subscriptions: Dictionary = {}

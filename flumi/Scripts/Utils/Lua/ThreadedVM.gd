@@ -333,6 +333,7 @@ func _setup_additional_lua_apis():
 	LuaNetworkUtils.setup_network_api(lua_vm)
 	LuaJSONUtils.setup_json_api(lua_vm)
 	LuaWebSocketUtils.setup_websocket_api(lua_vm)
+	LuaAudioUtils.setup_audio_api(lua_vm)
 
 func _threaded_table_tostring_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)

@@ -7,10 +7,10 @@
 [ext_resource type="Texture2D" uid="uid://dmktpcmm6klre" path="res://Assets/Icons/volume-2.svg" id="4_5j8mp"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xqesv"]
-content_margin_left = 15.0
-content_margin_top = 15.0
-content_margin_right = 15.0
-content_margin_bottom = 15.0
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
 bg_color = Color(0.105882, 0.105882, 0.105882, 1)
 corner_radius_top_left = 15
 corner_radius_top_right = 15
@@ -81,7 +81,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_xqesv")
 layout_mode = 2
 
 [node name="Play" type="Button" parent="PanelContainer/HBoxContainer"]
-custom_minimum_size = Vector2(45, 0)
+custom_minimum_size = Vector2(45, 45)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 theme_override_styles/focus = SubResource("StyleBoxEmpty_1hbfy")
@@ -108,12 +108,9 @@ theme_override_icons/grabber_disabled = ExtResource("3_gfofq")
 theme_override_styles/slider = SubResource("StyleBoxFlat_1hbfy")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_naep2")
 theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_ccpdr")
-value = 50.0
-editable = false
-scrollable = false
 
 [node name="Volume" type="Button" parent="PanelContainer/HBoxContainer"]
-custom_minimum_size = Vector2(45, 0)
+custom_minimum_size = Vector2(45, 45)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 theme_override_styles/focus = SubResource("StyleBoxEmpty_1hbfy")
@@ -138,7 +135,12 @@ theme_override_icons/grabber = ExtResource("3_gfofq")
 theme_override_styles/slider = SubResource("StyleBoxFlat_1hbfy")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_naep2")
 theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_ccpdr")
+value = 50.0
 
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+
+[connection signal="pressed" from="PanelContainer/HBoxContainer/Play" to="." method="_on_play_pressed"]
+[connection signal="value_changed" from="PanelContainer/HBoxContainer/HSlider" to="." method="_on_progress_slider_value_changed"]
 [connection signal="mouse_entered" from="PanelContainer/HBoxContainer/Volume" to="." method="_on_volume_mouse_entered"]
 [connection signal="mouse_exited" from="PanelContainer/HBoxContainer/Volume" to="." method="_on_volume_mouse_exited"]
 [connection signal="pressed" from="PanelContainer/HBoxContainer/Volume" to="." method="_on_volume_pressed"]

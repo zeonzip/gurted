@@ -28,6 +28,7 @@ const SELECT = preload("res://Scenes/Tags/select.tscn")
 const OPTION = preload("res://Scenes/Tags/option.tscn")
 const TEXTAREA = preload("res://Scenes/Tags/textarea.tscn")
 const DIV = preload("res://Scenes/Tags/div.tscn")
+const AUDIO = preload("res://Scenes/Tags/audio.tscn")
 
 const MIN_SIZE = Vector2i(750, 200)
 
@@ -126,7 +127,7 @@ func render() -> void:
 				var inline_node = await create_element_node(inline_element, parser)
 				if inline_node:
 					# Input elements register their own DOM nodes in their init() function
-					if inline_element.tag_name not in ["input", "textarea", "select", "button"]:
+					if inline_element.tag_name not in ["input", "textarea", "select", "button", "audio"]:
 						parser.register_dom_node(inline_element, inline_node)
 					
 					safe_add_child(hbox, inline_node)
@@ -142,7 +143,7 @@ func render() -> void:
 		var element_node = await create_element_node(element, parser)
 		if element_node:
 			# Input elements register their own DOM nodes in their init() function
-			if element.tag_name not in ["input", "textarea", "select", "button"]:
+			if element.tag_name not in ["input", "textarea", "select", "button", "audio"]:
 				parser.register_dom_node(element, element_node)
 			
 			# ul/ol handle their own adding
@@ -279,7 +280,7 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 				var child_node = await create_element_node(child_element, parser)
 				if child_node and is_instance_valid(container_for_children):
 					# Input elements register their own DOM nodes in their init() function
-					if child_element.tag_name not in ["input", "textarea", "select", "button"]:
+					if child_element.tag_name not in ["input", "textarea", "select", "button", "audio"]:
 						parser.register_dom_node(child_element, child_node)
 					safe_add_child(container_for_children, child_node)
 
@@ -359,6 +360,9 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			node.init(element, parser)
 		"textarea":
 			node = TEXTAREA.instantiate()
+			node.init(element, parser)
+		"audio":
+			node = AUDIO.instantiate()
 			node.init(element, parser)
 		"div":
 			var styles = parser.get_element_styles_with_inheritance(element, "", [])

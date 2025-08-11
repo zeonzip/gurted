@@ -477,6 +477,12 @@ static func create_element_wrapper(vm: LuauVM, element: HTMLParser.HTMLElement, 
 static func add_element_methods(vm: LuauVM, lua_api: LuaAPI) -> void:
 	vm.set_meta("lua_api", lua_api)
 	
+	vm.lua_pushcallable(LuaAudioUtils._dom_audio_play_handler, "_dom_audio_play")
+	vm.lua_setglobal("_dom_audio_play")
+	
+	vm.lua_pushcallable(LuaAudioUtils._dom_audio_pause_handler, "_dom_audio_pause")
+	vm.lua_setglobal("_dom_audio_pause")
+	
 	vm.lua_pushcallable(LuaDOMUtils._element_on_wrapper, "element.on")
 	vm.lua_setfield(-2, "on")
 	
@@ -827,10 +833,20 @@ static func _element_index_wrapper(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)
 	var key: String = vm.luaL_checkstring(2)
 	
+	var lua_api = vm.get_meta("lua_api") as LuaAPI
+	
+	vm.lua_getfield(1, "_tag_name")
+	var tag_name: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+		
+	if tag_name == "audio":
+		vm.lua_getfield(1, "_element_id")
+		var element_id: String = vm.lua_tostring(-1)
+		vm.lua_pop(1)
+		return LuaAudioUtils.handle_dom_audio_index(vm, element_id, key)
+	
 	match key:
 		"text":
-			# Get lua_api from VM metadata
-			var lua_api = vm.get_meta("lua_api") as LuaAPI
 			if lua_api:
 				# Get element ID and find the element
 				vm.lua_getfield(1, "_element_id")
@@ -846,8 +862,6 @@ static func _element_index_wrapper(vm: LuauVM) -> int:
 			vm.lua_pushstring("")
 			return 1
 		"children":
-			# Get lua_api from VM metadata
-			var lua_api = vm.get_meta("lua_api") as LuaAPI
 			if lua_api:
 				# Get element ID and find the element
 				vm.lua_getfield(1, "_element_id")
@@ -870,7 +884,6 @@ static func _element_index_wrapper(vm: LuauVM) -> int:
 			return 1
 		_:
 			# Check for DOM traversal properties first
-			var lua_api = vm.get_meta("lua_api") as LuaAPI
 			if lua_api:
 				match key:
 					"parent":
@@ -990,6 +1003,16 @@ static func _element_newindex_wrapper(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)
 	var key: String = vm.luaL_checkstring(2)
 	var value = vm.lua_tovariant(3)
+	
+	vm.lua_getfield(1, "_tag_name")
+	var tag_name: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	if tag_name == "audio":
+		vm.lua_getfield(1, "_element_id")
+		var element_id: String = vm.lua_tostring(-1)
+		vm.lua_pop(1)
+		return LuaAudioUtils.handle_dom_audio_newindex(vm, element_id, key, value)
 	
 	match key:
 		"text":
