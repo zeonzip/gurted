@@ -1,0 +1,35 @@
+# Copy this file to config.toml and update the values as needed
+
+[server]
+address = "127.0.0.1"
+port = 8080
+
+[server.database]
+url = "postgresql://username:password@localhost:5432/domains"
+
+# Maximum number of database connections
+max_connections = 10
+
+[settings]
+# Available top-level domains
+tld_list = [
+    "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", 
+    "web", "rizz", "habibi", "sigma", "now", "it", "soy", 
+    "lol", "uwu", "ohio", "cat"
+]
+
+# Words that are not allowed in domain names
+offensive_words = [
+    "nigg", "sex", "porn", "igg"
+]
+
+[discord]
+# Discord bot token for domain approval notifications
+bot_token = "your-discord-bot-token-here"
+
+# Channel ID where domain approval messages will be sent
+channel_id = 0
+
+[auth]
+# JWT secret key for authentication (change this!)
+jwt_secret = "your-very-secure-secret-key-here"

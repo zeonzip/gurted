@@ -1,0 +1,5 @@
+-- Fix timestamp columns to use TIMESTAMPTZ instead of TIMESTAMP
+ALTER TABLE users ALTER COLUMN created_at TYPE TIMESTAMPTZ;
+ALTER TABLE invite_codes ALTER COLUMN created_at TYPE TIMESTAMPTZ;
+ALTER TABLE invite_codes ALTER COLUMN used_at TYPE TIMESTAMPTZ;
+ALTER TABLE domains ALTER COLUMN created_at TYPE TIMESTAMPTZ;
