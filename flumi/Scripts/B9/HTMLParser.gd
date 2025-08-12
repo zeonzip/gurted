@@ -151,7 +151,7 @@ func get_element_styles_with_inheritance(element: HTMLElement, event: String = "
 			styles[property] = inline_parsed[property]
 	
 	# Inherit certain properties from parent elements
-	var inheritable_properties = ["width", "height", "font-size", "color", "font-family", "cursor"]
+	var inheritable_properties = ["width", "height", "font-size", "color", "font-family", "cursor", "font-bold", "font-italic", "underline"]
 	var parent_element = element.parent
 	while parent_element:
 		var parent_styles = get_element_styles_internal(parent_element, event)

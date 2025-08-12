@@ -47,6 +47,10 @@ func set_icon(new_icon: Texture) -> void:
 	icon.rotation = 0
 
 func update_icon_from_url(icon_url: String) -> void:
+	if icon_url.is_empty():
+		stop_loading()
+		return
+	
 	const LOADER_CIRCLE = preload("res://Assets/Icons/loader-circle.svg")
 	
 	loading_tween = create_tween()
@@ -68,9 +72,7 @@ func update_icon_from_url(icon_url: String) -> void:
 	# Only update if tab still exists
 	if is_instance_valid(self):
 		set_icon(icon_resource)
-		if loading_tween:
-			loading_tween.kill()
-			loading_tween = null
+		stop_loading()
 
 func _on_button_mouse_entered() -> void:
 	mouse_over_tab = true
@@ -81,6 +83,27 @@ func _on_button_mouse_exited() -> void:
 	mouse_over_tab = false
 	if is_active: return
 	gradient_texture.texture = TAB_GRADIENT_DEFAULT
+
+func start_loading() -> void:
+	const LOADER_CIRCLE = preload("res://Assets/Icons/loader-circle.svg")
+	
+	stop_loading()
+	
+	loading_tween = create_tween()
+	set_icon(LOADER_CIRCLE)
+	loading_tween.set_loops()
+	icon.pivot_offset = Vector2(11.5, 11.5)
+	loading_tween.tween_method(func(angle):
+		if !is_instance_valid(icon): 
+			if loading_tween: loading_tween.kill()
+			return
+		icon.rotation = angle
+	, 0.0, TAU, 1.0)
+
+func stop_loading() -> void:
+	if loading_tween:
+		loading_tween.kill()
+		loading_tween = null
 
 func _exit_tree():
 	if loading_tween:

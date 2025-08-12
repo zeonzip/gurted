@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://bytm7bt2s4ak8"]
+[gd_scene load_steps=40 format=3 uid="uid://bytm7bt2s4ak8"]
 
 [ext_resource type="Script" uid="uid://bg5iqnwic1rio" path="res://Scripts/main.gd" id="1_8q3xr"]
 [ext_resource type="Texture2D" uid="uid://df1m4j7uxi63v" path="res://Assets/Icons/chevron-down.svg" id="2_6bp64"]
@@ -9,8 +9,21 @@
 [ext_resource type="PackedScene" uid="uid://sqhcxhcre081" path="res://Scenes/Tab.tscn" id="4_344ge"]
 [ext_resource type="Texture2D" uid="uid://cu4hjoba6etf" path="res://Assets/Icons/rotate-cw.svg" id="5_344ge"]
 [ext_resource type="Texture2D" uid="uid://cehbtwq6gq0cn" path="res://Assets/Icons/plus.svg" id="5_ynf5e"]
+[ext_resource type="Texture2D" uid="uid://cklatjc4m38dy" path="res://Assets/Icons/ellipsis-vertical.svg" id="10_6iyac"]
 [ext_resource type="Script" uid="uid://bgqglerkcylxx" path="res://addons/SmoothScroll/SmoothScrollContainer.gd" id="10_d1ilt"]
 [ext_resource type="Script" uid="uid://b7h0k2h2qwlqv" path="res://addons/SmoothScroll/scroll_damper/expo_scroll_damper.gd" id="11_6iyac"]
+[ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="11_ee4r6"]
+[ext_resource type="Script" uid="uid://vjjhljlftlbk" path="res://Scripts/OptionButton.gd" id="11_gt3je"]
+[ext_resource type="Texture2D" uid="uid://du24f6em2nqwq" path="res://Assets/Icons/external-link.svg" id="12_gt3je"]
+[ext_resource type="Texture2D" uid="uid://81l2fi381yub" path="res://Assets/Icons/square.svg" id="13_3pmx8"]
+[ext_resource type="Texture2D" uid="uid://dwxquqmmd6dqx" path="res://Assets/Icons/hat-glasses.svg" id="14_u50mg"]
+[ext_resource type="Texture2D" uid="uid://bcaoarwrwqbby" path="res://Assets/Icons/history.svg" id="15_cbgmd"]
+[ext_resource type="Texture2D" uid="uid://cbwitcygwoqdo" path="res://Assets/Icons/download.svg" id="16_1w6v2"]
+[ext_resource type="Texture2D" uid="uid://codete2cbsqo2" path="res://Assets/Icons/star.svg" id="17_ueoa1"]
+[ext_resource type="Texture2D" uid="uid://c5pr3tb8rwxb8" path="res://Assets/Icons/message-circle-question-mark.svg" id="18_6vcvc"]
+[ext_resource type="Texture2D" uid="uid://mjr3nwamrqon" path="res://Assets/Icons/settings.svg" id="19_7k868"]
+[ext_resource type="Texture2D" uid="uid://cilwaxcv5dr1i" path="res://Assets/Icons/log-out.svg" id="20_hpc6h"]
+[ext_resource type="PackedScene" uid="uid://cn24pafwdpb1q" path="res://Scenes/BrowserMenus/history.tscn" id="24_3pmx8"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_344ge"]
 
@@ -49,9 +62,9 @@ corner_radius_bottom_left = 50
 bg_color = Color(0.6, 0.6, 0.6, 0)
 draw_center = false
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8gbba"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_u50mg"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8gbba"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cbgmd"]
 bg_color = Color(0.168627, 0.168627, 0.168627, 1)
 corner_radius_top_left = 15
 corner_radius_top_right = 15
@@ -60,8 +73,8 @@ corner_radius_bottom_left = 15
 expand_margin_left = 40.0
 
 [sub_resource type="Theme" id="Theme_jjvhh"]
-LineEdit/styles/focus = SubResource("StyleBoxEmpty_8gbba")
-LineEdit/styles/normal = SubResource("StyleBoxFlat_8gbba")
+LineEdit/styles/focus = SubResource("StyleBoxEmpty_u50mg")
+LineEdit/styles/normal = SubResource("StyleBoxFlat_cbgmd")
 
 [sub_resource type="Resource" id="Resource_fdnlq"]
 script = ExtResource("11_6iyac")
@@ -200,6 +213,59 @@ scale = Vector2(0.85, 0.85)
 texture = ExtResource("3_8gbba")
 stretch_mode = 5
 
+[node name="OptionsButton" type="Button" parent="VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(45, 0)
+layout_mode = 2
+theme_override_styles/focus = SubResource("StyleBoxEmpty_d1ilt")
+theme_override_styles/hover = SubResource("StyleBoxFlat_fdnlq")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_d1ilt")
+theme_override_styles/normal = SubResource("StyleBoxFlat_d1ilt")
+icon = ExtResource("10_6iyac")
+icon_alignment = 1
+script = ExtResource("11_gt3je")
+
+[node name="OptionsMenu" type="PopupMenu" parent="VBoxContainer/HBoxContainer/OptionsButton"]
+unique_name_in_owner = true
+position = Vector2i(1510, 125)
+size = Vector2i(408, 360)
+theme = ExtResource("11_ee4r6")
+theme_override_constants/v_separation = 10
+item_count = 11
+item_0/text = "New tab                                             (CTRL T)"
+item_0/icon = ExtResource("12_gt3je")
+item_0/id = 0
+item_1/text = "New window                                     (CTRL N)"
+item_1/icon = ExtResource("13_3pmx8")
+item_1/id = 1
+item_2/text = "New Incognito Window         (CTRL SHIFT N)"
+item_2/icon = ExtResource("14_u50mg")
+item_2/id = 2
+item_3/id = 3
+item_3/separator = true
+item_4/text = "History                                               (CTRL H)"
+item_4/icon = ExtResource("15_cbgmd")
+item_4/id = 4
+item_5/text = "Downloads                                         (CTRL J)"
+item_5/icon = ExtResource("16_1w6v2")
+item_5/id = 5
+item_6/text = "Bookmarks                             (CTRL SHIFT B)"
+item_6/icon = ExtResource("17_ueoa1")
+item_6/id = 7
+item_7/id = 7
+item_7/separator = true
+item_8/text = "Help"
+item_8/icon = ExtResource("18_6vcvc")
+item_8/id = 8
+item_9/text = "Settings"
+item_9/icon = ExtResource("19_7k868")
+item_9/id = 9
+item_10/text = "Exit"
+item_10/icon = ExtResource("20_hpc6h")
+item_10/id = 10
+
+[node name="Control2" type="Control" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
 [node name="Spacer3" type="Control" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 2)
 layout_mode = 2
@@ -216,11 +282,16 @@ metadata/_custom_type_script = "uid://bgqglerkcylxx"
 
 [node name="WebsiteContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(200, 200)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 22
+
+[node name="HistoryContainer" parent="VBoxContainer/ScrollContainer" instance=ExtResource("24_3pmx8")]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="WebsiteBackground" type="Panel" parent="."]
 unique_name_in_owner = true
@@ -259,3 +330,8 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_21xkr")
 
 [connection signal="pressed" from="VBoxContainer/TabContainer/NewTabButton" to="VBoxContainer/TabContainer" method="_on_new_tab_button_pressed"]
+[connection signal="focus_entered" from="VBoxContainer/HBoxContainer/LineEdit" to="." method="_on_search_focus_entered"]
+[connection signal="focus_exited" from="VBoxContainer/HBoxContainer/LineEdit" to="." method="_on_search_focus_exited"]
+[connection signal="text_submitted" from="VBoxContainer/HBoxContainer/LineEdit" to="." method="_on_search_submitted"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/OptionsButton" to="VBoxContainer/HBoxContainer/OptionsButton" method="_on_pressed"]
+[connection signal="id_pressed" from="VBoxContainer/HBoxContainer/OptionsButton/OptionsMenu" to="VBoxContainer/HBoxContainer/OptionsButton" method="_on_options_menu_id_pressed"]

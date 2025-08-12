@@ -404,10 +404,22 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 	if active_child:
 		if width or height:
 			# Explicit sizing from CSS
-			var new_child_size = Vector2(
-				width if width else active_child.custom_minimum_size.x,
-				height if height else max(active_child.custom_minimum_size.y, active_child.size.y)
-			)
+			var new_width = active_child.custom_minimum_size.x
+			var new_height = max(active_child.custom_minimum_size.y, active_child.size.y)
+			
+			if width:
+				if SizingUtils.is_percentage(width):
+					new_width = SizingUtils.calculate_percentage_size(width, SizingUtils.DEFAULT_VIEWPORT_WIDTH)
+				else:
+					new_width = width
+			
+			if height:
+				if SizingUtils.is_percentage(height):
+					new_height = SizingUtils.calculate_percentage_size(height, SizingUtils.DEFAULT_VIEWPORT_HEIGHT)
+				else:
+					new_height = height
+			
+			var new_child_size = Vector2(new_width, new_height)
 			
 			active_child.custom_minimum_size = new_child_size
 			

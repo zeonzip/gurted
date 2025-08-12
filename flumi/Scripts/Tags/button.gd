@@ -189,10 +189,23 @@ func apply_padding_to_stylebox(style_box: StyleBoxFlat, styles: Dictionary) -> v
 
 func apply_size_and_flags(ctrl: Control, width: Variant, height: Variant) -> void:
 	if width != null or height != null:
-		ctrl.custom_minimum_size = Vector2(
-			width if width != null else 0,
-			height if height != null else 0
-		)
+		var new_width = 0
+		var new_height = 0
+		
+		if width != null:
+			if SizingUtils.is_percentage(width):
+				new_width = SizingUtils.calculate_percentage_size(width, SizingUtils.DEFAULT_VIEWPORT_WIDTH)
+			else:
+				new_width = width
+		
+		if height != null:
+			if SizingUtils.is_percentage(height):
+				new_height = SizingUtils.calculate_percentage_size(height, SizingUtils.DEFAULT_VIEWPORT_HEIGHT)
+			else:
+				new_height = height
+		
+		ctrl.custom_minimum_size = Vector2(new_width, new_height)
+		
 		if width != null:
 			ctrl.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		if height != null:

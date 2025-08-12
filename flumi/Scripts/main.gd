@@ -4,6 +4,8 @@ extends Control
 @onready var website_container: Control = %WebsiteContainer
 @onready var website_background: Control = %WebsiteBackground
 @onready var tab_container: TabManager = $VBoxContainer/TabContainer
+@onready var search_bar: LineEdit = $VBoxContainer/HBoxContainer/LineEdit
+
 const LOADER_CIRCLE = preload("res://Assets/Icons/loader-circle.svg")
 const AUTO_SIZING_FLEX_CONTAINER = preload("res://Scripts/AutoSizingFlexContainer.gd")
 
@@ -53,6 +55,8 @@ func _ready():
 	DisplayServer.window_set_min_size(MIN_SIZE)
 	
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
+	
+	call_deferred("render")
 
 func _on_viewport_size_changed():
 	recalculate_percentage_elements(website_container)
@@ -64,7 +68,49 @@ func recalculate_percentage_elements(node: Node):
 	for child in node.get_children():
 		recalculate_percentage_elements(child)
 
+var current_domain = ""  # Store current domain for display
+
+func _on_search_submitted(url: String) -> void:
+	print("Search submitted: ", url)
+	
+	if GurtProtocol.is_gurt_domain(url):
+		print("Processing as GURT domain")
+		
+		var tab = tab_container.tabs[tab_container.active_tab]
+		tab.start_loading()
+		
+		var result = await GurtProtocol.handle_gurt_domain(url)
+		
+		if result.has("error"):
+			print("GURT domain error: ", result.error)
+			const GLOBE_ICON = preload("res://Assets/Icons/globe.svg")
+			tab.stop_loading()
+			tab.set_icon(GLOBE_ICON)
+		
+		var html_bytes = result.html.to_utf8_buffer()
+		render_content(html_bytes)
+		
+		if result.has("display_url"):
+			current_domain = result.display_url
+			if not search_bar.has_focus():
+				search_bar.text = current_domain
+	else:
+		print("Non-GURT URL entered: ", url)
+
+func _on_search_focus_entered() -> void:
+	if not current_domain.is_empty():
+		search_bar.text = "gurt://" + current_domain
+
+func _on_search_focus_exited() -> void:
+	if not current_domain.is_empty():
+		search_bar.text = current_domain
+
+
 func render() -> void:
+	render_content(Constants.HTML_CONTENT)
+
+func render_content(html_bytes: PackedByteArray) -> void:
+	
 	# Clear existing content
 	for child in website_container.get_children():
 		child.queue_free()
@@ -72,8 +118,6 @@ func render() -> void:
 	font_dependent_elements.clear()
 	FontManager.clear_fonts()
 	FontManager.set_refresh_callback(refresh_fonts)
-	
-	var html_bytes = Constants.HTML_CONTENT
 	
 	var parser: HTMLParser = HTMLParser.new(html_bytes)
 	var parse_result = parser.parse()
@@ -109,57 +153,59 @@ func render() -> void:
 		add_child(lua_api)
 
 	var i = 0
-	while i < body.children.size():
-		var element: HTMLParser.HTMLElement = body.children[i]
-		
-		if should_group_as_inline(element):
-			# Create an HBoxContainer for consecutive inline elements
-			var inline_elements: Array[HTMLParser.HTMLElement] = []
-
-			while i < body.children.size() and should_group_as_inline(body.children[i]):
-				inline_elements.append(body.children[i])
-				i += 1
-
-			var hbox = HBoxContainer.new()
-			hbox.add_theme_constant_override("separation", 4)
-
-			for inline_element in inline_elements:
-				var inline_node = await create_element_node(inline_element, parser)
-				if inline_node:
-					# Input elements register their own DOM nodes in their init() function
-					if inline_element.tag_name not in ["input", "textarea", "select", "button", "audio"]:
-						parser.register_dom_node(inline_element, inline_node)
-					
-					safe_add_child(hbox, inline_node)
-					# Handle hyperlinks for all inline elements
-					if contains_hyperlink(inline_element) and inline_node is RichTextLabel:
-						inline_node.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
-				else:
-					print("Failed to create inline element node: ", inline_element.tag_name)
-
-			safe_add_child(website_container, hbox)
-			continue
-		
-		var element_node = await create_element_node(element, parser)
-		if element_node:
-			# Input elements register their own DOM nodes in their init() function
-			if element.tag_name not in ["input", "textarea", "select", "button", "audio"]:
-				parser.register_dom_node(element, element_node)
+	if body:
+		while i < body.children.size():
+			var element: HTMLParser.HTMLElement = body.children[i]
 			
-			# ul/ol handle their own adding
-			if element.tag_name != "ul" and element.tag_name != "ol":
-				safe_add_child(website_container, element_node)
+			if should_group_as_inline(element):
+				# Create an HBoxContainer for consecutive inline elements
+				var inline_elements: Array[HTMLParser.HTMLElement] = []
 
-			# Handle hyperlinks for all elements
-			if contains_hyperlink(element):
-				if element_node is RichTextLabel:
-					element_node.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
-				elif element_node.has_method("get") and element_node.get("rich_text_label"):
-					element_node.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
-		else:
-			print("Couldn't parse unsupported HTML tag \"%s\"" % element.tag_name)
-		
-		i += 1
+				while i < body.children.size() and should_group_as_inline(body.children[i]):
+					inline_elements.append(body.children[i])
+					i += 1
+
+				var hbox = HBoxContainer.new()
+				hbox.add_theme_constant_override("separation", 4)
+
+				for inline_element in inline_elements:
+					var inline_node = await create_element_node(inline_element, parser)
+					if inline_node:
+						
+						# Input elements register their own DOM nodes in their init() function
+						if inline_element.tag_name not in ["input", "textarea", "select", "button", "audio"]:
+							parser.register_dom_node(inline_element, inline_node)
+						
+						safe_add_child(hbox, inline_node)
+						# Handle hyperlinks for all inline elements
+						if contains_hyperlink(inline_element) and inline_node is RichTextLabel:
+							inline_node.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+					else:
+						print("Failed to create inline element node: ", inline_element.tag_name)
+
+				safe_add_child(website_container, hbox)
+				continue
+			
+			var element_node = await create_element_node(element, parser)
+			if element_node:
+				
+				# Input elements register their own DOM nodes in their init() function
+				if element.tag_name not in ["input", "textarea", "select", "button", "audio"]:
+					parser.register_dom_node(element, element_node)
+				
+				# ul/ol handle their own adding
+				if element.tag_name != "ul" and element.tag_name != "ol":
+					safe_add_child(website_container, element_node)
+
+				if contains_hyperlink(element):
+					if element_node is RichTextLabel:
+						element_node.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+					elif element_node.has_method("get") and element_node.get("rich_text_label"):
+						element_node.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+			else:
+				print("Couldn't parse unsupported HTML tag \"%s\"" % element.tag_name)
+			
+			i += 1
 	
 	if scripts.size() > 0 and lua_api:
 		parser.process_scripts(lua_api, null)
@@ -380,6 +426,9 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			if has_only_text:
 				var p_node = P.instantiate()
 				p_node.init(element, parser)
+				
+				var div_styles = parser.get_element_styles_with_inheritance(element, "", [])
+				StyleManager.apply_styles_to_label(p_node, div_styles, element, parser)
 				
 				var container_for_children = node
 				if node is PanelContainer and node.get_child_count() > 0:

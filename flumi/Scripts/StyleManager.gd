@@ -318,15 +318,22 @@ static func apply_margin_wrapper(node: Control, styles: Dictionary) -> Control:
 	var margin_container = MarginContainer.new()
 	margin_container.name = "MarginWrapper_" + node.name
 	
-	# Copy size flags from the original node
-	margin_container.size_flags_horizontal = node.size_flags_horizontal
-	margin_container.size_flags_vertical = node.size_flags_vertical
+	var has_explicit_width = styles.has("width")
+	var has_explicit_height = styles.has("height")
+	
+	if has_explicit_width:
+		margin_container.size_flags_horizontal = node.size_flags_horizontal
+	else:
+		margin_container.size_flags_horizontal = node.size_flags_horizontal
+		node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		
+	if has_explicit_height:
+		margin_container.size_flags_vertical = node.size_flags_vertical
+	else:
+		margin_container.size_flags_vertical = node.size_flags_vertical
+		node.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	
 	apply_margin_styles_to_container(margin_container, styles)
-	
-	# Reset the original node's size flags since they're now handled by the wrapper
-	node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	node.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	
 	# Handle reparenting properly
 	var original_parent = node.get_parent()
@@ -542,9 +549,22 @@ static func parse_radius(radius_str: String) -> int:
 
 static func apply_font_to_label(label: RichTextLabel, font_resource: Font) -> void:
 	label.add_theme_font_override("normal_font", font_resource)
-	label.add_theme_font_override("bold_font", font_resource) 
-	label.add_theme_font_override("italics_font", font_resource)
-	label.add_theme_font_override("bold_italics_font", font_resource)
+	
+	var bold_font = SystemFont.new()
+	bold_font.font_names = font_resource.font_names if font_resource is SystemFont else ["Arial"]
+	bold_font.font_weight = 700  # Bold weight
+	label.add_theme_font_override("bold_font", bold_font)
+	
+	var italic_font = SystemFont.new()
+	italic_font.font_names = font_resource.font_names if font_resource is SystemFont else ["Arial"]
+	italic_font.font_italic = true
+	label.add_theme_font_override("italics_font", italic_font)
+	
+	var bold_italic_font = SystemFont.new()
+	bold_italic_font.font_names = font_resource.font_names if font_resource is SystemFont else ["Arial"]
+	bold_italic_font.font_weight = 700  # Bold weight
+	bold_italic_font.font_italic = true
+	label.add_theme_font_override("bold_italics_font", bold_italic_font)
 
 static func apply_font_to_button(button: Button, styles: Dictionary) -> void:
 	if styles.has("font-family"):
