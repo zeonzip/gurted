@@ -45,7 +45,6 @@ func apply_button_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 	
 	if styles.has("font-size"):
 		var font_size = int(styles["font-size"])
-		print("SETTING FONT SIZE: ", font_size, " FOR BUTTON NAME: ", element.tag_name)
 		button_node.add_theme_font_size_override("font_size", font_size)
 	
 	# Apply text color with state-dependent colors

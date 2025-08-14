@@ -32,5 +32,4 @@ static func get_user_agent() -> String:
 		godot_version.minor,
 		godot_version.patch
 	]
-	print(user_agent)
 	return user_agent

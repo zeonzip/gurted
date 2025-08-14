@@ -106,7 +106,6 @@ func handle_style_element(style_element: HTMLElement) -> void:
 	var src = style_element.get_attribute("src")
 	if src.length() > 0:
 		# TODO: Handle external CSS loading when Network module is available
-		print("External CSS not yet supported: " + src)
 		return
 	
 	# Handle inline CSS - we'll get the text content when parsing is complete
@@ -119,21 +118,19 @@ func process_styles() -> void:
 	if not parse_result.css_parser:
 		return
 	
-	# Collect all style element content
 	var css_content = Constants.DEFAULT_CSS
 	var style_elements = find_all("style")
 	for style_element in style_elements:
 		if style_element.get_attribute("src").is_empty():
 			css_content += style_element.text_content + "\n"
-	print("Processing CSS: ", css_content)
-	# Parse CSS if we have any
+
 	if css_content.length() > 0:
 		parse_result.css_parser.css_text = css_content
 		parse_result.css_parser.parse()
-		for child: CSSParser.CSSRule in parse_result.css_parser.stylesheet.rules:
-			print("INFO: for selector \"%s\" we have props: %s" % [child.selector, child.properties])
 
 func get_element_styles_with_inheritance(element: HTMLElement, event: String = "", visited_elements: Array = []) -> Dictionary:
+	if !parse_result.css_parser:
+		return {}
 	# Prevent infinite recursion
 	if element in visited_elements:
 		return {}
@@ -335,7 +332,7 @@ func process_fonts() -> void:
 		var weight = font_element.get_attribute("weight", "400")
 		
 		if name_str and src:
-			FontManager.register_font(name, src, weight)
+			FontManager.register_font(name_str, src, weight)
 
 func get_meta_content(name_: String) -> String:
 	var meta_elements = find_all("meta", "name")
@@ -366,9 +363,8 @@ func process_scripts(lua_api: LuaAPI, lua_vm) -> void:
 		
 		if not src.is_empty():
 			# TODO: add support for external Lua script
-			print("External script found: ", src)
+			pass
 		elif not inline_code.is_empty():
-			print("Executing inline Lua script")
 			lua_api.execute_lua_script(inline_code, lua_vm)
 
 func get_all_stylesheets() -> Array[String]:

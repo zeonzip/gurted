@@ -29,7 +29,7 @@ window/stretch/aspect="ignore"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/DatePicker/plugin.cfg", "res://addons/SmoothScroll/plugin.cfg", "res://addons/godot-flexbox/plugin.cfg")
+enabled=PackedStringArray("res://addons/DatePicker/plugin.cfg", "res://addons/SmoothScroll/plugin.cfg", "res://addons/godot-flexbox/plugin.cfg", "res://addons/gurt-protocol/plugin.cfg")
 
 [file_customization]
 

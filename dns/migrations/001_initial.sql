@@ -1,4 +1,3 @@
--- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -8,7 +7,6 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create invite codes table
 CREATE TABLE IF NOT EXISTS invite_codes (
     id SERIAL PRIMARY KEY,
     code VARCHAR(32) UNIQUE NOT NULL,
@@ -18,7 +16,6 @@ CREATE TABLE IF NOT EXISTS invite_codes (
     used_at TIMESTAMP
 );
 
--- Create domains table
 CREATE TABLE IF NOT EXISTS domains (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -31,7 +28,6 @@ CREATE TABLE IF NOT EXISTS domains (
     UNIQUE(name, tld)
 );
 
--- Create indexes for faster lookups
 CREATE INDEX IF NOT EXISTS idx_domains_name_tld ON domains(name, tld);
 CREATE INDEX IF NOT EXISTS idx_domains_user_id ON domains(user_id);
 CREATE INDEX IF NOT EXISTS idx_domains_status ON domains(status);

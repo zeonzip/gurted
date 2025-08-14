@@ -7,32 +7,51 @@ static func is_gurt_domain(url: String) -> bool:
 	if url.begins_with("gurt://"):
 		return true
 	
-	var parts = url.split(".")
-	return parts.size() == 2 and not url.contains("://")
+	if not url.contains("://"):
+		var parts = url.split(".")
+		return parts.size() == 2
+	
+	return false
 
 static func parse_gurt_domain(url: String) -> Dictionary:
-	print("Parsing URL: ", url)
-	
 	var domain_part = url
 	
 	if url.begins_with("gurt://"):
-		domain_part = url.substr(7)  # Remove "gurt://"
+		domain_part = url.substr(7)
+	
+	if domain_part.contains(":") or domain_part.begins_with("127.0.0.1") or domain_part.begins_with("localhost") or is_ip_address(domain_part):
+		return {
+			"direct_address": domain_part,
+			"display_url": domain_part,
+			"is_direct": true
+		}
 	
 	var parts = domain_part.split(".")
 	if parts.size() != 2:
-		print("Invalid domain format: ", domain_part)
 		return {}
 	
-	print("Parsed domain - name: ", parts[0], ", tld: ", parts[1])
 	return {
 		"name": parts[0],
 		"tld": parts[1],
-		"display_url": domain_part
+		"display_url": domain_part,
+		"is_direct": false
 	}
 
-static func fetch_domain_info(name: String, tld: String) -> Dictionary:
-	print("Fetching domain info for: ", name, ".", tld)
+static func is_ip_address(address: String) -> bool:
+	var parts = address.split(".")
+	if parts.size() != 4:
+		return false
 	
+	for part in parts:
+		if not part.is_valid_int():
+			return false
+		var num = part.to_int()
+		if num < 0 or num > 255:
+			return false
+	
+	return true
+
+static func fetch_domain_info(name: String, tld: String) -> Dictionary:	
 	var http_request = HTTPRequest.new()
 	var tree = Engine.get_main_loop()
 	tree.current_scene.add_child(http_request)
@@ -53,14 +72,10 @@ static func fetch_domain_info(name: String, tld: String) -> Dictionary:
 	http_request.queue_free()
 	
 	if response[1] == 0 and response[3].size() == 0:
-		print("DNS API request timed out")
 		return {"error": "DNS server is not responding"}
 	
 	var http_code = response[1]
 	var body = response[3]
-	
-	print("DNS API response code: ", http_code)
-	print("DNS API response body: ", body.get_string_from_utf8())
 	
 	if http_code != 200:
 		return {"error": "Domain not found or not approved"}
@@ -69,65 +84,124 @@ static func fetch_domain_info(name: String, tld: String) -> Dictionary:
 	var parse_result = json.parse(body.get_string_from_utf8())
 	
 	if parse_result != OK:
-		print("JSON parse error: ", parse_result)
 		return {"error": "Invalid JSON response from DNS server"}
 	
-	print("Domain info retrieved: ", json.data)
 	return json.data
 
-static func fetch_index_html(ip: String) -> String:
-	print("Fetching index.html from IP: ", ip)
+static func fetch_content_via_gurt(ip: String, path: String = "/") -> Dictionary:	
+	var client = GurtProtocolClient.new()
 	
-	var http_request = HTTPRequest.new()
-	var tree = Engine.get_main_loop()
-	tree.current_scene.add_child(http_request)
+	if not client.create_client(30):
+		return {"error": "Failed to create GURT client"}
 	
-	http_request.timeout = 5.0
+	var gurt_url = "gurt://" + ip + ":4878" + path
 	
-	var url = "http://" + ip + "/index.html"
-	print("Fetching from URL: ", url)
+	var response = client.request(gurt_url, {"method": "GET"})
 	
-	var error = http_request.request(url)
+	client.disconnect()
 	
-	if error != OK:
-		print("HTTP request to IP failed with error: ", error)
-		http_request.queue_free()
-		return ""
+	if not response:
+		return {"error": "No response from GURT server"}
 	
-	var response = await http_request.request_completed
-	http_request.queue_free()
+	if not response.is_success:
+		var error_msg = "Server returned status " + str(response.status_code) + ": " + response.status_message
+		return {"error": error_msg}
 	
-	if response[1] == 0 and response[3].size() == 0:
-		print("Index.html request timed out")
-		return ""
-	
-	var http_code = response[1]
-	var body = response[3]
-	
-	print("IP response code: ", http_code)
-	
-	if http_code != 200:
-		print("Failed to fetch index.html, HTTP code: ", http_code)
-		return ""
-	
-	var html_content = body.get_string_from_utf8()
-	print("Successfully fetched HTML content (", html_content.length(), " characters)")
-	return html_content
+	var content = response.body
+	return {"content": content, "headers": response.headers}
 
-static func handle_gurt_domain(url: String) -> Dictionary:
-	print("Handling GURT domain: ", url)
+static func fetch_content_via_gurt_direct(address: String, path: String = "/") -> Dictionary:
+	var shared_result = {"finished": false}
+	var thread = Thread.new()
+	var mutex = Mutex.new()
 	
+	var thread_func = func():
+		var local_result = {}
+		var client = GurtProtocolClient.new()
+		
+		if not client.create_client(10):
+			local_result = {"error": "Failed to create GURT client"}
+		else:
+			var gurt_url: String
+			if address.contains(":"):
+				gurt_url = "gurt://" + address + path
+			else:
+				gurt_url = "gurt://" + address + ":4878" + path
+			
+			var response = client.request(gurt_url, {"method": "GET"})
+			
+			client.disconnect()
+			
+			if not response:
+				local_result = {"error": "No response from GURT server"}
+			else:
+				var content = response.body
+				
+				if not response.is_success:
+					var error_msg = "Server returned status " + str(response.status_code) + ": " + response.status_message
+					local_result = {"error": error_msg, "content": content, "headers": response.headers}
+				else:
+					local_result = {"content": content, "headers": response.headers}
+		
+		mutex.lock()
+		shared_result.clear()
+		for key in local_result:
+			shared_result[key] = local_result[key]
+		shared_result["finished"] = true
+		mutex.unlock()
+	
+	thread.start(thread_func)
+	
+	var finished = false
+	while not finished:
+		await Engine.get_main_loop().process_frame
+		OS.delay_msec(10)
+		
+		mutex.lock()
+		finished = shared_result.get("finished", false)
+		mutex.unlock()
+	
+	thread.wait_to_finish()
+	
+	mutex.lock()
+	var final_result = {}
+	for key in shared_result:
+		if key != "finished":
+			final_result[key] = shared_result[key]
+	mutex.unlock()
+	
+	return final_result
+
+static func handle_gurt_domain(url: String) -> Dictionary:	
 	var parsed = parse_gurt_domain(url)
 	if parsed.is_empty():
-		return {"error": "Invalid domain format. Use: domain.tld", "html": create_error_page("Invalid domain format. Use: domain.tld")}
+		return {"error": "Invalid domain format. Use: domain.tld or IP:port", "html": create_error_page("Invalid domain format. Use: domain.tld or IP:port")}
 	
-	var domain_info = await fetch_domain_info(parsed.name, parsed.tld)
-	if domain_info.has("error"):
-		return {"error": domain_info.error, "html": create_error_page(domain_info.error)}
+	var target_address: String
+	var path = "/"
 	
-	var html_content = await fetch_index_html(domain_info.ip)
+	if parsed.get("is_direct", false):
+		target_address = parsed.direct_address
+	else:
+		var domain_info = await fetch_domain_info(parsed.name, parsed.tld)
+		if domain_info.has("error"):
+			return {"error": domain_info.error, "html": create_error_page(domain_info.error)}
+		target_address = domain_info.ip
+	
+	var content_result = await fetch_content_via_gurt_direct(target_address, path)
+	if content_result.has("error"):
+		var error_msg = "Failed to fetch content from " + target_address + " via GURT protocol - " + content_result.error
+		if content_result.has("content") and not content_result.content.is_empty():
+			return {"html": content_result.content, "display_url": parsed.display_url}
+		return {"error": error_msg, "html": create_error_page(error_msg)}
+	
+	if not content_result.has("content"):
+		var error_msg = "No content received from " + target_address
+		return {"error": error_msg, "html": create_error_page(error_msg)}
+	
+	var html_content = content_result.content
 	if html_content.is_empty():
-		var error_msg = "Failed to fetch index.html from " + domain_info.ip
+		var error_msg = "Empty content received from " + target_address
 		return {"error": error_msg, "html": create_error_page(error_msg)}
 	
 	return {"html": html_content, "display_url": parsed.display_url}
@@ -137,7 +211,7 @@ static func get_error_type(error_message: String) -> Dictionary:
 		return {"code": "ERR_NAME_NOT_RESOLVED", "title": "This site can't be reached", "icon": "🌐"}
 	elif "timeout" in error_message.to_lower() or "timed out" in error_message.to_lower():
 		return {"code": "ERR_CONNECTION_TIMED_OUT", "title": "This site can't be reached", "icon": "⏰"}
-	elif "Failed to fetch" in error_message or "HTTP request failed" in error_message:
+	elif "Failed to fetch" in error_message or "No response" in error_message:
 		return {"code": "ERR_CONNECTION_REFUSED", "title": "This site can't be reached", "icon": "🚫"}
 	elif "Invalid domain format" in error_message:
 		return {"code": "ERR_INVALID_URL", "title": "This page isn't working", "icon": "⚠️"}

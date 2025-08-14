@@ -23,6 +23,22 @@ pub struct Domain {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, FromRow)]
+pub struct DnsRecord {
+    #[serde(skip_deserializing)]
+    pub(crate) id: Option<i32>,
+    pub(crate) domain_id: i32,
+    #[serde(deserialize_with = "deserialize_lowercase")]
+    pub(crate) record_type: String, // A, AAAA, CNAME, TXT, MX, NS
+    #[serde(deserialize_with = "deserialize_lowercase")]
+    pub(crate) name: String,        // subdomain or @ for root
+    pub(crate) value: String,       // IP, domain, text value, etc.
+    pub(crate) ttl: Option<i32>,    // Time to live in seconds
+    pub(crate) priority: Option<i32>, // For MX records
+    #[serde(skip_deserializing)]
+    pub(crate) created_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, FromRow)]
 pub struct User {
     pub(crate) id: i32,
     pub(crate) username: String,
@@ -57,6 +73,16 @@ pub(crate) struct ResponseDomain {
     pub(crate) tld: String,
     pub(crate) ip: String,
     pub(crate) name: String,
+    pub(crate) records: Option<Vec<ResponseDnsRecord>>,
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct ResponseDnsRecord {
+    pub(crate) record_type: String,
+    pub(crate) name: String,
+    pub(crate) value: String,
+    pub(crate) ttl: i32,
+    pub(crate) priority: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

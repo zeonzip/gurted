@@ -87,7 +87,7 @@ func _on_search_submitted(url: String) -> void:
 			tab.stop_loading()
 			tab.set_icon(GLOBE_ICON)
 		
-		var html_bytes = result.html.to_utf8_buffer()
+		var html_bytes = result.html
 		render_content(html_bytes)
 		
 		if result.has("display_url"):
@@ -104,7 +104,6 @@ func _on_search_focus_entered() -> void:
 func _on_search_focus_exited() -> void:
 	if not current_domain.is_empty():
 		search_bar.text = current_domain
-
 
 func render() -> void:
 	render_content(Constants.HTML_CONTENT)

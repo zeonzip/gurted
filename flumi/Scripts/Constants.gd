@@ -6,7 +6,7 @@ const SECONDARY_COLOR = Color(43/255.0, 43/255.0, 43/255.0, 1)
 const HOVER_COLOR = Color(0, 0, 0, 1)
 
 const DEFAULT_CSS = """
-body { text-base text-[#000000] text-left }
+body { text-base text-[#000000] text-left bg-white }
 h1 { text-5xl font-bold }
 h2 { text-4xl font-bold }
 h3 { text-3xl font-bold }
