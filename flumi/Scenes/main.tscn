@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=3 uid="uid://bytm7bt2s4ak8"]
+[gd_scene load_steps=36 format=3 uid="uid://bytm7bt2s4ak8"]
 
 [ext_resource type="Script" uid="uid://bg5iqnwic1rio" path="res://Scripts/main.gd" id="1_8q3xr"]
 [ext_resource type="Texture2D" uid="uid://df1m4j7uxi63v" path="res://Assets/Icons/chevron-down.svg" id="2_6bp64"]
@@ -10,8 +10,6 @@
 [ext_resource type="Texture2D" uid="uid://cu4hjoba6etf" path="res://Assets/Icons/rotate-cw.svg" id="5_344ge"]
 [ext_resource type="Texture2D" uid="uid://cehbtwq6gq0cn" path="res://Assets/Icons/plus.svg" id="5_ynf5e"]
 [ext_resource type="Texture2D" uid="uid://cklatjc4m38dy" path="res://Assets/Icons/ellipsis-vertical.svg" id="10_6iyac"]
-[ext_resource type="Script" uid="uid://bgqglerkcylxx" path="res://addons/SmoothScroll/SmoothScrollContainer.gd" id="10_d1ilt"]
-[ext_resource type="Script" uid="uid://b7h0k2h2qwlqv" path="res://addons/SmoothScroll/scroll_damper/expo_scroll_damper.gd" id="11_6iyac"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="11_ee4r6"]
 [ext_resource type="Script" uid="uid://vjjhljlftlbk" path="res://Scripts/OptionButton.gd" id="11_gt3je"]
 [ext_resource type="Texture2D" uid="uid://du24f6em2nqwq" path="res://Assets/Icons/external-link.svg" id="12_gt3je"]
@@ -75,18 +73,6 @@ expand_margin_left = 40.0
 [sub_resource type="Theme" id="Theme_jjvhh"]
 LineEdit/styles/focus = SubResource("StyleBoxEmpty_u50mg")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_cbgmd")
-
-[sub_resource type="Resource" id="Resource_fdnlq"]
-script = ExtResource("11_6iyac")
-friction = 4.0
-minimum_velocity = 0.4
-rebound_strength = 7.0
-
-[sub_resource type="Resource" id="Resource_jkdf5"]
-script = ExtResource("11_6iyac")
-friction = 4.0
-minimum_velocity = 0.4
-rebound_strength = 7.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_white"]
 bg_color = Color(1, 1, 1, 1)
@@ -273,12 +259,6 @@ layout_mode = 2
 [node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("10_d1ilt")
-wheel_scroll_damper = SubResource("Resource_fdnlq")
-dragging_scroll_damper = SubResource("Resource_jkdf5")
-drag_with_mouse = false
-allow_overdragging = false
-metadata/_custom_type_script = "uid://bgqglerkcylxx"
 
 [node name="WebsiteContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
 unique_name_in_owner = true
