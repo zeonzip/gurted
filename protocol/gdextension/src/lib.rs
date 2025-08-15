@@ -1,11 +1,9 @@
 use godot::prelude::*;
 use gurt::prelude::*;
-use gurt::{GurtMethod, GurtRequest};
+use gurt::{GurtMethod, GurtClientConfig};
 use tokio::runtime::Runtime;
 use std::sync::Arc;
 use std::cell::RefCell;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpStream;
 
 struct GurtGodotExtension;
 
@@ -109,7 +107,7 @@ impl GurtProtocolClient {
             }
         };
         
-        let mut config = ClientConfig::default();
+        let mut config = GurtClientConfig::default();
         config.request_timeout = tokio::time::Duration::from_secs(timeout_seconds as u64);
         
         let client = GurtClient::with_config(config);
@@ -168,7 +166,31 @@ impl GurtProtocolClient {
             }
         };
         
-        let response = match runtime.block_on(self.gurt_request_with_handshake(host, port, method, path)) {
+        let client_binding = self.client.borrow();
+        let client = match client_binding.as_ref() {
+            Some(c) => c,
+            None => {
+                godot_print!("No client available");
+                return None;
+            }
+        };
+        
+        let url = format!("gurt://{}:{}{}", host, port, path);
+        let response = match runtime.block_on(async {
+            match method {
+                GurtMethod::GET => client.get(&url).await,
+                GurtMethod::POST => client.post(&url, "").await,
+                GurtMethod::PUT => client.put(&url, "").await,
+                GurtMethod::DELETE => client.delete(&url).await,
+                GurtMethod::HEAD => client.head(&url).await,
+                GurtMethod::OPTIONS => client.options(&url).await,
+                GurtMethod::PATCH => client.patch(&url, "").await,
+                _ => {
+                    godot_print!("Unsupported method: {:?}", method);
+                    return Err(GurtError::invalid_message("Unsupported method"));
+                }
+            }
+        }) {
             Ok(resp) => resp,
             Err(e) => {
                 godot_print!("GURT request failed: {}", e);
@@ -177,145 +199,6 @@ impl GurtProtocolClient {
         };
         
         Some(self.convert_response(response))
-    }
-    
-    async fn gurt_request_with_handshake(&self, host: &str, port: u16, method: GurtMethod, path: &str) -> gurt::Result<GurtResponse> {
-        let addr = format!("{}:{}", host, port);
-        let mut stream = TcpStream::connect(&addr).await?;
-        
-        let handshake_request = GurtRequest::new(GurtMethod::HANDSHAKE, "/".to_string())
-            .with_header("Host", host)
-            .with_header("User-Agent", &format!("GURT-Client/{}", gurt::GURT_VERSION));
-            
-        let handshake_data = handshake_request.to_string();
-        stream.write_all(handshake_data.as_bytes()).await?;
-        
-        let mut buffer = Vec::new();
-        let mut temp_buffer = [0u8; 8192];
-        
-        loop {
-            let bytes_read = stream.read(&mut temp_buffer).await?;
-            if bytes_read == 0 {
-                break;
-            }
-            buffer.extend_from_slice(&temp_buffer[..bytes_read]);
-            
-            let separator = b"\r\n\r\n";
-            if buffer.windows(separator.len()).any(|w| w == separator) {
-                break;
-            }
-        }
-        
-        let handshake_response = GurtResponse::parse_bytes(&buffer)?;
-        
-        if handshake_response.status_code != 101 {
-            return Err(GurtError::handshake(format!("Handshake failed: {} {}", 
-                handshake_response.status_code, 
-                handshake_response.status_message)));
-        }
-        
-        let tls_stream = self.create_secure_tls_connection(stream, host).await?;
-        let (mut reader, mut writer) = tokio::io::split(tls_stream);
-        
-        let actual_request = GurtRequest::new(method, path.to_string())
-            .with_header("Host", host)
-            .with_header("User-Agent", &format!("GURT-Client/{}", gurt::GURT_VERSION))
-            .with_header("Accept", "*/*");
-        
-        let request_data = actual_request.to_string();
-        writer.write_all(request_data.as_bytes()).await?;
-        
-        let mut response_buffer = Vec::new();
-        let mut temp_buf = [0u8; 8192];
-        
-        let mut headers_complete = false;
-        while !headers_complete {
-            let bytes_read = reader.read(&mut temp_buf).await?;
-            if bytes_read == 0 {
-                break;
-            }
-            response_buffer.extend_from_slice(&temp_buf[..bytes_read]);
-            
-            let separator = b"\r\n\r\n";
-            if response_buffer.windows(separator.len()).any(|w| w == separator) {
-                headers_complete = true;
-            }
-        }
-        
-        let response = GurtResponse::parse_bytes(&response_buffer)?;
-        let content_length = response.header("content-length")
-            .and_then(|s| s.parse::<usize>().ok())
-            .unwrap_or(0);
-        
-        let separator_pos = response_buffer.windows(4).position(|w| w == b"\r\n\r\n").unwrap_or(0) + 4;
-        let current_body_len = response_buffer.len().saturating_sub(separator_pos);
-        
-        if content_length > current_body_len {
-            let remaining = content_length - current_body_len;
-            let mut remaining_buffer = vec![0u8; remaining];
-            match reader.read_exact(&mut remaining_buffer).await {
-                Ok(_) => {
-                    response_buffer.extend_from_slice(&remaining_buffer);
-                }
-                Err(e) => {
-                    godot_error!("Failed to read remaining {} bytes: {}", remaining, e);
-                    // Don't fail completely, try to parse what we have
-                }
-            }
-        }
-        
-        drop(reader);
-        drop(writer);
-        
-        let final_response = GurtResponse::parse_bytes(&response_buffer)?;
-        
-        Ok(final_response)
-    }
-    
-    async fn create_secure_tls_connection(&self, stream: tokio::net::TcpStream, host: &str) -> gurt::Result<tokio_rustls::client::TlsStream<tokio::net::TcpStream>> {
-        use tokio_rustls::rustls::{ClientConfig, RootCertStore};
-        use std::sync::Arc;
-        
-        let mut root_store = RootCertStore::empty();
-        
-        let cert_result = rustls_native_certs::load_native_certs();
-        let mut system_cert_count = 0;
-        for cert in cert_result.certs {
-            if root_store.add(cert).is_ok() {
-                system_cert_count += 1;
-            }
-        }
-
-        if system_cert_count <= 0 {
-            godot_error!("No system certificates found. TLS connections will fail.");
-        }
-        
-        let mut client_config = ClientConfig::builder()
-            .with_root_certificates(root_store)
-            .with_no_client_auth();
-        
-        client_config.alpn_protocols = vec![gurt::crypto::GURT_ALPN.to_vec()];
-        
-        let connector = tokio_rustls::TlsConnector::from(Arc::new(client_config));
-        
-        let server_name = match host {
-            "127.0.0.1" => "localhost",
-            "localhost" => "localhost",
-            _ => host
-        };
-        
-        let domain = tokio_rustls::rustls::pki_types::ServerName::try_from(server_name.to_string())
-            .map_err(|e| GurtError::connection(format!("Invalid server name '{}': {}", server_name, e)))?;
-                
-        match connector.connect(domain, stream).await {
-            Ok(tls_stream) => {
-                Ok(tls_stream)
-            }
-            Err(e) => {
-                godot_error!("TLS handshake failed: {}", e);
-                Err(GurtError::connection(format!("TLS handshake failed: {}", e)))
-            }
-        }
     }
     
     #[func]

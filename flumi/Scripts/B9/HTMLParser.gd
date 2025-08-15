@@ -377,7 +377,7 @@ func apply_element_styles(node: Control, element: HTMLElement, parser: HTMLParse
 		var text = HTMLParser.get_bbcode_with_styles(element, styles, parser)
 		label.text = text
 
-static func apply_element_bbcode_formatting(element: HTMLElement, styles: Dictionary, content: String) -> String:
+static func apply_element_bbcode_formatting(element: HTMLElement, styles: Dictionary, content: String, parser: HTMLParser = null) -> String:
 	match element.tag_name:
 		"b":
 			if styles.has("font-bold") and styles["font-bold"]:
@@ -416,6 +416,7 @@ static func apply_element_bbcode_formatting(element: HTMLElement, styles: Dictio
 				else:
 					color = str(c)
 			if href.length() > 0:
+				# Pass raw href - URL resolution happens in handle_link_click
 				return "[color=%s][url=%s]%s[/url][/color]" % [color, href, content]
 	return content
 
@@ -429,10 +430,10 @@ static func get_bbcode_with_styles(element: HTMLElement, styles: Dictionary, par
 		if parser != null:
 			child_styles = parser.get_element_styles_with_inheritance(child, "", [])
 		var child_content = HTMLParser.get_bbcode_with_styles(child, child_styles, parser)
-		child_content = apply_element_bbcode_formatting(child, child_styles, child_content)
+		child_content = apply_element_bbcode_formatting(child, child_styles, child_content, parser)
 		text += child_content
 	
 	# Apply formatting to the current element itself
-	text = apply_element_bbcode_formatting(element, styles, text)
+	text = apply_element_bbcode_formatting(element, styles, text, parser)
 	
 	return text

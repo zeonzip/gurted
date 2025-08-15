@@ -218,10 +218,10 @@ static func get_error_type(error_message: String) -> Dictionary:
 	else:
 		return {"code": "ERR_UNKNOWN", "title": "Something went wrong", "icon": "❌"}
 
-static func create_error_page(error_message: String) -> String:
+static func create_error_page(error_message: String) -> PackedByteArray:
 	var error_info = get_error_type(error_message)
 	
-	return """<head>
+	return ("""<head>
 	<title>""" + error_info.title + """ - GURT</title>
 	<meta name="theme-color" content="#f8f9fa">
 	<style>
@@ -269,4 +269,4 @@ static func create_error_page(error_message: String) -> String:
 		
 		<button style="retry-button" id="reload">Reload</button>
 	</div>
-</body>"""
+</body>""").to_utf8_buffer()

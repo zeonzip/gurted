@@ -90,7 +90,7 @@ impl GurtRequest {
         self.headers.get(&key.to_lowercase())
     }
     
-    pub fn body_as_string(&self) -> Result<String> {
+    pub fn text(&self) -> Result<String> {
         std::str::from_utf8(&self.body)
             .map(|s| s.to_string())
             .map_err(|e| GurtError::invalid_message(format!("Invalid UTF-8 body: {}", e)))
@@ -283,7 +283,7 @@ impl GurtResponse {
         self.headers.get(&key.to_lowercase())
     }
     
-    pub fn body_as_string(&self) -> Result<String> {
+    pub fn text(&self) -> Result<String> {
         std::str::from_utf8(&self.body)
             .map(|s| s.to_owned())
             .map_err(|e| GurtError::invalid_message(format!("Invalid UTF-8 body: {}", e)))
@@ -524,7 +524,7 @@ mod tests {
         assert_eq!(request.version, GURT_VERSION.to_string());
         assert_eq!(request.header("host"), Some(&"example.com".to_string()));
         assert_eq!(request.header("accept"), Some(&"text/html".to_string()));
-        assert_eq!(request.body_as_string().unwrap(), "test body");
+        assert_eq!(request.text().unwrap(), "test body");
     }
     
     #[test]
@@ -536,7 +536,7 @@ mod tests {
         assert_eq!(response.status_code, 200);
         assert_eq!(response.status_message, "OK");
         assert_eq!(response.header("content-type"), Some(&"text/html".to_string()));
-        assert_eq!(response.body_as_string().unwrap(), "<html></html>");
+        assert_eq!(response.text().unwrap(), "<html></html>");
     }
     
     #[test]

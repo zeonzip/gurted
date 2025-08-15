@@ -47,8 +47,8 @@ impl ServerContext {
         &self.request.body
     }
     
-    pub fn body_as_string(&self) -> Result<String> {
-        self.request.body_as_string()
+    pub fn text(&self) -> Result<String> {
+        self.request.text()
     }
     
     pub fn header(&self, key: &str) -> Option<&String> {
@@ -387,7 +387,7 @@ impl GurtServer {
         let response = GurtResponse::new(GurtStatusCode::SwitchingProtocols)
             .with_header("GURT-Version", crate::GURT_VERSION.to_string())
             .with_header("Encryption", TLS_VERSION)
-            .with_header("ALPN", std::str::from_utf8(GURT_ALPN).unwrap_or("gurt/1.0"));
+            .with_header("ALPN", std::str::from_utf8(GURT_ALPN).unwrap_or("GURT/1.0"));
         
         let response_bytes = response.to_string().into_bytes();
         stream.write_all(&response_bytes).await?;

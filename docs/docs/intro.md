@@ -15,6 +15,8 @@ sidebar_position: 1
 
 **GURT** is a *content delivery protocol* similar to HTTPS. It's the core of how Gurted applications communicate.
 
+Learn more about the GURT protocol: [Protocol Specification](./gurt-protocol.md)
+
 ## Getting Started
 
 Get started by **exploring Gurted sites** or **try creating your first GURT page**.

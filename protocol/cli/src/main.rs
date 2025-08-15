@@ -95,11 +95,10 @@ fn create_file_server(base_dir: PathBuf, cert_path: Option<PathBuf>, key_path: O
     let server = server
         .get("/", {
             let base_dir = base_dir.clone();
-            move |ctx| {
-                let client_ip = ctx.client_ip();
+            move |_| {
                 let base_dir = base_dir.clone();
                 async move {
-                    // Try to serve index.html if it exists, otherwise show server info
+                    // Try to serve index.html if it exists
                     let index_path = base_dir.join("index.html");
 
                     if index_path.exists() && index_path.is_file() {
@@ -110,36 +109,54 @@ fn create_file_server(base_dir: PathBuf, cert_path: Option<PathBuf>, key_path: O
                                     .with_string_body(content));
                             }
                             Err(_) => {
-                                // Fall through to default page
+                                // Fall through to directory listing
                             }
                         }
                     }
                     
-                    // Default server info page
-                    Ok(GurtResponse::ok()
-                        .with_header("Content-Type", "text/html")
-                        .with_string_body(format!(r#"
+                    // No index.html found, show directory listing
+                    match std::fs::read_dir(base_dir.as_ref()) {
+                        Ok(entries) => {
+                            let mut listing = String::from(r#"
 <!DOCTYPE html>
 <html>
 <head>
-    <title>GURT Protocol Server</title>
+    <title>Directory Listing</title>
     <style>
-        body {{ font-sans m-[30px] bg-[#f5f5f5] }}
-        .header {{ text-[#0066cc] }}
-        .status {{ text-[#28a745] font-bold }}
+        body { font-sans m-[40px] }
+        .dir { font-bold text-[#0066cc] }
     </style>
 </head>
 <body>
-    <h1 class="header">Welcome to the GURT Protocol!</h1>
-    <p class="status">This server is successfully running. We couldn't find index.html though :(</p>
-    <p>Protocol: <strong>GURT/{}</strong></p>
-    <p>Client IP: <strong>{}</strong></p>
-</body>
-</html>
-                        "#,
-                        gurt::GURT_VERSION,
-                        client_ip,
-                    )))
+    <h1>Directory Listing</h1>
+    <div style="flex flex-col gap-2">
+"#);
+                            for entry in entries.flatten() {
+                                let file_name = entry.file_name();
+                                let name = file_name.to_string_lossy();
+                                let is_dir = entry.path().is_dir();
+                                let display_name = if is_dir { format!("{}/", name) } else { name.to_string() };
+                                let class = if is_dir { "style=\"dir\"" } else { "" };
+                                
+                                listing.push_str(&format!(
+                                    r#"    <a {} href="/{}">{}</a>"#,
+                                    class, name, display_name
+                                ));
+                                listing.push('\n');
+                            }
+                            
+                            listing.push_str("</div></body>\n</html>");
+
+                            Ok(GurtResponse::ok()
+                                .with_header("Content-Type", "text/html")
+                                .with_string_body(listing))
+                        }
+                        Err(_) => {
+                            Ok(GurtResponse::internal_server_error()
+                                .with_header("Content-Type", "text/plain")
+                                .with_string_body("Failed to read directory"))
+                        }
+                    }
                 }
             }
         })
@@ -214,7 +231,6 @@ fn create_file_server(base_dir: PathBuf, cert_path: Option<PathBuf>, key_path: O
     <title>Directory Listing</title>
     <style>
         body { font-sans m-[40px] }
-        .file { my-1 }
         .dir { font-bold text-[#0066cc] }
     </style>
 </head>
@@ -228,10 +244,10 @@ fn create_file_server(base_dir: PathBuf, cert_path: Option<PathBuf>, key_path: O
                                                 let name = file_name.to_string_lossy();
                                                 let is_dir = entry.path().is_dir();
                                                 let display_name = if is_dir { format!("{}/", name) } else { name.to_string() };
-                                                let class = if is_dir { "file dir" } else { "file" };
+                                                let class = if is_dir { "style=\"dir\"" } else { "" };
                                                 
                                                 listing.push_str(&format!(
-                                                    r#"    <a style={} href="/{}">{}</a>"#,
+                                                    r#"    <a {} href="{}">{}</a>"#,
                                                     class, name, display_name
                                                 ));
                                                 listing.push('\n');

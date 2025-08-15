@@ -70,6 +70,54 @@ func recalculate_percentage_elements(node: Node):
 
 var current_domain = ""  # Store current domain for display
 
+func resolve_url(href: String) -> String:
+	if href.begins_with("http://") or href.begins_with("https://") or href.begins_with("gurt://"):
+		return href
+	
+	if current_domain.is_empty():
+		return href
+	
+	var clean_domain = current_domain.rstrip("/")
+	
+	var current_parts = clean_domain.split("/")
+	var host = current_parts[0]
+	var current_path_parts = Array(current_parts.slice(1)) if current_parts.size() > 1 else []
+	
+	var final_path_parts = []
+	
+	if href.begins_with("/"):
+		var href_path = href.substr(1) if href.length() > 1 else ""
+		if not href_path.is_empty():
+			final_path_parts = href_path.split("/")
+	else:
+		final_path_parts = current_path_parts.duplicate()
+		
+		var href_parts = href.split("/")
+		for part in href_parts:
+			if part == "..":
+				if final_path_parts.size() > 0:
+					final_path_parts.pop_back()
+			elif part == "." or part == "":
+				continue
+			else:
+				final_path_parts.append(part)
+	
+	var result = "gurt://" + host
+	if final_path_parts.size() > 0:
+		result += "/" + "/".join(final_path_parts)
+	
+	return result
+
+func handle_link_click(meta: Variant) -> void:
+	var href = str(meta)
+	
+	var resolved_url = resolve_url(href)
+	
+	if GurtProtocol.is_gurt_domain(resolved_url):
+		_on_search_submitted(resolved_url)
+	else:
+		OS.shell_open(resolved_url)
+
 func _on_search_submitted(url: String) -> void:
 	print("Search submitted: ", url)
 	
@@ -88,12 +136,13 @@ func _on_search_submitted(url: String) -> void:
 			tab.set_icon(GLOBE_ICON)
 		
 		var html_bytes = result.html
-		render_content(html_bytes)
 		
 		if result.has("display_url"):
 			current_domain = result.display_url
 			if not search_bar.has_focus():
 				search_bar.text = current_domain
+		
+		render_content(html_bytes)
 	else:
 		print("Non-GURT URL entered: ", url)
 
@@ -178,7 +227,7 @@ func render_content(html_bytes: PackedByteArray) -> void:
 						safe_add_child(hbox, inline_node)
 						# Handle hyperlinks for all inline elements
 						if contains_hyperlink(inline_element) and inline_node is RichTextLabel:
-							inline_node.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+							inline_node.meta_clicked.connect(handle_link_click)
 					else:
 						print("Failed to create inline element node: ", inline_element.tag_name)
 
@@ -198,9 +247,9 @@ func render_content(html_bytes: PackedByteArray) -> void:
 
 				if contains_hyperlink(element):
 					if element_node is RichTextLabel:
-						element_node.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+						element_node.meta_clicked.connect(handle_link_click)
 					elif element_node.has_method("get") and element_node.get("rich_text_label"):
-						element_node.rich_text_label.meta_clicked.connect(func(meta): OS.shell_open(str(meta)))
+						element_node.rich_text_label.meta_clicked.connect(handle_link_click)
 			else:
 				print("Couldn't parse unsupported HTML tag \"%s\"" % element.tag_name)
 			
@@ -328,6 +377,12 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 					if child_element.tag_name not in ["input", "textarea", "select", "button", "audio"]:
 						parser.register_dom_node(child_element, child_node)
 					safe_add_child(container_for_children, child_node)
+					
+					if contains_hyperlink(child_element):
+						if child_node is RichTextLabel:
+							child_node.meta_clicked.connect(handle_link_click)
+						elif child_node.has_method("get") and child_node.get("rich_text_label"):
+							child_node.rich_text_label.meta_clicked.connect(handle_link_click)
 
 	return final_node
 

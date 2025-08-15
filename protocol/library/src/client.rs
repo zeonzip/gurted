@@ -2,15 +2,18 @@ use crate::{
     GurtError, Result, GurtRequest, GurtResponse,
     protocol::{DEFAULT_PORT, DEFAULT_CONNECTION_TIMEOUT, DEFAULT_REQUEST_TIMEOUT, DEFAULT_HANDSHAKE_TIMEOUT, BODY_SEPARATOR},
     message::GurtMethod,
+    crypto::GURT_ALPN,
 };
 use tokio::net::TcpStream;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::time::{timeout, Duration};
+use tokio_rustls::{TlsConnector, rustls::{ClientConfig as TlsClientConfig, RootCertStore, pki_types::ServerName}};
+use std::sync::Arc;
 use url::Url;
 use tracing::debug;
 
 #[derive(Debug, Clone)]
-pub struct ClientConfig {
+pub struct GurtClientConfig {
     pub connect_timeout: Duration,
     pub request_timeout: Duration,
     pub handshake_timeout: Duration,
@@ -18,7 +21,7 @@ pub struct ClientConfig {
     pub max_redirects: usize,
 }
 
-impl Default for ClientConfig {
+impl Default for GurtClientConfig {
     fn default() -> Self {
         Self {
             connect_timeout: Duration::from_secs(DEFAULT_CONNECTION_TIMEOUT),
@@ -31,28 +34,54 @@ impl Default for ClientConfig {
 }
 
 #[derive(Debug)]
+enum Connection {
+    Plain(TcpStream),
+    Tls(tokio_rustls::client::TlsStream<TcpStream>),
+}
+
+impl Connection {
+    async fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+        match self {
+            Connection::Plain(stream) => stream.read(buf).await.map_err(|e| GurtError::connection(e.to_string())),
+            Connection::Tls(stream) => stream.read(buf).await.map_err(|e| GurtError::connection(e.to_string())),
+        }
+    }
+    
+    async fn write_all(&mut self, buf: &[u8]) -> Result<()> {
+        match self {
+            Connection::Plain(stream) => stream.write_all(buf).await.map_err(|e| GurtError::connection(e.to_string())),
+            Connection::Tls(stream) => stream.write_all(buf).await.map_err(|e| GurtError::connection(e.to_string())),
+        }
+    }
+}
+
+#[derive(Debug)]
 struct PooledConnection {
-    stream: TcpStream,
+    connection: Connection,
 }
 
 impl PooledConnection {
     fn new(stream: TcpStream) -> Self {
-        Self { stream }
+        Self { connection: Connection::Plain(stream) }
+    }
+    
+    fn with_tls(stream: tokio_rustls::client::TlsStream<TcpStream>) -> Self {
+        Self { connection: Connection::Tls(stream) }
     }
 }
 
 pub struct GurtClient {
-    config: ClientConfig,
+    config: GurtClientConfig,
 }
 
 impl GurtClient {
     pub fn new() -> Self {
         Self {
-            config: ClientConfig::default(),
+            config: GurtClientConfig::default(),
         }
     }
     
-    pub fn with_config(config: ClientConfig) -> Self {
+    pub fn with_config(config: GurtClientConfig) -> Self {
         Self {
             config,
         }
@@ -71,7 +100,7 @@ impl GurtClient {
         Ok(conn)
     }
     
-    async fn read_response_data(&self, stream: &mut TcpStream) -> Result<Vec<u8>> {
+    async fn read_response_data(&self, conn: &mut PooledConnection) -> Result<Vec<u8>> {
         let mut buffer = Vec::new();
         let mut temp_buffer = [0u8; 8192];
         
@@ -82,7 +111,7 @@ impl GurtClient {
                 return Err(GurtError::timeout("Response timeout"));
             }
             
-            let bytes_read = stream.read(&mut temp_buffer).await?;
+            let bytes_read = conn.connection.read(&mut temp_buffer).await?;
             if bytes_read == 0 {
                 break; // Connection closed
             }
@@ -106,17 +135,92 @@ impl GurtClient {
         }
     }
     
+    async fn perform_handshake(&self, host: &str, port: u16) -> Result<tokio_rustls::client::TlsStream<TcpStream>> {
+        debug!("Starting GURT handshake with {}:{}", host, port);
+        
+        let mut plain_conn = self.create_connection(host, port).await?;
+        
+        let handshake_request = GurtRequest::new(GurtMethod::HANDSHAKE, "/".to_string())
+            .with_header("Host", host)
+            .with_header("User-Agent", &self.config.user_agent);
+        
+        let handshake_data = handshake_request.to_string();
+        plain_conn.connection.write_all(handshake_data.as_bytes()).await?;
+        
+        let handshake_response_bytes = timeout(
+            self.config.handshake_timeout,
+            self.read_response_data(&mut plain_conn)
+        ).await
+            .map_err(|_| GurtError::timeout("Handshake timeout"))??;
+        
+        let handshake_response = GurtResponse::parse_bytes(&handshake_response_bytes)?;
+        
+        if handshake_response.status_code != 101 {
+            return Err(GurtError::protocol(format!("Handshake failed: {} {}", 
+                handshake_response.status_code, 
+                handshake_response.status_message)));
+        }
+        
+        let tcp_stream = match plain_conn.connection {
+            Connection::Plain(stream) => stream,
+            _ => return Err(GurtError::protocol("Expected plain connection for handshake")),
+        };
+        
+        self.upgrade_to_tls(tcp_stream, host).await
+    }
+    
+    async fn upgrade_to_tls(&self, stream: TcpStream, host: &str) -> Result<tokio_rustls::client::TlsStream<TcpStream>> {
+        debug!("Upgrading connection to TLS for {}", host);
+        
+        let mut root_store = RootCertStore::empty();
+        
+        let cert_result = rustls_native_certs::load_native_certs();
+        let mut added = 0;
+        for cert in cert_result.certs {
+            if root_store.add(cert).is_ok() {
+                added += 1;
+            }
+        }
+        if added == 0 {
+            return Err(GurtError::crypto("No valid system certificates found".to_string()));
+        }
+        
+        let mut client_config = TlsClientConfig::builder()
+            .with_root_certificates(root_store)
+            .with_no_client_auth();
+        
+        client_config.alpn_protocols = vec![GURT_ALPN.to_vec()];
+        
+        let connector = TlsConnector::from(Arc::new(client_config));
+        
+        let server_name = match host {
+            "127.0.0.1" => "localhost",
+            "localhost" => "localhost", 
+            _ => host
+        };
+        
+        let domain = ServerName::try_from(server_name.to_string())
+            .map_err(|e| GurtError::crypto(format!("Invalid server name '{}': {}", server_name, e)))?;
+        
+        let tls_stream = connector.connect(domain, stream).await
+            .map_err(|e| GurtError::crypto(format!("TLS handshake failed: {}", e)))?;
+        
+        debug!("TLS connection established with {}", host);
+        Ok(tls_stream)
+    }
+    
     async fn send_request_internal(&self, host: &str, port: u16, request: GurtRequest) -> Result<GurtResponse> {
         debug!("Sending {} {} to {}:{}", request.method, request.path, host, port);
         
-        let mut conn = self.create_connection(host, port).await?;
+        let tls_stream = self.perform_handshake(host, port).await?;
+        let mut conn = PooledConnection::with_tls(tls_stream);
         
         let request_data = request.to_string();
-        conn.stream.write_all(request_data.as_bytes()).await?;
+        conn.connection.write_all(request_data.as_bytes()).await?;
         
         let response_bytes = timeout(
             self.config.request_timeout,
-            self.read_response_data(&mut conn.stream)
+            self.read_response_data(&mut conn)
         ).await
             .map_err(|_| GurtError::timeout("Request timeout"))??;
         
