@@ -1,0 +1,105 @@
+<head>
+	<title>Login</title>
+	<icon src="https://cdn-icons-png.flaticon.com/512/295/295128.png">
+	<meta name="theme-color" content="#1b1b1b">
+	<meta name="description" content="Login to your account">
+
+	<font name="roboto" src="https://fonts.gstatic.com/s/roboto/v48/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3KUBGEe.woff2" />
+
+	<style>
+		body { bg-[#1b1b1b] text-[#ffffff] font-roboto flex items-center justify-center p-4 }
+		.login-card { bg-[#2a2a2a] rounded-lg p-8 shadow-2xl mx-0 }
+		h1 { text-3xl font-bold text-center mb-6 text-[#ffffff] }
+		input {
+			bg-[#3b3b3b]
+			border-none
+			rounded-md
+			p-3
+			w-full
+			text-[#ffffff]
+			placeholder:text-[#999999]
+			outline-none
+			focus:ring-2
+			focus:ring-[#5b5b5b]
+			mb-4
+		}
+		button {
+			bg-[#4ade80]
+			text-[#1b1b1b]
+			font-bold
+			p-3
+			rounded-md
+			w-full
+			hover:bg-[#22c55e]
+			active:bg-[#15803d]
+			cursor-pointer
+		}
+		a { text-[#4ade80] hover:text-[#22c55e] cursor-pointer }
+		#log-output { text-white p-4 rounded-md mt-4 font-mono max-h-40 }
+	</style>
+	
+	<script>
+		local submitBtn = gurt.select('#submit')
+		local username_input = gurt.select('#username')
+		local password_input = gurt.select('#password')
+		local log_output = gurt.select('#log-output')
+
+		function addLog(message)
+			gurt.log(message)
+			log_output.text = log_output.text .. message .. '\\n'
+		end
+
+		submitBtn:on('submit', function(event)
+			local username = event.data.username
+			local password = event.data.password
+
+			local request_body = JSON.stringify({
+				username = username,
+				password = password
+			})
+			print(request_body)
+			local url = 'http://localhost:8080/auth/login'
+			local headers = {
+				['Content-Type'] = 'application/json'
+			}
+
+			addLog('Attempting to log in with username: ' .. username)
+			log_output.text = ''
+
+			local response = fetch(url, {
+				method = 'POST',
+				headers = headers,
+				body = request_body
+			})
+			
+			addLog('Response Status: ' .. response.status .. ' ' .. response.statusText)
+			
+			if response:ok() then
+				addLog('Login successful!')
+				local jsonData = response:json()
+				if jsonData then
+					addLog('Logged in as user: ' .. jsonData.user.username)
+					addLog('Token: ' .. jsonData.token:sub(1, 20) .. '...')
+				end
+			else
+				addLog('Request failed with status: ' .. response.status)
+				local error_data = response:text()
+				addLog('Error response: ' .. error_data)
+			end
+		end)
+	</script>
+</head>
+
+<body>
+	<div style="login-card">
+		<h1>Login</h1>
+		<form id="login-form">
+			<input id="username" type="text" placeholder="Username" required="true" />
+			<input id="password" type="password" placeholder="Password" required="true" />
+			<button type="submit" id="submit">Log In</button>
+		</form>
+		<p style="text-center mt-4 text-[#999999] text-base">Don't have an account? <a href="#">Register here</a></p>
+		
+		<p id="log-output" style="min-h-24"></p>
+	</div>
+</body>
