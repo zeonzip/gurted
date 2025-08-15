@@ -14,6 +14,7 @@ config/name="Flumi"
 config/version="1.0.0"
 run/main_scene="uid://bytm7bt2s4ak8"
 config/features=PackedStringArray("4.4", "Forward Plus")
+boot_splash/show_image=false
 config/icon="uid://ctpe0lbehepen"
 
 [autoload]
@@ -29,7 +30,7 @@ window/stretch/aspect="ignore"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/DatePicker/plugin.cfg", "res://addons/SmoothScroll/plugin.cfg", "res://addons/godot-flexbox/plugin.cfg", "res://addons/gurt-protocol/plugin.cfg")
+enabled=PackedStringArray("res://addons/DatePicker/plugin.cfg", "res://addons/godot-flexbox/plugin.cfg", "res://addons/gurt-protocol/plugin.cfg")
 
 [file_customization]
 

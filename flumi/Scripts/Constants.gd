@@ -24,3 +24,10 @@ pre { text-xl font-mono }
 button { text-[16px] bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] }
 button[disabled] { bg-[#666666] text-[#999999] cursor-not-allowed }
 """
+
+var HTML_CONTENT = """
+<head>
+<title>New tab</title>
+</head>
+<body><p>test</p></body>
+""".to_utf8_buffer()
