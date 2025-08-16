@@ -18,7 +18,7 @@ submitBtn:on('submit', function(event)
 		password = password
 	})
 	print(request_body)
-	local url = 'http://localhost:8080/auth/login'
+	local url = 'gurt://localhost:8080/auth/login'
 	local headers = {
 		['Content-Type'] = 'application/json'
 	}
@@ -39,9 +39,13 @@ submitBtn:on('submit', function(event)
 		local jsonData = response:json()
 		if jsonData then
 			addLog('Logged in as user: ' .. jsonData.user.username)
-			addLog('Token: ' .. jsonData.token:sub(1, 20) .. '...')
 
-			-- TODO: store as cookie
+			gurt.crumbs.set({
+				name = "auth_token",
+				value = jsonData.token,
+				lifespan = 604800
+			})
+
 			gurt.location.goto("/dashboard.html")
 		end
 	else

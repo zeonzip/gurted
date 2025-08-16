@@ -913,6 +913,10 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		rule.properties[utility_name] = "200ms"
 		return
 
+	if utility_name == "hidden":
+		rule.properties["display"] = "none"
+		return
+
 	# Handle more utility classes as needed
 	# Add more cases here for other utilities
 

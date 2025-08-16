@@ -25,21 +25,21 @@
 
 		-- Insert Before
 		gurt.select("#btn-insert-before"):on("click", function()
-			local newDiv = gurt.create("div", { class = "test-item highlight", text = "Inserted Before Child 2" })
+			local newDiv = gurt.create("div", { style = "test-item highlight", text = "Inserted Before Child 2" })
 			parent:insertBefore(newDiv, child2)
 			log_msg("Inserted before child2: " .. newDiv._element_id)
 		end)
 
 		-- Insert After
 		gurt.select("#btn-insert-after"):on("click", function()
-			local newDiv = gurt.create("div", { class = "test-item highlight", text = "Inserted After Child 2" })
+			local newDiv = gurt.create("div", { style = "test-item highlight", text = "Inserted After Child 2" })
 			parent:insertAfter(newDiv, child2)
 			log_msg("Inserted after child2: " .. newDiv._element_id)
 		end)
 
 		-- Replace
 		gurt.select("#btn-replace"):on("click", function()
-			local newDiv = gurt.create("div", { class = "test-item highlight", text = "Replacement for Child 2" })
+			local newDiv = gurt.create("div", { style = "test-item highlight", text = "Replacement for Child 2" })
 			parent:replace(newDiv, child2)
 			log_msg("Replaced child2 with: " .. newDiv._element_id)
 		end)

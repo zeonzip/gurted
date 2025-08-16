@@ -105,6 +105,9 @@ impl GurtClient {
         let mut temp_buffer = [0u8; 8192];
         
         let start_time = std::time::Instant::now();
+        let mut headers_parsed = false;
+        let mut expected_body_length: Option<usize> = None;
+        let mut headers_end_pos: Option<usize> = None;
         
         loop {
             if start_time.elapsed() > self.config.request_timeout {
@@ -118,12 +121,38 @@ impl GurtClient {
             
             buffer.extend_from_slice(&temp_buffer[..bytes_read]);
             
-            // Check for complete message without converting to string
+            // Check for complete message
             let body_separator = BODY_SEPARATOR.as_bytes();
-            let has_complete_response = buffer.windows(body_separator.len()).any(|w| w == body_separator) ||
-                (buffer.starts_with(b"{") && buffer.ends_with(b"}"));
             
-            if has_complete_response {
+            if !headers_parsed {
+                if let Some(pos) = buffer.windows(body_separator.len()).position(|w| w == body_separator) {
+                    headers_end_pos = Some(pos + body_separator.len());
+                    headers_parsed = true;
+                    
+                    // Parse headers to get Content-Length
+                    let headers_section = &buffer[..pos];
+                    if let Ok(headers_str) = std::str::from_utf8(headers_section) {
+                        for line in headers_str.lines() {
+                            if line.to_lowercase().starts_with("content-length:") {
+                                if let Some(length_str) = line.split(':').nth(1) {
+                                    if let Ok(length) = length_str.trim().parse::<usize>() {
+                                        expected_body_length = Some(length);
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if let (Some(headers_end), Some(expected_length)) = (headers_end_pos, expected_body_length) {
+                let current_body_length = buffer.len() - headers_end;
+                if current_body_length >= expected_length {
+                    return Ok(buffer);
+                }
+            } else if headers_parsed && expected_body_length.is_none() {
+                // No Content-Length header, return what we have after headers
                 return Ok(buffer);
             }
         }

@@ -86,6 +86,8 @@ func handle_link_click(meta: Variant) -> void:
 func _on_search_submitted(url: String) -> void:
 	print("Search submitted: ", url)
 	
+	search_bar.release_focus()
+	
 	if GurtProtocol.is_gurt_domain(url):
 		print("Processing as GURT domain")
 		

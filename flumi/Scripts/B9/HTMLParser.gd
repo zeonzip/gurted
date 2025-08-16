@@ -112,15 +112,15 @@ func handle_style_element(style_element: HTMLElement) -> void:
 		parse_result.external_css.append(src)
 		return
 	
-	# Handle inline CSS - we'll get the text content when parsing is complete
-	# For now, create a parser that will be populated later
+	# Handle inline CSS
 	if not parse_result.css_parser:
 		parse_result.css_parser = CSSParser.new()
 		parse_result.css_parser.init()
 
 func process_styles() -> void:
 	if not parse_result.css_parser:
-		return
+		parse_result.css_parser = CSSParser.new()
+		parse_result.css_parser.init()
 	
 	var css_content = Constants.DEFAULT_CSS
 	var style_elements = find_all("style")

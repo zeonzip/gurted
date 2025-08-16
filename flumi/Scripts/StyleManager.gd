@@ -109,6 +109,12 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 	if styles.has("opacity"):
 		node.modulate.a = styles["opacity"]
 	
+	if styles.has("display"):
+		if styles["display"] == "none":
+			node.visible = false
+		else:
+			node.visible = true
+	
 	# Apply cursor
 	if styles.has("cursor"):
 		var cursor_shape = get_cursor_shape_from_type(styles["cursor"])

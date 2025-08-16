@@ -5,12 +5,36 @@ static func setup_network_api(vm: LuauVM):
 	vm.lua_pushcallable(_lua_fetch_handler, "fetch")
 	vm.lua_setglobal("fetch")
 
+static func resolve_fetch_url(url: String) -> String:
+	# If URL is already absolute, return as-is
+	if url.begins_with("http://") or url.begins_with("https://") or url.begins_with("gurt://"):
+		return url
+	
+	# Get current domain from main scene
+	var main_node = Engine.get_main_loop().current_scene
+	var current_domain = ""
+	if main_node and main_node.has_method("get_current_url"):
+		current_domain = main_node.get_current_url()
+	
+	# If no current domain, default to gurt:// protocol for relative URLs
+	if current_domain.is_empty():
+		if url.begins_with("/"):
+			return "gurt://" + url.substr(1)
+		else:
+			return "gurt://" + url
+	
+	# Use URLUtils to resolve relative URL against current domain
+	return URLUtils.resolve_url(current_domain, url)
+
 static func _lua_fetch_handler(vm: LuauVM) -> int:
 	var url: String = vm.luaL_checkstring(1)
 	var options: Dictionary = {}
 	
 	if vm.lua_gettop() >= 2 and vm.lua_istable(2):
 		options = vm.lua_todictionary(2)
+	
+	# Resolve relative URLs and default to gurt:// protocol
+	url = resolve_fetch_url(url)
 	
 	# Default options
 	var method = options.get("method", "GET").to_upper()

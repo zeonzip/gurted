@@ -45,11 +45,16 @@ static func resolve_url(base_url: String, relative_url: String) -> String:
 		# Relative path
 		final_path_parts = current_path_parts.duplicate()
 		
+		if final_path_parts.size() > 0:
+			var last_part = final_path_parts[-1]
+			if "." in last_part and not last_part.ends_with("/"):
+				final_path_parts.resize(final_path_parts.size() - 1)
+		
 		var href_parts = relative_url.split("/")
 		for part in href_parts:
 			if part == "..":
 				if final_path_parts.size() > 0:
-					final_path_parts.pop_back()
+					final_path_parts.resize(final_path_parts.size() - 1)
 			elif part == "." or part == "":
 				continue
 			else:
