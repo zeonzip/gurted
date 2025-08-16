@@ -120,9 +120,8 @@ static func handle_element_append(operation: Dictionary, dom_parser: HTMLParser,
 	# Handle visual rendering if parent is already rendered
 	var parent_dom_node: Node = null
 	if parent_id == "body":
-		var main_scene = lua_api.get_node("/root/Main")
-		if main_scene:
-			parent_dom_node = main_scene.website_container
+		var main_scene = Engine.get_main_loop().current_scene
+		parent_dom_node = main_scene.website_container
 	else:
 		parent_dom_node = dom_parser.parse_result.dom_nodes.get(parent_id, null)
 	
@@ -184,7 +183,7 @@ static func handle_insert_before(operation: Dictionary, dom_parser: HTMLParser, 
 		# Handle visual rendering
 		var parent_dom_node: Node = null
 		if parent_id == "body":
-			var main_scene = lua_api.get_node("/root/Main")
+			var main_scene = Engine.get_main_loop().current_scene
 			if main_scene:
 				parent_dom_node = main_scene.website_container
 		else:
@@ -223,7 +222,7 @@ static func handle_insert_after(operation: Dictionary, dom_parser: HTMLParser, l
 		# Handle visual rendering
 		var parent_dom_node: Node = null
 		if parent_id == "body":
-			var main_scene = lua_api.get_node("/root/Main")
+			var main_scene = Engine.get_main_loop().current_scene
 			if main_scene:
 				parent_dom_node = main_scene.website_container
 		else:
@@ -265,7 +264,7 @@ static func handle_replace_child(operation: Dictionary, dom_parser: HTMLParser, 
 
 static func render_new_element(element: HTMLParser.HTMLElement, parent_node: Node, dom_parser: HTMLParser, lua_api) -> void:
 	# Get reference to main scene for rendering
-	var main_scene = lua_api.get_node("/root/Main")
+	var main_scene = Engine.get_main_loop().current_scene
 	if not main_scene:
 		return
 	
@@ -318,7 +317,7 @@ static func clone_element(element: HTMLParser.HTMLElement, deep: bool) -> HTMLPa
 static func handle_visual_insertion_by_reference(parent_element_id: String, new_child_element: HTMLParser.HTMLElement, reference_element_id: String, insert_before: bool, dom_parser: HTMLParser, lua_api) -> void:
 	var parent_dom_node: Node = null
 	if parent_element_id == "body":
-		var main_scene = lua_api.get_node("/root/Main")
+		var main_scene = Engine.get_main_loop().current_scene
 		if main_scene:
 			parent_dom_node = main_scene.website_container
 	else:

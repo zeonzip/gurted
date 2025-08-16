@@ -135,6 +135,16 @@ func render() -> void:
 
 func render_content(html_bytes: PackedByteArray) -> void:
 	
+	var existing_lua_apis = []
+	for child in get_children():
+		if child is LuaAPI:
+			existing_lua_apis.append(child)
+	
+	for lua_api in existing_lua_apis:
+		lua_api.kill_script_execution()
+		remove_child(lua_api)
+		lua_api.queue_free()
+	
 	# Clear existing content
 	for child in website_container.get_children():
 		child.queue_free()
