@@ -113,12 +113,12 @@ func _lua_thread_worker():
 		lua_vm.LUA_COROUTINE_LIB, lua_vm.LUA_MATH_LIB, lua_vm.LUA_UTF8_LIB,
 		lua_vm.LUA_TABLE_LIB, lua_vm.LUA_STRING_LIB, lua_vm.LUA_VECTOR_LIB])
 	
-	lua_vm.lua_pushcallable(_threaded_print_handler, "print")
+	lua_vm.lua_pushcallable(_print_handler, "print")
 	lua_vm.lua_setglobal("print")
 	
 	# Setup threaded Time.sleep function
 	lua_vm.lua_newtable()
-	lua_vm.lua_pushcallable(_threaded_time_sleep_handler, "Time.sleep")
+	lua_vm.lua_pushcallable(_time_sleep_handler, "Time.sleep")
 	lua_vm.lua_setfield(-2, "sleep")
 	lua_vm.lua_setglobal("Time")
 	
@@ -232,7 +232,7 @@ func _execute_timeout_in_thread(timeout_id: int):
 	
 	lua_vm.lua_pop(1) # Pop the table
 
-func _threaded_print_handler(vm: LuauVM) -> int:
+func _print_handler(vm: LuauVM) -> int:
 	var message_parts: Array = []
 	var num_args = vm.lua_gettop()
 	
@@ -258,7 +258,7 @@ func _threaded_print_handler(vm: LuauVM) -> int:
 	
 	return 0
 
-func _threaded_time_sleep_handler(vm: LuauVM) -> int:
+func _time_sleep_handler(vm: LuauVM) -> int:
 	vm.luaL_checknumber(1)
 	var seconds = vm.lua_tonumber(1)
 	
@@ -268,55 +268,65 @@ func _threaded_time_sleep_handler(vm: LuauVM) -> int:
 	return 0
 
 func _setup_threaded_gurt_api():
-	lua_vm.lua_pushcallable(_threaded_print_handler, "print")
+	lua_vm.lua_pushcallable(_print_handler, "print")
 	lua_vm.lua_setglobal("print")
 	
 	LuaTimeUtils.setup_time_api(lua_vm)
 	
 	lua_vm.lua_getglobal("Time")
 	if not lua_vm.lua_isnil(-1):
-		lua_vm.lua_pushcallable(_threaded_time_sleep_handler, "Time.sleep")
+		lua_vm.lua_pushcallable(_time_sleep_handler, "Time.sleep")
 		lua_vm.lua_setfield(-2, "sleep")
 	lua_vm.lua_pop(1)
 	
 	lua_vm.lua_newtable()
 	
-	lua_vm.lua_pushcallable(_threaded_print_handler, "gurt.log")
+	lua_vm.lua_pushcallable(_print_handler, "gurt.log")
 	lua_vm.lua_setfield(-2, "log")
 	
-	lua_vm.lua_pushcallable(_threaded_gurt_select_handler, "gurt.select")
+	lua_vm.lua_pushcallable(_gurt_select_handler, "gurt.select")
 	lua_vm.lua_setfield(-2, "select")
 	
-	lua_vm.lua_pushcallable(_threaded_gurt_select_all_handler, "gurt.selectAll")
+	lua_vm.lua_pushcallable(_gurt_select_all_handler, "gurt.selectAll")
 	lua_vm.lua_setfield(-2, "selectAll")
 	
-	lua_vm.lua_pushcallable(_threaded_gurt_create_handler, "gurt.create")
+	lua_vm.lua_pushcallable(_gurt_create_handler, "gurt.create")
 	lua_vm.lua_setfield(-2, "create")
 	
-	lua_vm.lua_pushcallable(_threaded_set_timeout_handler, "gurt.setTimeout")
+	lua_vm.lua_pushcallable(_set_timeout_handler, "gurt.setTimeout")
 	lua_vm.lua_setfield(-2, "setTimeout")
 	
-	lua_vm.lua_pushcallable(_threaded_clear_timeout_handler, "gurt.clearTimeout")
+	lua_vm.lua_pushcallable(lua_api._gurt_clear_timeout_handler, "gurt.clearTimeout")
 	lua_vm.lua_setfield(-2, "clearTimeout")
 	
-	lua_vm.lua_pushcallable(_threaded_set_interval_handler, "gurt.setInterval")
+	lua_vm.lua_pushcallable(_set_interval_handler, "gurt.setInterval")
 	lua_vm.lua_setfield(-2, "setInterval")
 	
-	lua_vm.lua_pushcallable(_threaded_clear_interval_handler, "gurt.clearInterval")
+	lua_vm.lua_pushcallable(lua_api._gurt_clear_interval_handler, "gurt.clearInterval")
 	lua_vm.lua_setfield(-2, "clearInterval")
 	
-	# Add body element access
+	lua_vm.lua_newtable()
+	lua_vm.lua_pushcallable(lua_api._gurt_location_reload_handler, "gurt.location.reload")
+	lua_vm.lua_setfield(-2, "reload")
+	lua_vm.lua_pushcallable(lua_api._gurt_location_goto_handler, "gurt.location.goto")
+	lua_vm.lua_setfield(-2, "goto")
+	
+	var current_href = get_current_href()
+	lua_vm.lua_pushstring(current_href)
+	lua_vm.lua_setfield(-2, "href")
+	
+	lua_vm.lua_setfield(-2, "location")
+	
 	var body_element = dom_parser.find_first("body")
 	if body_element:
 		LuaDOMUtils.create_element_wrapper(lua_vm, body_element, lua_api)
-		lua_vm.lua_pushcallable(_threaded_body_on_handler, "body.on")
+		lua_vm.lua_pushcallable(_body_on_handler, "body.on")
 		lua_vm.lua_setfield(-2, "on")
 		lua_vm.lua_setfield(-2, "body")
 	
 	lua_vm.lua_setglobal("gurt")
 
 func _setup_additional_lua_apis():
-	# Add table.tostring utility that's needed in callbacks
 	lua_vm.lua_getglobal("table")
 	if lua_vm.lua_isnil(-1):
 		lua_vm.lua_pop(1)
@@ -324,9 +334,9 @@ func _setup_additional_lua_apis():
 		lua_vm.lua_setglobal("table")
 		lua_vm.lua_getglobal("table")
 	
-	lua_vm.lua_pushcallable(_threaded_table_tostring_handler, "table.tostring")
+	lua_vm.lua_pushcallable(_table_tostring_handler, "table.tostring")
 	lua_vm.lua_setfield(-2, "tostring")
-	lua_vm.lua_pop(1)  # Pop table from stack
+	lua_vm.lua_pop(1)
 	
 	LuaSignalUtils.setup_signal_api(lua_vm)
 	LuaClipboardUtils.setup_clipboard_api(lua_vm)
@@ -335,7 +345,7 @@ func _setup_additional_lua_apis():
 	LuaWebSocketUtils.setup_websocket_api(lua_vm)
 	LuaAudioUtils.setup_audio_api(lua_vm)
 
-func _threaded_table_tostring_handler(vm: LuauVM) -> int:
+func _table_tostring_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)
 	var table_string = LuaPrintUtils.table_to_string(vm, 1)
 	vm.lua_pushstring(table_string)
@@ -350,14 +360,24 @@ func _emit_script_error(error: String):
 func _emit_print_output(message: String):
 	print_output.emit(message)
 
-func _threaded_gurt_select_all_handler(vm: LuauVM) -> int:
-	# For threaded mode, selectAll is complex as it requires DOM access
-	# Return empty array for now, or implement via main thread operation
+func _gurt_select_all_handler(vm: LuauVM) -> int:
+	var selector: String = vm.luaL_checkstring(1)
+	
+	if not dom_parser or not dom_parser.parse_result:
+		vm.lua_newtable()
+		return 1
+	
+	var elements = SelectorUtils.find_all_matching(selector, dom_parser.parse_result.all_elements)
+	
 	vm.lua_newtable()
+	for i in range(elements.size()):
+		vm.lua_pushinteger(i + 1)
+		LuaDOMUtils.create_element_wrapper(vm, elements[i], lua_api)
+		vm.lua_rawset(-3)
+	
 	return 1
 
-func _threaded_gurt_create_handler(vm: LuauVM) -> int:
-	# Create new HTML element using existing system
+func _gurt_create_handler(vm: LuauVM) -> int:
 	var tag_name: String = vm.luaL_checkstring(1)
 	var attributes = {}
 	
@@ -365,36 +385,29 @@ func _threaded_gurt_create_handler(vm: LuauVM) -> int:
 		vm.luaL_checktype(2, vm.LUA_TTABLE)
 		attributes = vm.lua_todictionary(2)
 	
-	# Create HTML element using existing HTMLParser
 	var new_element = HTMLParser.HTMLElement.new(tag_name)
 	
-	# Apply attributes and content
 	for attr_name in attributes:
 		if attr_name == "text":
-			# Set text content directly on the HTML element
 			new_element.text_content = str(attributes[attr_name])
 		else:
 			new_element.set_attribute(attr_name, str(attributes[attr_name]))
 	
-	# Assign a unique ID
 	var element_id = lua_api.get_or_assign_element_id(new_element)
 	new_element.set_attribute("id", element_id)
 	
-	# Add to parser's element collection
 	dom_parser.parse_result.all_elements.append(new_element)
 	
 	LuaDOMUtils.create_element_wrapper(vm, new_element, lua_api)
 	return 1
 
-func _threaded_set_timeout_handler(vm: LuauVM) -> int:
+func _set_timeout_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TFUNCTION)
 	var delay_ms: int = vm.luaL_checkint(2)
 	
-	# Generate a unique timeout ID
 	var timeout_id = lua_api.timeout_manager.next_timeout_id
 	lua_api.timeout_manager.next_timeout_id += 1
 	
-	# Store the callback in THIS threaded VM's registry
 	vm.lua_pushstring("GURT_THREADED_TIMEOUTS")
 	vm.lua_rawget(vm.LUA_REGISTRYINDEX)
 	if vm.lua_isnil(-1):
@@ -405,29 +418,25 @@ func _threaded_set_timeout_handler(vm: LuauVM) -> int:
 		vm.lua_rawset(vm.LUA_REGISTRYINDEX)
 	
 	vm.lua_pushinteger(timeout_id)
-	vm.lua_pushvalue(1)  # Copy the callback function
+	vm.lua_pushvalue(1)
 	vm.lua_rawset(-3)
 	vm.lua_pop(1)
 	
-	# Create timeout info and send timer creation command to main thread
 	call_deferred("_create_threaded_timeout", timeout_id, delay_ms)
 	
 	vm.lua_pushinteger(timeout_id)
 	return 1
 
-func _threaded_clear_timeout_handler(vm: LuauVM) -> int:
-	# Delegate to Lua API timeout system
+func _clear_timeout_handler(vm: LuauVM) -> int:
 	return lua_api._gurt_clear_timeout_handler(vm)
 
-func _threaded_set_interval_handler(vm: LuauVM) -> int:
+func _set_interval_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TFUNCTION)
 	var delay_ms: int = vm.luaL_checkint(2)
 	
-	# Generate a unique interval ID
 	var interval_id = lua_api.timeout_manager.next_timeout_id
 	lua_api.timeout_manager.next_timeout_id += 1
 	
-	# Store the callback in THIS threaded VM's registry (same as timeout)
 	vm.lua_pushstring("GURT_THREADED_TIMEOUTS")
 	vm.lua_rawget(vm.LUA_REGISTRYINDEX)
 	if vm.lua_isnil(-1):
@@ -438,48 +447,40 @@ func _threaded_set_interval_handler(vm: LuauVM) -> int:
 		vm.lua_rawset(vm.LUA_REGISTRYINDEX)
 	
 	vm.lua_pushinteger(interval_id)
-	vm.lua_pushvalue(1)  # Copy the callback function
+	vm.lua_pushvalue(1)
 	vm.lua_rawset(-3)
 	vm.lua_pop(1)
 	
-	# Create interval info and send timer creation command to main thread
 	call_deferred("_create_threaded_interval", interval_id, delay_ms)
 	
 	vm.lua_pushinteger(interval_id)
 	return 1
 
-func _threaded_clear_interval_handler(vm: LuauVM) -> int:
-	# Delegate to Lua API timeout system (clearInterval works same as clearTimeout)
-	return lua_api._gurt_clear_interval_handler(vm)
+func get_current_href() -> String:
+	var main_node = Engine.get_main_loop().current_scene
+	
+	return main_node.current_domain
 
-func _threaded_gurt_select_handler(vm: LuauVM) -> int:
+func _gurt_select_handler(vm: LuauVM) -> int:
 	var selector: String = vm.luaL_checkstring(1)
 	
 	if not dom_parser or not dom_parser.parse_result:
 		vm.lua_pushnil()
 		return 1
 	
-	# Find the element using the existing SelectorUtils
 	var element = SelectorUtils.find_first_matching(selector, dom_parser.parse_result.all_elements)
 	if element:
-		# Use DOM.gd element wrapper
 		LuaDOMUtils.create_element_wrapper(vm, element, lua_api)
 		return 1
 	else:
-		# Return nil if element not found
 		vm.lua_pushnil()
 		return 1
 
-# All element handlers now use DOM.gd wrappers
-
-func _threaded_body_on_handler(vm: LuauVM) -> int:
-	# Handle body event registration in threaded mode
-	# Arguments: (self, event_name, callback) due to colon syntax
-	vm.luaL_checktype(1, vm.LUA_TTABLE)  # self (body table)
-	var event_name: String = vm.luaL_checkstring(2)  # event name
-	vm.luaL_checktype(3, vm.LUA_TFUNCTION)  # callback function
+func _body_on_handler(vm: LuauVM) -> int:
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	var event_name: String = vm.luaL_checkstring(2)
+	vm.luaL_checktype(3, vm.LUA_TFUNCTION)
 	
-	# Store callback in registry
 	vm.lua_pushstring("THREADED_CALLBACKS")
 	vm.lua_rawget(vm.LUA_REGISTRYINDEX)
 	if vm.lua_isnil(-1):
@@ -492,16 +493,14 @@ func _threaded_body_on_handler(vm: LuauVM) -> int:
 	var callback_ref = lua_api.next_callback_ref
 	lua_api.next_callback_ref += 1
 	
-	# Get a proper subscription ID
 	var subscription_id = lua_api.next_subscription_id
 	lua_api.next_subscription_id += 1
 	
 	vm.lua_pushinteger(callback_ref)
-	vm.lua_pushvalue(3)  # Copy the callback function (3rd argument)
+	vm.lua_pushvalue(3)
 	vm.lua_rawset(-3)
 	vm.lua_pop(1)
 	
-	# Queue DOM operation for main thread (body events)
 	var operation = {
 		"type": "register_body_event",
 		"event_name": event_name,
@@ -511,7 +510,6 @@ func _threaded_body_on_handler(vm: LuauVM) -> int:
 	
 	call_deferred("_emit_dom_operation_request", operation)
 	
-	# Return subscription with unsubscribe method
 	vm.lua_newtable()
 	vm.lua_pushinteger(subscription_id)
 	vm.lua_setfield(-2, "_subscription_id")
@@ -524,15 +522,12 @@ func _emit_dom_operation_request(operation: Dictionary):
 	dom_operation_request.emit(operation)
 
 func _create_threaded_timeout(timeout_id: int, delay_ms: int):
-	# Ensure timeout manager exists
 	lua_api._ensure_timeout_manager()
 	
-	# Create timeout info for threaded execution
 	var timeout_info = lua_api.timeout_manager.TimeoutInfo.new(timeout_id, timeout_id, lua_vm, lua_api.timeout_manager, false, delay_ms)
 	lua_api.timeout_manager.active_timeouts[timeout_id] = timeout_info
 	lua_api.timeout_manager.threaded_vm = self
 	
-	# Create and start timer on main thread
 	var timer = Timer.new()
 	timer.wait_time = delay_ms / 1000.0
 	timer.one_shot = true
@@ -543,17 +538,15 @@ func _create_threaded_timeout(timeout_id: int, delay_ms: int):
 	timer.start()
 
 func _create_threaded_interval(interval_id: int, delay_ms: int):
-	# Ensure timeout manager exists
 	lua_api._ensure_timeout_manager()
 	
-	# Create interval info for threaded execution
 	var timeout_info = lua_api.timeout_manager.TimeoutInfo.new(interval_id, interval_id, lua_vm, lua_api.timeout_manager, true, delay_ms)
 	lua_api.timeout_manager.active_timeouts[interval_id] = timeout_info
 	lua_api.timeout_manager.threaded_vm = self
 	
 	var timer = Timer.new()
 	timer.wait_time = delay_ms / 1000.0
-	timer.one_shot = false  # Repeating timer for intervals
+	timer.one_shot = false
 	timer.timeout.connect(lua_api.timeout_manager._on_timeout_triggered.bind(timeout_info))
 	
 	timeout_info.timer = timer

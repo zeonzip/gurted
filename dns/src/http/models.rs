@@ -1,7 +1,6 @@
 use super::helpers::deserialize_lowercase;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, types::chrono::{DateTime, Utc}};
-use chrono;
 
 #[derive(Clone, Debug, Deserialize, Serialize, FromRow)]
 pub struct Domain {

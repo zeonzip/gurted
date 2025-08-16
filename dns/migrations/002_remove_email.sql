@@ -1,3 +1,0 @@
-ALTER TABLE users DROP COLUMN IF EXISTS email;
-
-DROP INDEX IF EXISTS idx_users_email;

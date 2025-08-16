@@ -71,42 +71,7 @@ func recalculate_percentage_elements(node: Node):
 var current_domain = ""  # Store current domain for display
 
 func resolve_url(href: String) -> String:
-	if href.begins_with("http://") or href.begins_with("https://") or href.begins_with("gurt://"):
-		return href
-	
-	if current_domain.is_empty():
-		return href
-	
-	var clean_domain = current_domain.rstrip("/")
-	
-	var current_parts = clean_domain.split("/")
-	var host = current_parts[0]
-	var current_path_parts = Array(current_parts.slice(1)) if current_parts.size() > 1 else []
-	
-	var final_path_parts = []
-	
-	if href.begins_with("/"):
-		var href_path = href.substr(1) if href.length() > 1 else ""
-		if not href_path.is_empty():
-			final_path_parts = href_path.split("/")
-	else:
-		final_path_parts = current_path_parts.duplicate()
-		
-		var href_parts = href.split("/")
-		for part in href_parts:
-			if part == "..":
-				if final_path_parts.size() > 0:
-					final_path_parts.pop_back()
-			elif part == "." or part == "":
-				continue
-			else:
-				final_path_parts.append(part)
-	
-	var result = "gurt://" + host
-	if final_path_parts.size() > 0:
-		result += "/" + "/".join(final_path_parts)
-	
-	return result
+	return URLUtils.resolve_url(current_domain, href)
 
 func handle_link_click(meta: Variant) -> void:
 	var href = str(meta)
@@ -134,25 +99,36 @@ func _on_search_submitted(url: String) -> void:
 			const GLOBE_ICON = preload("res://Assets/Icons/globe.svg")
 			tab.stop_loading()
 			tab.set_icon(GLOBE_ICON)
+			return
 		
 		var html_bytes = result.html
 		
 		if result.has("display_url"):
 			current_domain = result.display_url
+			if not current_domain.begins_with("gurt://"):
+				current_domain = "gurt://" + current_domain
 			if not search_bar.has_focus():
-				search_bar.text = current_domain
+				search_bar.text = result.display_url  # Show clean version in search bar
+		else:
+			current_domain = url
 		
 		render_content(html_bytes)
+		
+		# Stop loading spinner after successful render
+		tab.stop_loading()
 	else:
 		print("Non-GURT URL entered: ", url)
 
 func _on_search_focus_entered() -> void:
 	if not current_domain.is_empty():
-		search_bar.text = "gurt://" + current_domain
+		search_bar.text = current_domain
 
 func _on_search_focus_exited() -> void:
 	if not current_domain.is_empty():
-		search_bar.text = current_domain
+		var display_text = current_domain
+		if display_text.begins_with("gurt://"):
+			display_text = display_text.substr(7)
+		search_bar.text = display_text
 
 func render() -> void:
 	render_content(Constants.HTML_CONTENT)
@@ -163,6 +139,19 @@ func render_content(html_bytes: PackedByteArray) -> void:
 	for child in website_container.get_children():
 		child.queue_free()
 	
+	var current_parent = website_container.get_parent()
+	if current_parent and current_parent.name == "BodyMarginContainer":
+		var original_parent = current_parent.get_parent()
+		var container_index = current_parent.get_index()
+		
+		current_parent.remove_child(website_container)
+		
+		original_parent.remove_child(current_parent)
+		current_parent.queue_free()
+		
+		original_parent.add_child(website_container)
+		original_parent.move_child(website_container, container_index)
+	
 	font_dependent_elements.clear()
 	FontManager.clear_fonts()
 	FontManager.set_refresh_callback(refresh_fonts)
@@ -171,6 +160,9 @@ func render_content(html_bytes: PackedByteArray) -> void:
 	var parse_result = parser.parse()
 	
 	parser.process_styles()
+	
+	if parse_result.external_css and not parse_result.external_css.is_empty():
+		await parser.process_external_styles(current_domain)
 	
 	# Process and load all custom fonts defined in <font> tags
 	parser.process_fonts()
@@ -257,6 +249,8 @@ func render_content(html_bytes: PackedByteArray) -> void:
 	
 	if scripts.size() > 0 and lua_api:
 		parser.process_scripts(lua_api, null)
+		if parse_result.external_scripts and not parse_result.external_scripts.is_empty():
+			await parser.process_external_scripts(lua_api, null, current_domain)
 
 static func safe_add_child(parent: Node, child: Node) -> void:
 	if child.get_parent():
@@ -513,3 +507,14 @@ func refresh_fonts(font_name: String) -> void:
 		if styles.has("font-family") and styles["font-family"] == font_name:
 			if is_instance_valid(label):
 				StyleManager.apply_styles_to_label(label, styles, element, parser)
+
+func get_current_url() -> String:
+	return current_domain if not current_domain.is_empty() else ""
+
+func reload_current_page() -> void:
+	if not current_domain.is_empty():
+		_on_search_submitted(current_domain)
+
+func navigate_to_url(url: String) -> void:
+	var resolved_url = resolve_url(url)
+	_on_search_submitted(resolved_url)

@@ -6,9 +6,8 @@ mod routes;
 
 use crate::{auth::jwt_middleware, config::Config, discord_bot};
 use actix_governor::{Governor, GovernorConfigBuilder};
-use actix_web::{http::Method, web, web::Data, App, HttpRequest, HttpServer};
+use actix_web::{http::Method, web, web::Data, App, HttpServer};
 use actix_web_httpauth::middleware::HttpAuthentication;
-use anyhow::{anyhow, Error};
 use colored::Colorize;
 use macros_rs::fmt::{crashln, string};
 use ratelimit::RealIpKeyExtractor;

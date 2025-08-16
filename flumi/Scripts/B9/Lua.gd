@@ -153,6 +153,35 @@ func _gurt_clear_interval_handler(vm: LuauVM) -> int:
 	_ensure_timeout_manager()
 	return timeout_manager.clear_interval_handler(vm)
 
+# Location API handlers
+func _gurt_location_reload_handler(vm: LuauVM) -> int:
+	call_deferred("_reload_current_page")
+	return 0
+
+func _gurt_location_goto_handler(vm: LuauVM) -> int:
+	var url: String = vm.luaL_checkstring(1)
+	call_deferred("_navigate_to_url", url)
+	return 0
+
+func _gurt_location_get_href_handler(vm: LuauVM) -> int:
+	var main_node = Engine.get_main_loop().current_scene
+	if main_node and main_node.has_method("get_current_url"):
+		var current_url = main_node.get_current_url()
+		vm.lua_pushstring(current_url)
+	else:
+		vm.lua_pushstring("")
+	return 1
+
+func _reload_current_page():
+	var main_node = Engine.get_main_loop().current_scene
+	if main_node and main_node.has_method("reload_current_page"):
+		main_node.reload_current_page()
+
+func _navigate_to_url(url: String):
+	var main_node = Engine.get_main_loop().current_scene
+	if main_node and main_node.has_method("navigate_to_url"):
+		main_node.navigate_to_url(url)
+
 # Event system handlers
 func _element_on_event_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)

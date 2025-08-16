@@ -65,3 +65,60 @@ func fetch_image(url: String) -> ImageTexture:
 	var texture = ImageTexture.create_from_image(image)
 	
 	return texture
+
+func fetch_text(url: String) -> String:
+	var http_request = HTTPRequest.new()
+	add_child(http_request)
+	
+	if url.is_empty():
+		http_request.queue_free()
+		return ""
+	
+	var request_headers = PackedStringArray()
+	request_headers.append("User-Agent: " + UserAgent.get_user_agent())
+	
+	var error = http_request.request(url, request_headers)
+	if error != OK:
+		print("Error making HTTP request for text resource: ", url, " Error: ", error)
+		http_request.queue_free()
+		return ""
+	
+	var response = await http_request.request_completed
+	
+	var result = response[0]  # HTTPClient.Result
+	var response_code = response[1]  # int
+	var headers = response[2]  # PackedStringArray
+	var body = response[3]  # PackedByteArray
+	
+	http_request.queue_free()
+	
+	if result != HTTPRequest.RESULT_SUCCESS or response_code != 200:
+		print("Failed to fetch text resource. URL: ", url, " Result: ", result, " Response code: ", response_code)
+		return ""
+	
+	return body.get_string_from_utf8()
+
+func fetch_external_resource(url: String, base_url: String = "") -> String:
+	var resolved_url = URLUtils.resolve_url(base_url, url)
+	
+	if resolved_url.begins_with("http://") or resolved_url.begins_with("https://"):
+		return await fetch_text(resolved_url)
+	elif resolved_url.begins_with("gurt://"):
+		return await fetch_gurt_resource(resolved_url)
+	else:
+		return ""
+
+func fetch_gurt_resource(url: String) -> String:
+	if not GurtProtocol.is_gurt_domain(url):
+		return ""
+	
+	var result = await GurtProtocol.handle_gurt_domain(url)
+	
+	if result.has("error"):
+		print("GURT resource error: ", result.error)
+		return ""
+	
+	if result.has("html"):
+		return result.html.get_string_from_utf8()
+	
+	return ""

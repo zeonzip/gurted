@@ -56,6 +56,8 @@ class ParseResult:
 	var css_parser: CSSParser = null
 	var inline_styles: Dictionary = {}
 	var dom_nodes: Dictionary = {}
+	var external_css: Array[String] = []
+	var external_scripts: Array[String] = []
 	
 	func _init():
 		root = HTMLElement.new("document")
@@ -105,7 +107,9 @@ func handle_style_element(style_element: HTMLElement) -> void:
 	# Check if it's an external stylesheet
 	var src = style_element.get_attribute("src")
 	if src.length() > 0:
-		# TODO: Handle external CSS loading when Network module is available
+		if not parse_result.external_css:
+			parse_result.external_css = []
+		parse_result.external_css.append(src)
 		return
 	
 	# Handle inline CSS - we'll get the text content when parsing is complete
@@ -127,6 +131,24 @@ func process_styles() -> void:
 	if css_content.length() > 0:
 		parse_result.css_parser.css_text = css_content
 		parse_result.css_parser.parse()
+
+func process_external_styles(base_url: String = "") -> void:
+	if not parse_result.external_css or parse_result.external_css.is_empty():
+		return
+	
+	if not parse_result.css_parser:
+		parse_result.css_parser = CSSParser.new()
+		parse_result.css_parser.init()
+	
+	var combined_css = parse_result.css_parser.css_text if parse_result.css_parser.css_text else Constants.DEFAULT_CSS
+	
+	for css_url in parse_result.external_css:
+		var css_content = await Network.fetch_external_resource(css_url, base_url)
+		if not css_content.is_empty():
+			combined_css += "\n" + css_content
+	
+	parse_result.css_parser.css_text = combined_css
+	parse_result.css_parser.parse()
 
 func get_element_styles_with_inheritance(element: HTMLElement, event: String = "", visited_elements: Array = []) -> Dictionary:
 	if !parse_result.css_parser:
@@ -362,10 +384,22 @@ func process_scripts(lua_api: LuaAPI, lua_vm) -> void:
 		var inline_code = script_element.text_content.strip_edges()
 		
 		if not src.is_empty():
-			# TODO: add support for external Lua script
-			pass
+			if not parse_result.external_scripts:
+				parse_result.external_scripts = []
+			parse_result.external_scripts.append(src)
 		elif not inline_code.is_empty():
 			lua_api.execute_lua_script(inline_code, lua_vm)
+
+func process_external_scripts(lua_api: LuaAPI, lua_vm, base_url: String = "") -> void:
+	if not lua_api or not parse_result.external_scripts or parse_result.external_scripts.is_empty():
+		return
+	
+	lua_api.dom_parser = self
+	
+	for script_url in parse_result.external_scripts:
+		var script_content = await Network.fetch_external_resource(script_url, base_url)
+		if not script_content.is_empty():
+			lua_api.execute_lua_script(script_content, lua_vm)
 
 func get_all_stylesheets() -> Array[String]:
 	return get_attribute_values("style", "src")

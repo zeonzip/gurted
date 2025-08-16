@@ -1,6 +1,5 @@
 use serenity::async_trait;
 use serenity::all::*;
-use serenity::prelude::*;
 use sqlx::PgPool;
 
 pub struct DiscordBot {

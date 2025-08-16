@@ -48,31 +48,18 @@ func set_icon(new_icon: Texture) -> void:
 
 func update_icon_from_url(icon_url: String) -> void:
 	if icon_url.is_empty():
-		stop_loading()
+		const GLOBE_ICON = preload("res://Assets/Icons/globe.svg")
+		set_icon(GLOBE_ICON)
 		return
 	
-	const LOADER_CIRCLE = preload("res://Assets/Icons/loader-circle.svg")
-	
-	loading_tween = create_tween()
-	
-	set_icon(LOADER_CIRCLE)
-	
-	loading_tween.set_loops()
-	
-	icon.pivot_offset = Vector2(11.5, 11.5)
-	loading_tween.tween_method(func(angle):
-		if !is_instance_valid(icon): 
-			if loading_tween: loading_tween.kill()
-			return
-		icon.rotation = angle
-	, 0.0, TAU, 1.0)
-	
+	# Load the icon in the background
 	var icon_resource = await Network.fetch_image(icon_url)
-
-	# Only update if tab still exists
-	if is_instance_valid(self):
+	
+	if is_instance_valid(self) and icon_resource:
 		set_icon(icon_resource)
-		stop_loading()
+	elif is_instance_valid(self):
+		const GLOBE_ICON = preload("res://Assets/Icons/globe.svg")
+		set_icon(GLOBE_ICON)
 
 func _on_button_mouse_entered() -> void:
 	mouse_over_tab = true
@@ -89,16 +76,18 @@ func start_loading() -> void:
 	
 	stop_loading()
 	
-	loading_tween = create_tween()
 	set_icon(LOADER_CIRCLE)
-	loading_tween.set_loops()
 	icon.pivot_offset = Vector2(11.5, 11.5)
-	loading_tween.tween_method(func(angle):
-		if !is_instance_valid(icon): 
-			if loading_tween: loading_tween.kill()
-			return
-		icon.rotation = angle
-	, 0.0, TAU, 1.0)
+	
+	loading_tween = create_tween()
+	if loading_tween:
+		loading_tween.set_loops(0)
+		loading_tween.tween_method(func(angle):
+			if !is_instance_valid(icon): 
+				if loading_tween: loading_tween.kill()
+				return
+			icon.rotation = angle
+		, 0.0, TAU, 1.0)
 
 func stop_loading() -> void:
 	if loading_tween:

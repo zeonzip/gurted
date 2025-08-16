@@ -1560,9 +1560,9 @@ checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
 
 [[package]]
 name = "macros-rs"
-version = "1.2.1"
+version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb8136cf4bdbfd10cdf683dab195f53892cb3b6433397ef48b211556b9c49dcb"
+checksum = "9cfca1250b52a785fbe49de29612471f59592b6b659159dcfcb976af08c803b4"
 dependencies = [
  "termcolor",
 ]

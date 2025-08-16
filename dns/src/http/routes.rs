@@ -242,6 +242,7 @@ pub(crate) async fn get_domain(path: web::Path<(String, String)>, app: Data<AppS
             tld: domain.tld,
             name: domain.name,
             ip: domain.ip,
+            records: None,
         }),
         Ok(None) => HttpResponse::NotFound().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),
@@ -378,6 +379,7 @@ pub(crate) async fn get_domains(query: web::Query<PaginationParams>, app: Data<A
                     tld: domain.tld,
                     name: domain.name,
                     ip: domain.ip,
+                    records: None,
                 })
                 .collect();
 
