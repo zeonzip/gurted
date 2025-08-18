@@ -126,6 +126,8 @@ static func _response_ok_handler(vm: LuauVM) -> int:
 	return 1
 
 static func make_http_request(url: String, method: String, headers: PackedStringArray, body: String) -> Dictionary:
+	if url.begins_with("gurt://"):
+		return make_gurt_request(url, method, headers, body)
 	var http_client = HTTPClient.new()
 	var response_data = {
 		"status": 0,
@@ -268,4 +270,64 @@ static func make_http_request(url: String, method: String, headers: PackedString
 		response_data.body = body_bytes.get_string_from_utf8()
 	
 	http_client.close()
+	return response_data
+
+static var _gurt_client: GurtProtocolClient = null
+
+static func make_gurt_request(url: String, method: String, headers: PackedStringArray, body: String) -> Dictionary:
+	var response_data = {
+		"status": 0,
+		"status_text": "Network Error",
+		"headers": {},
+		"body": ""
+	}
+	
+	# Reuse existing client or create new one
+	if _gurt_client == null:
+		_gurt_client = GurtProtocolClient.new()
+		if not _gurt_client.create_client(10):
+			response_data.status = 0
+			response_data.status_text = "Connection Failed"
+			return response_data
+	
+	var client = _gurt_client
+	
+	# Convert headers array to dictionary
+	var headers_dict = {}
+	for header in headers:
+		var parts = header.split(":", 1)
+		if parts.size() == 2:
+			headers_dict[parts[0].strip_edges()] = parts[1].strip_edges()
+	
+	# Prepare request options
+	var options = {
+		"method": method
+	}
+	
+	if not headers_dict.is_empty():
+		options["headers"] = headers_dict
+	
+	if not body.is_empty():
+		options["body"] = body
+	
+	var response = client.request(url, options)
+	
+	# Keep connection alive for reuse instead of disconnecting after every request
+	# client.disconnect()
+	
+	if not response:
+		response_data.status = 0
+		response_data.status_text = "No Response"
+		return response_data
+	
+	response_data.status = response.status_code
+	response_data.status_text = response.status_message if response.status_message else "OK"
+	response_data.headers = response.headers if response.headers else {}
+	
+	var body_content = response.body if response.body else ""
+	if body_content is PackedByteArray:
+		response_data.body = body_content.get_string_from_utf8()
+	else:
+		response_data.body = str(body_content)
+	
 	return response_data

@@ -462,8 +462,32 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		return
 
 	# Handle font weight
+	if utility_name == "font-thin":
+		rule.properties["font-thin"] = true
+		return
+	if utility_name == "font-extralight":
+		rule.properties["font-extralight"] = true
+		return
+	if utility_name == "font-light":
+		rule.properties["font-light"] = true
+		return
+	if utility_name == "font-normal":
+		rule.properties["font-normal"] = true
+		return
+	if utility_name == "font-medium":
+		rule.properties["font-medium"] = true
+		return
+	if utility_name == "font-semibold":
+		rule.properties["font-semibold"] = true
+		return
 	if utility_name == "font-bold":
 		rule.properties["font-bold"] = true
+		return
+	if utility_name == "font-extrabold":
+		rule.properties["font-extrabold"] = true
+		return
+	if utility_name == "font-black":
+		rule.properties["font-black"] = true
 		return
 
 	# Handle font family
@@ -478,7 +502,7 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		rule.properties["font-mono"] = true
 		return
 	
-	var reserved_font_styles = ["font-sans", "font-serif", "font-mono", "font-bold", "font-italic"]
+	var reserved_font_styles = ["font-sans", "font-serif", "font-mono", "font-thin", "font-extralight", "font-light", "font-normal", "font-medium", "font-semibold", "font-bold", "font-extrabold", "font-black", "font-italic"]
 	# Handle custom font families like font-roboto
 	if utility_name.begins_with("font-") and not utility_name in reserved_font_styles:
 		var font_name = utility_name.substr(5)  # after 'font-'
@@ -521,8 +545,8 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 			val = val.substr(1, val.length() - 2)
 		rule.properties["width"] = SizeUtils.parse_size(val)
 		return
-	# Height
-	if utility_name.begins_with("h-"):
+	# Height, but h-full is temporarily disabled since it fucks with Yoga layout engine
+	if utility_name.begins_with("h-") and utility_name != "h-full":
 		var val = utility_name.substr(2)
 		if val.begins_with("[") and val.ends_with("]"):
 			val = val.substr(1, val.length() - 2)

@@ -195,6 +195,13 @@ static func trigger_element_restyle(element: HTMLParser.HTMLElement, dom_parser:
 	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
 	if not dom_node:
 		return
+	
+	# Check if element has the "hidden" class before styling
+	var has_hidden_class = false
+	var current_style = element.get_attribute("style", "")
+	if current_style.length() > 0:
+		var style_classes = CSSParser.smart_split_utility_classes(current_style)
+		has_hidden_class = "hidden" in style_classes
 		
 	# margins, wrappers, etc.
 	var updated_dom_node = StyleManager.apply_element_styles(dom_node, element, dom_parser)
@@ -204,9 +211,15 @@ static func trigger_element_restyle(element: HTMLParser.HTMLElement, dom_parser:
 		dom_parser.parse_result.dom_nodes[element_id] = updated_dom_node
 		dom_node = updated_dom_node
 	
+	# Apply visibility state to the correct node (wrapper or content)
+	if has_hidden_class:
+		dom_node.visible = false
+	else:
+		dom_node.visible = true
+	
 	# Find node
 	var actual_element_node = dom_node
-	if dom_node is MarginContainer and dom_node.name.begins_with("MarginWrapper_"):
+	if dom_node is MarginContainer and dom_node.has_meta("is_margin_wrapper"):
 		if dom_node.get_child_count() > 0:
 			actual_element_node = dom_node.get_child(0)
 	
@@ -223,7 +236,7 @@ static func trigger_element_restyle(element: HTMLParser.HTMLElement, dom_parser:
 static func update_element_text_content(dom_node: Control, element: HTMLParser.HTMLElement, dom_parser: HTMLParser) -> void:
 	# Get node
 	var content_node = dom_node
-	if dom_node is MarginContainer and dom_node.name.begins_with("MarginWrapper_"):
+	if dom_node is MarginContainer and dom_node.has_meta("is_margin_wrapper"):
 		if dom_node.get_child_count() > 0:
 			content_node = dom_node.get_child(0)
 	

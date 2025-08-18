@@ -25,6 +25,8 @@ impl Config {
                     url: "postgresql://username:password@localhost/domains".into(),
                     max_connections: 10,
                 },
+                cert_path: "localhost+2.pem".into(),
+                key_path: "localhost+2-key.pem".into(),
             },
             discord: Discord {
                 bot_token: "".into(),

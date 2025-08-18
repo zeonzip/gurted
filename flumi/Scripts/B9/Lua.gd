@@ -661,18 +661,43 @@ func _handle_text_setting(operation: Dictionary):
 		if dom_node:
 			var text_node = get_dom_node(dom_node, "text")
 			if text_node:
-				if text_node.has_method("set_text"):
+				if text_node is RichTextLabel:
+					var formatted_text = element.get_bbcode_formatted_text(dom_parser)
+					formatted_text = "[font_size=24]%s[/font_size]" % formatted_text
+					
+					text_node.text = formatted_text
+					text_node.call_deferred("_auto_resize_to_content")
+				elif text_node.has_method("set_text"):
 					text_node.set_text(text)
 				elif "text" in text_node:
 					text_node.text = text
+					if text_node.has_method("_auto_resize_to_content"):
+						text_node.call_deferred("_auto_resize_to_content")
+			else:
+				var rich_text_label = _find_rich_text_label_recursive(dom_node)
+				if rich_text_label:
+					var formatted_text = element.get_bbcode_formatted_text(dom_parser)
+					formatted_text = "[font_size=24]%s[/font_size]" % formatted_text
+					
+					rich_text_label.text = formatted_text
+					rich_text_label.call_deferred("_auto_resize_to_content")
+
+func _find_rich_text_label_recursive(node: Node) -> RichTextLabel:
+	if node is RichTextLabel:
+		return node
+	
+	for child in node.get_children():
+		var result = _find_rich_text_label_recursive(child)
+		if result:
+			return result
+	
+	return null
 
 func _handle_text_getting(operation: Dictionary):
 	var selector: String = operation.selector
 	
 	var element = SelectorUtils.find_first_matching(selector, dom_parser.parse_result.all_elements)
 	if element:
-		# Return the element's cached text content from the HTML element
-		# This avoids the need for a callback system since we have the text cached
 		return element.text_content
 	return ""
 

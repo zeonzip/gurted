@@ -55,8 +55,6 @@ func _ready():
 	DisplayServer.window_set_min_size(MIN_SIZE)
 	
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
-	
-	call_deferred("render")
 
 func _on_viewport_size_changed():
 	recalculate_percentage_elements(website_container)
@@ -305,7 +303,7 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 			return null
 		final_node = StyleManager.apply_element_styles(final_node, element, parser)
 		# Flex item properties may still apply
-		StyleManager.apply_flex_item_properties(final_node, styles)
+		FlexUtils.apply_flex_item_properties(final_node, styles)
 		return final_node
 
 	if is_flex_container:
@@ -335,6 +333,9 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 		elif not element.text_content.is_empty():
 			var new_node = await create_element_node_internal(element, parser)
 			container_for_children.add_child(new_node)
+		# For flex divs, we're done - no additional node creation needed
+		elif element.tag_name == "div":
+			pass
 	else:
 		final_node = await create_element_node_internal(element, parser)
 		if not final_node:
@@ -359,10 +360,10 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 				flex_container_node = first_child
 		
 		if flex_container_node is FlexContainer:
-			StyleManager.apply_flex_container_properties(flex_container_node, styles)
+			FlexUtils.apply_flex_container_properties(flex_container_node, styles)
 
 	# Apply flex ITEM properties
-	StyleManager.apply_flex_item_properties(final_node, styles)
+	FlexUtils.apply_flex_item_properties(final_node, styles)
 
 	# Skip ul/ol and non-flex forms, they handle their own children
 	var skip_general_processing = false
@@ -473,6 +474,11 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 		"div":
 			var styles = parser.get_element_styles_with_inheritance(element, "", [])
 			var hover_styles = parser.get_element_styles_with_inheritance(element, "hover", [])
+			var is_flex_container = styles.has("display") and ("flex" in styles["display"])
+			
+			# For flex divs, don't create div scene - the AutoSizingFlexContainer handles it
+			if is_flex_container:
+				return null
 			
 			# Create div container
 			if BackgroundUtils.needs_background_wrapper(styles) or hover_styles.size() > 0:

@@ -515,6 +515,12 @@ static func add_element_methods(vm: LuauVM, lua_api: LuaAPI) -> void:
 	vm.lua_pushcallable(LuaDOMUtils._element_create_tween_wrapper, "element.createTween")
 	vm.lua_setfield(-2, "createTween")
 	
+	vm.lua_pushcallable(LuaDOMUtils._element_show_wrapper, "element.show")
+	vm.lua_setfield(-2, "show")
+	
+	vm.lua_pushcallable(LuaDOMUtils._element_hide_wrapper, "element.hide")
+	vm.lua_setfield(-2, "hide")
+	
 	_add_classlist_support(vm, lua_api)
 	
 	vm.lua_newtable()
@@ -881,6 +887,24 @@ static func _element_index_wrapper(vm: LuauVM) -> int:
 			# Fallback to empty array
 			vm.lua_newtable()
 			return 1
+		"visible":
+			if lua_api:
+				# Get element ID and find the element
+				vm.lua_getfield(1, "_element_id")
+				var element_id: String = vm.lua_tostring(-1)
+				vm.lua_pop(1)
+				
+				var element = lua_api.dom_parser.find_by_id(element_id) if element_id != "body" else lua_api.dom_parser.find_first("body")
+				if element:
+					# Check if element has display: none (hidden class)
+					var class_attr = element.get_attribute("class")
+					var is_hidden = "hidden" in class_attr or element.get_attribute("style").contains("display:none") or element.get_attribute("style").contains("display: none")
+					vm.lua_pushboolean(not is_hidden)
+					return 1
+			
+			# Fallback to true (visible by default)
+			vm.lua_pushboolean(true)
+			return 1
 		_:
 			# Check for DOM traversal properties first
 			if lua_api:
@@ -1034,12 +1058,119 @@ static func _element_newindex_wrapper(vm: LuauVM) -> int:
 			
 			emit_dom_operation(lua_api, operation)
 			return 0
+		"visible":
+			var is_visible: bool = vm.lua_toboolean(3)
+			
+			vm.lua_getfield(1, "_element_id")
+			var element_id: String = vm.lua_tostring(-1)
+			vm.lua_pop(1)
+			
+			var element = lua_api.dom_parser.find_by_id(element_id) if element_id != "body" else lua_api.dom_parser.find_first("body")
+			if element:
+				var class_attr = element.get_attribute("class")
+				var classes = class_attr.split(" ") if not class_attr.is_empty() else []
+				
+				if is_visible:
+					# Remove hidden class if present
+					var hidden_index = classes.find("hidden")
+					if hidden_index >= 0:
+						classes.remove_at(hidden_index)
+						var new_class_attr = " ".join(classes).strip_edges()
+						element.set_attribute("class", new_class_attr)
+						
+						# Update visual element
+						var operation = {
+							"type": "remove_class",
+							"element_id": element_id,
+							"class_name": "hidden"
+						}
+						emit_dom_operation(lua_api, operation)
+				else:
+					# Add hidden class if not present
+					if not "hidden" in classes:
+						classes.append("hidden")
+						var new_class_attr = " ".join(classes).strip_edges()
+						element.set_attribute("class", new_class_attr)
+						
+						# Update visual element
+						var operation = {
+							"type": "add_class",
+							"element_id": element_id,
+							"class_name": "hidden"
+						}
+						emit_dom_operation(lua_api, operation)
+			return 0
 		_:
 			# Store in table normally
 			vm.lua_pushvalue(2)
 			vm.lua_pushvalue(3)
 			vm.lua_rawset(1)
 			return 0
+
+static func _element_show_wrapper(vm: LuauVM) -> int:
+	var lua_api = vm.get_meta("lua_api") as LuaAPI
+	if not lua_api:
+		return 0
+	
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	
+	vm.lua_getfield(1, "_element_id")
+	var element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	var element = lua_api.dom_parser.find_by_id(element_id) if element_id != "body" else lua_api.dom_parser.find_first("body")
+	if element:
+		var class_attr = element.get_attribute("class")
+		var classes = class_attr.split(" ") if not class_attr.is_empty() else []
+		
+		# Remove hidden class if present
+		var hidden_index = classes.find("hidden")
+		if hidden_index >= 0:
+			classes.remove_at(hidden_index)
+			var new_class_attr = " ".join(classes).strip_edges()
+			element.set_attribute("class", new_class_attr)
+			
+			# Update visual element
+			var operation = {
+				"type": "remove_class",
+				"element_id": element_id,
+				"class_name": "hidden"
+			}
+			emit_dom_operation(lua_api, operation)
+	
+	return 0
+
+static func _element_hide_wrapper(vm: LuauVM) -> int:
+	var lua_api = vm.get_meta("lua_api") as LuaAPI
+	if not lua_api:
+		return 0
+	
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	
+	vm.lua_getfield(1, "_element_id")
+	var element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	var element = lua_api.dom_parser.find_by_id(element_id) if element_id != "body" else lua_api.dom_parser.find_first("body")
+	if element:
+		var class_attr = element.get_attribute("class")
+		var classes = class_attr.split(" ") if not class_attr.is_empty() else []
+		
+		# Add hidden class if not present
+		if not "hidden" in classes:
+			classes.append("hidden")
+			var new_class_attr = " ".join(classes).strip_edges()
+			element.set_attribute("class", new_class_attr)
+			
+			# Update visual element
+			var operation = {
+				"type": "add_class",
+				"element_id": element_id,
+				"class_name": "hidden"
+			}
+			emit_dom_operation(lua_api, operation)
+	
+	return 0
 
 static func _element_create_tween_wrapper(vm: LuauVM) -> int:
 	var lua_api = vm.get_meta("lua_api") as LuaAPI

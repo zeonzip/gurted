@@ -62,16 +62,16 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 					node.size_flags_stretch_ratio = percentage_value
 				else:
 					node.custom_minimum_size.x = width
-					var should_center_h = styles.has("mx-auto") or styles.has("justify-self-center") or (styles.has("text-align") and styles["text-align"] == "center")
-					node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER if should_center_h else Control.SIZE_SHRINK_BEGIN
+					node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+				node.set_meta("size_flags_horizontal_set", true)
 			
 			if height != null:
 				if SizingUtils.is_percentage(height):
 					node.size_flags_vertical = Control.SIZE_EXPAND_FILL
 				else:
 					node.custom_minimum_size.y = height
-					var should_center_v = styles.has("my-auto") or styles.has("align-self-center")
-					node.size_flags_vertical = Control.SIZE_SHRINK_CENTER if should_center_v else Control.SIZE_SHRINK_BEGIN
+					node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+				node.set_meta("size_flags_vertical_set", true)
 			
 			node.set_meta("size_flags_set_by_style_manager", true)
 		elif node is VBoxContainer or node is HBoxContainer or node is Container:
@@ -97,6 +97,9 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 			else:
 				# regular controls
 				SizingUtils.apply_regular_control_sizing(node, width, height, styles)
+	
+	# Apply centering for FlexContainers
+	apply_flexcontainer_centering(node, styles)
 
 	if label and label != node:
 		label.anchors_preset = Control.PRESET_FULL_RECT
@@ -145,7 +148,7 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 	if needs_styling:
 		# If node is a MarginContainer wrapper, get the actual content node for styling
 		var content_node = node
-		if node is MarginContainer and node.name.begins_with("MarginWrapper_"):
+		if node is MarginContainer and node.has_meta("is_margin_wrapper"):
 			if node.get_child_count() > 0:
 				content_node = node.get_child(0)
 		
@@ -168,7 +171,7 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 				target_node_for_bg.call_deferred("add_background_rect")
 	else:
 		var content_node = node
-		if node is MarginContainer and node.name.begins_with("MarginWrapper_"):
+		if node is MarginContainer and node.has_meta("is_margin_wrapper"):
 			if node.get_child_count() > 0:
 				content_node = node.get_child(0)
 		
@@ -194,6 +197,7 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 			transform_target = node.get_child(0)
 	
 	apply_transform_properties(transform_target, styles)
+
 
 	return node
 
@@ -273,12 +277,12 @@ static func clear_styling_metadata(node: Control) -> void:
 static func handle_margin_wrapper(node: Control, styles: Dictionary, needs_margin: bool):
 	var current_wrapper = null
 	
-	if node is MarginContainer and node.name.begins_with("MarginWrapper_"):
+	if node is MarginContainer and node.has_meta("is_margin_wrapper"):
 		current_wrapper = node
 
 	elif node.get_parent() and node.get_parent() is MarginContainer:
 		var parent = node.get_parent()
-		if parent.name.begins_with("MarginWrapper_"):
+		if parent.has_meta("is_margin_wrapper"):
 			current_wrapper = parent
 	
 	if needs_margin:
@@ -323,6 +327,7 @@ static func remove_margin_wrapper(margin_container: MarginContainer, original_no
 static func apply_margin_wrapper(node: Control, styles: Dictionary) -> Control:
 	var margin_container = MarginContainer.new()
 	margin_container.name = "MarginWrapper_" + node.name
+	margin_container.set_meta("is_margin_wrapper", true)
 	
 	var has_explicit_width = styles.has("width")
 	var has_explicit_height = styles.has("height")
@@ -406,11 +411,16 @@ static func apply_styles_to_label(label: Control, styles: Dictionary, element: H
 			if not FontManager.loaded_fonts.has(font_family):
 				# Font not loaded yet, use sans-serif as fallback
 				var fallback_font = FontManager.get_font("sans-serif")
-				apply_font_to_label(label, fallback_font)
+				apply_font_to_label(label, fallback_font, styles)
 			
 		if font_resource:
-			apply_font_to_label(label, font_resource)
-		
+			apply_font_to_label(label, font_resource, styles)
+	else:
+		# No custom font family, but check if we need to apply font weight
+		if styles.has("font-thin") or styles.has("font-extralight") or styles.has("font-light") or styles.has("font-normal") or styles.has("font-medium") or styles.has("font-semibold") or styles.has("font-extrabold") or styles.has("font-black"):
+			var default_font = FontManager.get_font("sans-serif")
+			apply_font_to_label(label, default_font, styles)
+	
 	# Apply font size
 	if styles.has("font-size"):
 		font_size = int(styles["font-size"])
@@ -487,15 +497,6 @@ static func apply_styles_to_label(label: Control, styles: Dictionary, element: H
 		
 	label.text = styled_text
 
-static func apply_flex_container_properties(node: FlexContainer, styles: Dictionary) -> void:
-	FlexUtils.apply_flex_container_properties(node, styles)
-
-static func apply_flex_item_properties(node: Control, styles: Dictionary) -> void:
-	FlexUtils.apply_flex_item_properties(node, styles)
-
-static func parse_flex_value(val):
-	return FlexUtils.parse_flex_value(val)
-
 static func apply_body_styles(body: HTMLParser.HTMLElement, parser: HTMLParser, website_container: Control, website_background: Control) -> void:
 	var styles = parser.get_element_styles_with_inheritance(body, "", [])
 	
@@ -553,8 +554,35 @@ static func apply_body_styles(body: HTMLParser.HTMLElement, parser: HTMLParser, 
 static func parse_radius(radius_str: String) -> int:
 	return SizeUtils.parse_radius(radius_str)
 
-static func apply_font_to_label(label: RichTextLabel, font_resource: Font) -> void:
-	label.add_theme_font_override("normal_font", font_resource)
+static func apply_font_to_label(label: RichTextLabel, font_resource: Font, styles: Dictionary = {}) -> void:
+	# Create normal font with appropriate weight
+	var normal_font = SystemFont.new()
+	normal_font.font_names = font_resource.font_names if font_resource is SystemFont else ["Arial"]
+	
+	# Set weight based on styles
+	var font_weight = 400  # Default normal weight
+	if styles.has("font-thin"):
+		font_weight = 100
+	elif styles.has("font-extralight"):
+		font_weight = 200
+	elif styles.has("font-light"):
+		font_weight = 300
+	elif styles.has("font-normal"):
+		font_weight = 400
+	elif styles.has("font-medium"):
+		font_weight = 500
+	elif styles.has("font-semibold"):
+		font_weight = 600
+	elif styles.has("font-bold"):
+		font_weight = 700
+	elif styles.has("font-extrabold"):
+		font_weight = 800
+	elif styles.has("font-black"):
+		font_weight = 900
+	
+	normal_font.font_weight = font_weight
+	
+	label.add_theme_font_override("normal_font", normal_font)
 	
 	var bold_font = SystemFont.new()
 	bold_font.font_names = font_resource.font_names if font_resource is SystemFont else ["Arial"]
@@ -761,3 +789,19 @@ static func await_and_restore_transform(node: Control, target_scale: Vector2, ta
 	node.scale = target_scale
 	node.rotation = target_rotation
 	node.pivot_offset = node.size / 2
+
+static func apply_flexcontainer_centering(node: Control, styles: Dictionary) -> void:
+	if not node is FlexContainer:
+		return
+		
+	var should_center_h = styles.has("mx-auto") or styles.has("justify-self-center") or (styles.has("text-align") and styles["text-align"] == "center")
+	var should_center_v = styles.has("my-auto") or styles.has("align-self-center")
+	
+	if should_center_h and not node.has_meta("size_flags_horizontal_set"):
+		node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	
+	if should_center_v and not node.has_meta("size_flags_vertical_set"):
+		node.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	
+	if should_center_h or should_center_v:
+		node.set_meta("size_flags_set_by_style_manager", true)

@@ -1,5 +1,5 @@
 mod config;
-mod http;
+mod gurt_server;
 mod secret;
 mod auth;
 mod discord_bot;
@@ -27,12 +27,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Start the daemon
     Start,
 }
 
-
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
     let mut env = pretty_env_logger::formatted_builder();
     let level = cli.verbose.log_level_filter();
@@ -47,7 +46,7 @@ fn main() {
 
     match &cli.command {
         Commands::Start => {
-            if let Err(err) = http::start(cli) {
+            if let Err(err) = gurt_server::start(cli).await {
                 log::error!("Failed to start server: {err}")
             }
         }

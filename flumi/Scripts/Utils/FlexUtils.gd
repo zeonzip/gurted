@@ -14,9 +14,14 @@ static func apply_flex_container_properties(node, styles: Dictionary) -> void:
 	# Flex wrap
 	if styles.has("flex-wrap"):
 		match styles["flex-wrap"]:
-			"nowrap": node.flex_wrap = FlexContainer.FlexWrap.NoWrap
-			"wrap": node.flex_wrap = FlexContainer.FlexWrap.Wrap
-			"wrap-reverse": node.flex_wrap = FlexContainer.FlexWrap.WrapReverse
+			"nowrap": 
+				node.flex_wrap = FlexContainer.FlexWrap.NoWrap
+			"wrap": 
+				node.flex_wrap = FlexContainer.FlexWrap.Wrap
+				# this is probably not needed but i dont feel like testing it
+				node.flex_property_changed("flex_wrap", FlexContainer.FlexWrap.Wrap)
+			"wrap-reverse": 
+				node.flex_wrap = FlexContainer.FlexWrap.WrapReverse
 	# Justify content
 	if styles.has("justify-content"):
 		match styles["justify-content"]:

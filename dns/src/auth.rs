@@ -1,7 +1,4 @@
-use actix_web::{dev::ServiceRequest, web, Error, HttpMessage};
-use actix_web_httpauth::extractors::bearer::BearerAuth;
-use actix_web_httpauth::extractors::AuthenticationError;
-use actix_web_httpauth::headers::www_authenticate::bearer::Bearer;
+use gurt::prelude::*;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation, Algorithm};
 use serde::{Deserialize, Serialize};
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -42,7 +39,7 @@ pub struct UserInfo {
     pub created_at: DateTime<Utc>,
 }
 
-pub fn generate_jwt(user_id: i32, username: &str, secret: &str) -> Result<String, jsonwebtoken::errors::Error> {
+pub fn generate_jwt(user_id: i32, username: &str, secret: &str) -> std::result::Result<String, jsonwebtoken::errors::Error> {
     let expiration = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
@@ -57,7 +54,7 @@ pub fn generate_jwt(user_id: i32, username: &str, secret: &str) -> Result<String
     encode(&Header::default(), &claims, &EncodingKey::from_secret(secret.as_ref()))
 }
 
-pub fn validate_jwt(token: &str, secret: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+pub fn validate_jwt(token: &str, secret: &str) -> std::result::Result<Claims, jsonwebtoken::errors::Error> {
     let mut validation = Validation::new(Algorithm::HS256);
     validation.validate_exp = true;
     
@@ -65,31 +62,39 @@ pub fn validate_jwt(token: &str, secret: &str) -> Result<Claims, jsonwebtoken::e
         .map(|token_data| token_data.claims)
 }
 
-pub fn hash_password(password: &str) -> Result<String, bcrypt::BcryptError> {
+pub fn hash_password(password: &str) -> std::result::Result<String, bcrypt::BcryptError> {
     hash(password, DEFAULT_COST)
 }
 
-pub fn verify_password(password: &str, hash: &str) -> Result<bool, bcrypt::BcryptError> {
+pub fn verify_password(password: &str, hash: &str) -> std::result::Result<bool, bcrypt::BcryptError> {
     verify(password, hash)
 }
 
-pub async fn jwt_middleware(
-    req: ServiceRequest,
-    credentials: BearerAuth,
-) -> Result<ServiceRequest, (Error, ServiceRequest)> {
-    let jwt_secret = req
-        .app_data::<web::Data<String>>()
-        .unwrap()
-        .as_ref();
+pub async fn jwt_middleware_gurt(ctx: &ServerContext, jwt_secret: &str) -> Result<Claims> {
+    let start_time = std::time::Instant::now();
+    log::info!("JWT middleware started for {} {}", ctx.method(), ctx.path());
+    
+    let auth_header = ctx.header("authorization")
+        .or_else(|| ctx.header("Authorization"))
+        .ok_or_else(|| {
+            log::warn!("JWT middleware failed: Missing Authorization header in {:?}", start_time.elapsed());
+            GurtError::invalid_message("Missing Authorization header")
+        })?;
 
-    match validate_jwt(credentials.token(), jwt_secret) {
-        Ok(claims) => {
-            req.extensions_mut().insert(claims);
-            Ok(req)
-        }
-        Err(_) => {
-            let config = AuthenticationError::new(Bearer::default());
-            Err((Error::from(config), req))
-        }
+    if !auth_header.starts_with("Bearer ") {
+        log::warn!("JWT middleware failed: Invalid header format in {:?}", start_time.elapsed());
+        return Err(GurtError::invalid_message("Invalid Authorization header format"));
     }
+
+    let token = &auth_header[7..]; // Remove "Bearer " prefix
+    
+    let result = validate_jwt(token, jwt_secret)
+        .map_err(|e| GurtError::invalid_message(format!("Invalid JWT token: {}", e)));
+        
+    match &result {
+        Ok(_) => log::info!("JWT middleware completed successfully in {:?}", start_time.elapsed()),
+        Err(e) => log::warn!("JWT middleware failed: {} in {:?}", e, start_time.elapsed()),
+    }
+    
+    result
 }

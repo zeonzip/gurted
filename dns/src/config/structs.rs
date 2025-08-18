@@ -15,6 +15,8 @@ pub struct Server {
     pub(crate) address: String,
     pub(crate) port: u64,
     pub(crate) database: Database,
+    pub(crate) cert_path: String,
+    pub(crate) key_path: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

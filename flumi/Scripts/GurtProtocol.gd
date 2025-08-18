@@ -1,7 +1,7 @@
 extends RefCounted
 class_name GurtProtocol
 
-const DNS_API_URL = "http://localhost:8080"
+const DNS_API_URL = "gurt://localhost:8877"
 
 static func is_gurt_domain(url: String) -> bool:
 	if url.begins_with("gurt://"):
@@ -52,41 +52,39 @@ static func is_ip_address(address: String) -> bool:
 	return true
 
 static func fetch_domain_info(name: String, tld: String) -> Dictionary:	
-	var http_request = HTTPRequest.new()
-	var tree = Engine.get_main_loop()
-	tree.current_scene.add_child(http_request)
+	var path = "/domain/" + name + "/" + tld
+	var dns_address = "localhost:8877"
 	
-	http_request.timeout = 5.0
+	print("DNS API URL: gurt://" + dns_address + path)
 	
-	var url = DNS_API_URL + "/domain/" + name + "/" + tld
-	print("DNS API URL: ", url)
+	var response = await fetch_content_via_gurt_direct(dns_address, path)
 	
-	var error = http_request.request(url)
+	if response.has("error"):
+		if "No response from GURT server" in response.error or "Failed to create GURT client" in response.error:
+			return {"error": "DNS server is not responding"}
+		else:
+			return {"error": "Failed to make DNS request"}
 	
-	if error != OK:
-		print("HTTP request failed with error: ", error)
-		http_request.queue_free()
-		return {"error": "Failed to make DNS request"}
-	
-	var response = await http_request.request_completed
-	http_request.queue_free()
-	
-	if response[1] == 0 and response[3].size() == 0:
+	if not response.has("content"):
 		return {"error": "DNS server is not responding"}
 	
-	var http_code = response[1]
-	var body = response[3]
-	
-	if http_code != 200:
-		return {"error": "Domain not found or not approved"}
+	var content = response.content
+	if content.is_empty():
+		return {"error": "DNS server is not responding"}
 	
 	var json = JSON.new()
-	var parse_result = json.parse(body.get_string_from_utf8())
+	var parse_result = json.parse(content.get_string_from_utf8())
 	
 	if parse_result != OK:
 		return {"error": "Invalid JSON response from DNS server"}
 	
-	return json.data
+	var data = json.data
+	
+	# Check if the response indicates an error (like 404)
+	if data is Dictionary and data.has("error"):
+		return {"error": "Domain not found or not approved"}
+	
+	return data
 
 static func fetch_content_via_gurt(ip: String, path: String = "/") -> Dictionary:	
 	var client = GurtProtocolClient.new()

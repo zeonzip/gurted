@@ -412,47 +412,69 @@ func apply_element_styles(node: Control, element: HTMLElement, parser: HTMLParse
 		label.text = text
 
 static func apply_element_bbcode_formatting(element: HTMLElement, styles: Dictionary, content: String, parser: HTMLParser = null) -> String:
+	# Apply general styling first (color, font-weight) for all elements
+	var formatted_content = content
+	
+	# Apply font weight (bold/semibold/etc)
+	if styles.has("font-bold") and styles["font-bold"]:
+		formatted_content = "[b]" + formatted_content + "[/b]"
+	elif styles.has("font-semibold") and styles["font-semibold"]:
+		formatted_content = "[b]" + formatted_content + "[/b]"  # BBCode doesn't have semibold, use bold
+	
+	# Apply italic
+	if styles.has("font-italic") and styles["font-italic"]:
+		formatted_content = "[i]" + formatted_content + "[/i]"
+	
+	# Apply underline
+	if styles.has("underline") and styles["underline"]:
+		formatted_content = "[u]" + formatted_content + "[/u]"
+	
+	# Apply color
+	if styles.has("color"):
+		var color = styles["color"]
+		if typeof(color) == TYPE_COLOR:
+			color = "#" + color.to_html(false)
+		else:
+			color = str(color)
+		formatted_content = "[color=%s]%s[/color]" % [color, formatted_content]
+	
+	# Apply tag-specific formatting
 	match element.tag_name:
 		"b":
-			if styles.has("font-bold") and styles["font-bold"]:
-				return "[b]" + content + "[/b]"
+			if not (styles.has("font-bold") and styles["font-bold"]):
+				formatted_content = "[b]" + formatted_content + "[/b]"
 		"i":
-			if styles.has("font-italic") and styles["font-italic"]:
-				return "[i]" + content + "[/i]"
+			if not (styles.has("font-italic") and styles["font-italic"]):
+				formatted_content = "[i]" + formatted_content + "[/i]"
 		"u":
-			if styles.has("underline") and styles["underline"]:
-				return "[u]" + content + "[/u]"
+			if not (styles.has("underline") and styles["underline"]):
+				formatted_content = "[u]" + formatted_content + "[/u]"
 		"small":
 			if styles.has("font-size"):
-				return "[font_size=%d]%s[/font_size]" % [styles["font-size"], content]
+				formatted_content = "[font_size=%d]%s[/font_size]" % [styles["font-size"], formatted_content]
 			else:
-				return "[font_size=20]%s[/font_size]" % content
+				formatted_content = "[font_size=20]%s[/font_size]" % formatted_content
 		"mark":
 			if styles.has("bg"):
-				var color = styles["bg"]
-				if typeof(color) == TYPE_COLOR:
-					color = color.to_html(false)
-				return "[bgcolor=#%s]%s[/bgcolor]" % [color, content]
+				var bg_color = styles["bg"]
+				if typeof(bg_color) == TYPE_COLOR:
+					bg_color = bg_color.to_html(false)
+				formatted_content = "[bgcolor=#%s]%s[/bgcolor]" % [bg_color, formatted_content]
 			else:
-				return "[bgcolor=#FFFF00]%s[/bgcolor]" % content
+				formatted_content = "[bgcolor=#FFFF00]%s[/bgcolor]" % formatted_content
 		"code":
 			if styles.has("font-size"):
-				return "[font_size=%d][code]%s[/code][/font_size]" % [styles["font-size"], content]
+				formatted_content = "[font_size=%d][code]%s[/code][/font_size]" % [styles["font-size"], formatted_content]
 			else:
-				return "[font_size=20][code]%s[/code][/font_size]" % content
+				formatted_content = "[font_size=20][code]%s[/code][/font_size]" % formatted_content
 		"a":
 			var href = element.get_attribute("href")
-			var color = "#1a0dab"
-			if styles.has("color"):
-				var c = styles["color"]
-				if typeof(c) == TYPE_COLOR:
-					color = "#" + c.to_html(false)
-				else:
-					color = str(c)
+			
 			if href.length() > 0:
 				# Pass raw href - URL resolution happens in handle_link_click
-				return "[color=%s][url=%s]%s[/url][/color]" % [color, href, content]
-	return content
+				formatted_content = "[url=%s]%s[/url]" % [href, formatted_content]
+	
+	return formatted_content
 
 static func get_bbcode_with_styles(element: HTMLElement, styles: Dictionary, parser: HTMLParser) -> String:
 	var text = ""

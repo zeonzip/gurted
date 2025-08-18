@@ -1,44 +1,103 @@
 <head>
 	<title>Domain Dashboard</title>
 	<icon src="https://cdn-icons-png.flaticon.com/512/295/295128.png">
-	<meta name="theme-color" content="#0891b2">
-	<meta name="description" content="Manage your domains and registrations">
+		<meta name="theme-color" content="#0891b2">
+		<meta name="description" content="Manage your domains and registrations">
 
-	<style>
-		body { bg-[#f8fafc] p-6 font-sans }
-		h1 { text-[#0891b2] text-3xl font-bold text-center }
-		h2 { text-[#0f766e] text-xl font-semibold }
-		h3 { text-[#374151] text-lg font-medium }
-		.container { bg-[#ffffff] p-6 rounded-lg shadow-lg max-w-6xl mx-auto }
-		.primary-btn { px-4 py-2 rounded-lg font-medium cursor-pointer transition-colors bg-[#0891b2] text-white hover:bg-[#0e7490] }
-		.success-btn { px-4 py-2 rounded-lg font-medium cursor-pointer transition-colors bg-[#059669] text-white hover:bg-[#047857] }
-		.danger-btn { px-4 py-2 rounded-lg font-medium cursor-pointer transition-colors bg-[#dc2626] text-white hover:bg-[#b91c1c] }
-		.secondary-btn { px-4 py-2 rounded-lg font-medium cursor-pointer transition-colors bg-[#6b7280] text-white hover:bg-[#4b5563] }
-		.warning-btn { px-4 py-2 rounded-lg font-medium cursor-pointer transition-colors bg-[#f59e0b] text-white hover:bg-[#d97706] }
-		.form-group { flex flex-col gap-2 mb-4 }
-		.form-input { w-full p-3 border border-gray-300 rounded-md }
-		.card { bg-[#ffffff] p-4 rounded-lg shadow border }
-		.stats-card { bg-[#f0f9ff] p-4 rounded-lg border border-[#0891b2] }
-		.domain-item { bg-[#f8fafc] p-4 rounded-lg border mb-2 flex justify-between items-center }
-		.log-area { bg-[#1f2937] text-white p-4 rounded-lg font-mono text-sm max-h-64 overflow-auto }
-		.error-text { text-[#dc2626] text-sm }
-		.modal { w-full h-full bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 }
-		.modal-content { bg-white p-6 rounded-lg max-w-md w-full mx-4 }
-		.tld-selector { flex flex-wrap gap-2 }
-		.tld-option { px-3 py-1 rounded border cursor-pointer hover:bg-[#f3f4f6] }
-		.tld-selected { bg-[#0891b2] text-white hover:bg-[#0e7490] }
-	</style>
+		<style>
+			body {
+				bg-[#171616] font-sans text-white
+			}
 
-	<script src="dashboard.lua" />
+			h1 {
+				text-[#ef4444] text-3xl font-bold text-center
+			}
+
+			h2 {
+				text-[#dc2626] text-xl font-semibold
+			}
+
+			h3 {
+				text-[#fca5a5] text-lg font-medium
+			}
+
+			.container {
+				bg-[#262626] p-6 rounded-lg shadow-lg max-w-6xl mx-auto
+			}
+
+			.primary-btn {
+				px-4 py-2 rounded-lg font-medium cursor-pointer transition-colors bg-[#dc2626] text-white
+			}
+
+			.success-btn {
+				px-4 py-2 rounded-lg font-medium cursor-pointer transition-colors bg-[#ef4444] text-white
+			}
+
+			.danger-btn {
+				px-4 py-2 rounded-lg font-medium cursor-pointer transition-colors bg-[#b91c1c] text-white
+			}
+
+			.secondary-btn {
+				px-4 py-2 rounded-lg font-medium cursor-pointer transition-colors bg-[#525252] text-white w-32 h-12
+			}
+
+			.warning-btn {
+				px-4 py-2 rounded-lg font-medium cursor-pointer transition-colors bg-[#dc2626] text-white
+			}
+
+			.form-group {
+				flex flex-col gap-2 mb-4 w-full
+			}
+
+			.form-input {
+				w-full p-3 border border-gray-600 rounded-md bg-[#374151] text-white
+			}
+
+			.card {
+				bg-[#262626] p-4 rounded-lg shadow border border-gray-700
+			}
+
+			.stats-card {
+				bg-[#1f1f1f] p-4 rounded-lg border border-[#dc2626]
+			}
+
+			.domain-item {
+				bg-[#374151] p-4 rounded-lg border border-gray-700 mb-2 flex justify-between items-center
+			}
+
+			.log-area {
+				bg-[#111827] text-white p-4 rounded-lg font-mono text-sm max-h-64 overflow-auto
+			}
+
+			.error-text {
+				text-[#fca5a5] text-sm
+			}
+
+			.tld-selector {
+				flex flex-wrap gap-2
+			}
+
+			.tld-option {
+				px-3 py-1 rounded border border-gray-600 cursor-pointer bg-[#374151] text-white w-12 h-12
+			}
+
+			.tld-selected {
+				bg-[#dc2626] text-white
+			}
+
+			.invite-code-display {
+				bg-[#374151] p-3 rounded font-mono text-center mb-2 text-white
+			}
+		</style>
+
+		<script src="dashboard.lua" />
 </head>
 
 <body>
-	<h1>🌐 Domain Management Dashboard</h1>
-	
 	<div style="container mt-6">
 		<div style="stats-card mb-6">
-			<div style="flex justify-between items-center">
-				<div id="user-info" style="text-lg font-semibold">Loading...</div>
+			<div style="flex justify-between items-center w-full">
+				<p id="user-info" style="text-white text-lg font-semibold">Loading...</p>
 				<button id="logout-btn" style="secondary-btn">Logout</button>
 			</div>
 		</div>
@@ -46,17 +105,17 @@
 		<div style="card mb-6">
 			<h2>Register New Domain</h2>
 			<div style="form-group">
-				<label>Domain Name:</label>
+				<p>Domain Name:</p>
 				<input id="domain-name" type="text" style="form-input" placeholder="myawesome" />
 			</div>
 			<div style="form-group">
-				<label>Select TLD:</label>
+				<p>Select TLD:</p>
 				<div id="tld-selector" style="tld-selector">
-					Loading TLDs...
+					<p id="tld-loading">Loading TLDs...</p>
 				</div>
 			</div>
 			<div style="form-group">
-				<label>IP Address:</label>
+				<p>IP Address:</p>
 				<input id="domain-ip" type="text" style="form-input" placeholder="192.168.1.100" />
 			</div>
 			<div id="domain-error" style="error-text hidden mb-2"></div>
@@ -65,49 +124,29 @@
 
 		<div style="card mb-6">
 			<h2>Invite System</h2>
-			<p style="text-[#6b7280] mb-4">Create invite codes to share with friends, or redeem codes to get more domain registrations.</p>
-			
-			<div style="flex flex-row gap-4">
-				<div style="flex-1">
-					<h3>Create Invite</h3>
-					<button id="create-invite-btn" style="warning-btn">Generate Invite Code</button>
+			<p style="text-[#6b7280] mb-4">Create invite codes to share with friends, or redeem codes to get more domain
+				registrations.</p>
+
+			<p id="invite-code-display" style="invite-code-display mt-2">Placeholder</p>
+
+			<div style="flex flex-col gap-4 items-center justify-center mx-auto">
+				<h3>Create Invite</h3>
+				<button id="create-invite-btn" style="warning-btn">Generate Invite Code</button>
+			</div>
+			<div style="flex flex-col gap-4 mx-auto">
+				<h3>Redeem Invite</h3>
+				<div style="flex gap-2">
+					<input id="invite-code-input" type="text" style="form-input" placeholder="Enter invite code" />
+					<button id="redeem-invite-btn" style="primary-btn">Redeem</button>
 				</div>
-				<div style="flex-1">
-					<h3>Redeem Invite</h3>
-					<div style="flex gap-2">
-						<input id="invite-code-input" type="text" style="form-input" placeholder="Enter invite code" />
-						<button id="redeem-invite-btn" style="primary-btn">Redeem</button>
-					</div>
-					<div id="redeem-error" style="error-text hidden mt-2"></div>
-				</div>
+				<div id="redeem-error" style="error-text hidden mt-2"></div>
 			</div>
 		</div>
 
 		<div style="card mb-6">
 			<h2>My Domains</h2>
 			<div id="domains-list">
-				Loading domains...
-			</div>
-		</div>
-
-		<div style="card">
-			<h2>Activity Log</h2>
-			<div style="log-area">
-				<pre id="log-area">Initializing...</pre>
-			</div>
-		</div>
-	</div>
-
-	<div id="invite-modal" style="modal hidden">
-		<div style="modal-content">
-			<h3>Invite Code Generated</h3>
-			<p>Share this code with friends to give them 3 additional domain registrations:</p>
-			<div style="bg-[#f3f4f6] p-3 rounded font-mono text-center mb-4">
-				<span id="invite-code-display">Loading...</span>
-			</div>
-			<div style="flex gap-2 justify-center">
-				<button id="copy-invite-code" style="primary-btn">Copy Code</button>
-				<button id="close-invite-modal" style="secondary-btn">Close</button>
+				<p id="domains-loading">Loading domains...</p>
 			</div>
 		</div>
 	</div>

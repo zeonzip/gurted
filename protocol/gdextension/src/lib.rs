@@ -1,6 +1,6 @@
 use godot::prelude::*;
 use gurt::prelude::*;
-use gurt::{GurtMethod, GurtClientConfig};
+use gurt::{GurtMethod, GurtClientConfig, GurtRequest};
 use tokio::runtime::Runtime;
 use std::sync::Arc;
 use std::cell::RefCell;
@@ -175,21 +175,27 @@ impl GurtProtocolClient {
             }
         };
         
-        let url = format!("gurt://{}:{}{}", host, port, path);
-        let response = match runtime.block_on(async {
-            match method {
-                GurtMethod::GET => client.get(&url).await,
-                GurtMethod::POST => client.post(&url, "").await,
-                GurtMethod::PUT => client.put(&url, "").await,
-                GurtMethod::DELETE => client.delete(&url).await,
-                GurtMethod::HEAD => client.head(&url).await,
-                GurtMethod::OPTIONS => client.options(&url).await,
-                GurtMethod::PATCH => client.patch(&url, "").await,
-                _ => {
-                    godot_print!("Unsupported method: {:?}", method);
-                    return Err(GurtError::invalid_message("Unsupported method"));
-                }
+        let body = options.get("body").unwrap_or("".to_variant()).to::<String>();
+        let headers_dict = options.get("headers").unwrap_or(Dictionary::new().to_variant()).to::<Dictionary>();
+        
+        let mut request = GurtRequest::new(method, path.to_string())
+            .with_header("Host", host)
+            .with_header("User-Agent", "GURT-Client/1.0.0");
+        
+        for key_variant in headers_dict.keys_array().iter_shared() {
+            let key = key_variant.to::<String>();
+            if let Some(value_variant) = headers_dict.get(key_variant) {
+                let value = value_variant.to::<String>();
+                request = request.with_header(key, value);
             }
+        }
+        
+        if !body.is_empty() {
+            request = request.with_string_body(&body);
+        }
+        
+        let response = match runtime.block_on(async {
+            client.send_request(host, port, request).await
         }) {
             Ok(resp) => resp,
             Err(e) => {

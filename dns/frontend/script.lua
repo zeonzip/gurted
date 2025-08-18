@@ -1,3 +1,7 @@
+if gurt.crumbs.get("auth_token") then
+	gurt.location.goto("/dashboard.html")
+end
+
 local submitBtn = gurt.select('#submit')
 local username_input = gurt.select('#username')
 local password_input = gurt.select('#password')
@@ -8,7 +12,6 @@ function addLog(message)
 	log_output.text = log_output.text .. message .. '\\n'
 end
 
-print(gurt.location.href)
 submitBtn:on('submit', function(event)
 	local username = event.data.username
 	local password = event.data.password
@@ -18,7 +21,7 @@ submitBtn:on('submit', function(event)
 		password = password
 	})
 	print(request_body)
-	local url = 'gurt://localhost:8080/auth/login'
+	local url = 'gurt://localhost:8877/auth/login'
 	local headers = {
 		['Content-Type'] = 'application/json'
 	}
