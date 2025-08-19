@@ -7,8 +7,12 @@ var custom_hex_input: LineEdit
 var _file_text_content: String = ""
 var _file_binary_content: PackedByteArray = PackedByteArray()
 var _file_info: Dictionary = {}
+var _element: HTMLParser.HTMLElement
+var _parser: HTMLParser
 
 func init(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
+	_element = element
+	_parser = parser
 	var color_picker_button: ColorPickerButton = $ColorPickerButton
 	var picker: ColorPicker = color_picker_button.get_picker()
 
@@ -150,6 +154,15 @@ func init(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
 		parser.register_dom_node(element, active_child)
 	else:
 		parser.register_dom_node(element, active_child)
+	
+	if active_child is LineEdit:
+		active_child.focus_entered.connect(_on_input_focus_entered)
+		active_child.focus_exited.connect(_on_input_focus_exited)
+	elif active_child is SpinBox:
+		var line_edit = active_child.get_line_edit()
+		if line_edit:
+			line_edit.focus_entered.connect(_on_input_focus_entered)
+			line_edit.focus_exited.connect(_on_input_focus_exited)
 
 func remove_unused_children(keep_child_name: String) -> void:
 	for child in get_children():
@@ -380,6 +393,38 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 	
 	var styles = parser.get_element_styles_with_inheritance(element, "", [])
 	
+	
+	# Apply text color to the active input control
+	var active_child = null
+	for child in get_children():
+		if child.visible:
+			active_child = child
+			break
+	
+	if active_child:
+		# Apply text color
+		if styles.has("color"):
+			var text_color = styles["color"] as Color
+			if active_child is LineEdit:
+				active_child.add_theme_color_override("font_color", text_color)
+				active_child.add_theme_color_override("caret_color", text_color)
+				# Also set placeholder color with reduced opacity
+				var placeholder_color = Color(text_color.r, text_color.g, text_color.b, text_color.a * 0.6)
+				active_child.add_theme_color_override("font_placeholder_color", placeholder_color)
+			elif active_child is SpinBox:
+				active_child.add_theme_color_override("font_color", text_color)
+				# Also apply to the LineEdit inside SpinBox
+				var line_edit = active_child.get_line_edit()
+				if line_edit:
+					line_edit.add_theme_color_override("font_color", text_color)
+					line_edit.add_theme_color_override("caret_color", text_color)
+					var placeholder_color = Color(text_color.r, text_color.g, text_color.b, text_color.a * 0.6)
+					line_edit.add_theme_color_override("font_placeholder_color", placeholder_color)
+		
+		# Apply stylebox for borders, background, padding, etc.
+		if BackgroundUtils.needs_background_wrapper(styles):
+			apply_stylebox_to_input(active_child, styles)
+	
 	var width = null
 	var height = null
 	
@@ -394,12 +439,6 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 			width = SizingUtils.parse_size_value(styles["width"])
 	if styles.has("height"):
 		height = SizingUtils.parse_size_value(styles["height"])
-	
-	var active_child = null
-	for child in get_children():
-		if child.visible:
-			active_child = child
-			break
 	
 	if active_child:
 		if width or height:
@@ -455,3 +494,99 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 		if active_child.name == "DateButton":
 			active_child.anchors_preset = Control.PRESET_TOP_LEFT
 			active_child.position = Vector2.ZERO
+
+func _on_input_focus_entered() -> void:
+	apply_active_styles()
+
+func _on_input_focus_exited() -> void:
+	apply_normal_styles()
+
+func apply_active_styles() -> void:
+	if not _element or not _parser:
+		return
+	
+	# Get both normal and active styles, then merge them
+	var normal_styles = _parser.get_element_styles_with_inheritance(_element, "", [])
+	var active_styles = _parser.get_element_styles_with_inheritance(_element, "active", [])
+	
+	
+	# Merge normal styles with active styles (active styles override normal)
+	var merged_styles = normal_styles.duplicate()
+	for key in active_styles:
+		merged_styles[key] = active_styles[key]
+	
+	
+	# Find the active input control
+	var active_child = null
+	for child in get_children():
+		if child.visible:
+			active_child = child
+			break
+	
+	if not active_child:
+		return
+	
+	# Apply merged styles
+	if BackgroundUtils.needs_background_wrapper(merged_styles):
+		apply_stylebox_to_input(active_child, merged_styles)
+
+func apply_normal_styles() -> void:
+	if not _element or not _parser:
+		return
+	
+	var normal_styles = _parser.get_element_styles_with_inheritance(_element, "", [])
+	
+	# Find the active input control
+	var active_child = null
+	for child in get_children():
+		if child.visible:
+			active_child = child
+			break
+	
+	if not active_child:
+		return
+	
+	# Apply normal border styles
+	if BackgroundUtils.needs_background_wrapper(normal_styles):
+		apply_stylebox_to_input(active_child, normal_styles)
+	else:
+		# Remove style overrides to use default theme
+		if active_child is LineEdit:
+			active_child.remove_theme_stylebox_override("normal")
+			active_child.remove_theme_stylebox_override("focus")
+		elif active_child is SpinBox:
+			active_child.remove_theme_stylebox_override("normal")
+			active_child.remove_theme_stylebox_override("focus")
+		elif active_child is Button:
+			active_child.remove_theme_stylebox_override("normal")
+
+func apply_stylebox_to_input(control: Control, styles: Dictionary) -> void:
+	var style_box = BackgroundUtils.create_stylebox_from_styles(styles)
+	
+	# Set appropriate content margins for inputs if no padding is specified
+	# Check for all possible padding-related styles
+	var has_left_padding = styles.has("padding") or styles.has("padding-left")
+	var has_right_padding = styles.has("padding") or styles.has("padding-right")
+	var has_top_padding = styles.has("padding") or styles.has("padding-top")
+	var has_bottom_padding = styles.has("padding") or styles.has("padding-bottom")
+	
+	
+	if not has_left_padding:
+		style_box.content_margin_left = 5.0
+	if not has_right_padding:
+		style_box.content_margin_right = 5.0
+	if not has_top_padding:
+		style_box.content_margin_top = 2.0
+	if not has_bottom_padding:
+		style_box.content_margin_bottom = 2.0
+	
+	
+	# Apply the style to the appropriate states
+	if control is LineEdit:
+		control.add_theme_stylebox_override("normal", style_box)
+		control.add_theme_stylebox_override("focus", style_box)
+	elif control is SpinBox:
+		control.add_theme_stylebox_override("normal", style_box)
+		control.add_theme_stylebox_override("focus", style_box)
+	elif control is Button:
+		control.add_theme_stylebox_override("normal", style_box)

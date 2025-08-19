@@ -261,7 +261,8 @@ class CSSStylesheet:
 			else:
 				# Exact match
 				parsed = parse_attribute_value(attribute_part, "=")
-				return element.get_attribute(parsed.name) == parsed.value
+				element_value = element.get_attribute(parsed.name)
+				return element_value == parsed.value
 		else:
 			# Just check if attribute exists
 			return element.has_attribute(attribute_part)
@@ -384,12 +385,15 @@ func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
 			pseudo_rule.selector_type = "simple"
 			pseudo_rule.selector_parts = [rule.selector]
 			pseudo_rule.calculate_specificity()
+			pseudo_rule.specificity += 100
 			
 			parse_utility_class_internal(pseudo_rule, actual_utility)
 			stylesheet.add_rule(pseudo_rule)
 			return
 
 	# Fallback to normal parsing
+	rule.calculate_specificity()
+	rule.specificity += 50
 	parse_utility_class_internal(rule, utility_name)
 
 # Parses a utility class (e.g. "text-red-500") and adds properties to the rule (e.g. "color: red")
@@ -671,12 +675,18 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 	if utility_name.begins_with("p-[") and utility_name.ends_with("]"):
 		var val = SizeUtils.extract_bracket_content(utility_name, 2)  # after 'p-'
 		var padding_value = SizeUtils.parse_size(val)
-		rule.properties["padding"] = padding_value
+		rule.properties["padding-left"] = padding_value
+		rule.properties["padding-right"] = padding_value
+		rule.properties["padding-top"] = padding_value
+		rule.properties["padding-bottom"] = padding_value
 		return
 	if utility_name.begins_with("p-"):
 		var val = utility_name.substr(2)
 		var padding_value = SizeUtils.parse_size(val)
-		rule.properties["padding"] = padding_value
+		rule.properties["padding-left"] = padding_value
+		rule.properties["padding-right"] = padding_value
+		rule.properties["padding-top"] = padding_value
+		rule.properties["padding-bottom"] = padding_value
 		return
 	if utility_name.begins_with("px-"):
 		var val = utility_name.substr(3)

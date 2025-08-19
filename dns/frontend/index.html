@@ -7,8 +7,8 @@
 	<font name="roboto" src="https://fonts.gstatic.com/s/roboto/v48/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3KUBGEe.woff2" />
 
 	<style>
-		body { bg-[#1b1b1b] text-[#ffffff] font-roboto flex items-center justify-center p-4 }
-		.login-card { bg-[#2a2a2a] rounded-lg p-8 shadow-2xl mx-0 }
+		body { bg-[#2a2a2a] text-[#ffffff] font-roboto flex items-center justify-center p-4 }
+		.login-card { p-8 }
 		h1 { text-3xl font-bold text-center mb-6 text-[#ffffff] }
 		input {
 			bg-[#3b3b3b]
@@ -38,13 +38,12 @@
 		#log-output { text-white p-4 rounded-md mt-4 font-mono max-h-40 }
 	</style>
 	
-	<script src="script.lua" />
 </head>
 
 <body>
 	<div style="login-card">
 		<h1>Login</h1>
-		<form id="login-form">
+		<form id="login-form" style="mx-auto">
 			<input id="username" type="text" placeholder="Username" required="true" />
 			<input id="password" type="password" placeholder="Password" required="true" />
 			<button type="submit" id="submit">Log In</button>

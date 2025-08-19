@@ -7,13 +7,25 @@ static func parse_size(val):
 	if val == null: return null
 	if typeof(val) == TYPE_INT or typeof(val) == TYPE_FLOAT:
 		return float(val)
+	
+	# Handle bracketed values like [5px], [2rem], [50%]
+	if val.begins_with("[") and val.ends_with("]"):
+		var clean_val = val.replace("[", "").replace("]", "")
+		if clean_val.ends_with("px"):
+			return float(clean_val.replace("px", ""))
+		elif clean_val.ends_with("rem"):
+			return float(clean_val.replace("rem", "")) * 16.0
+		elif clean_val.ends_with("%"):
+			return clean_val
+		else:
+			return float(clean_val)
+	
 	if val.ends_with("px"):
 		return float(val.replace("px", ""))
 	if val.ends_with("rem"):
 		return float(val.replace("rem", "")) * 16.0
-	if val.ends_with("%") or (val.ends_with("]") and "%" in val):
-		var clean_val = val.replace("[", "").replace("]", "")
-		return clean_val
+	if val.ends_with("%"):
+		return val
 	return float(val)
 
 static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement, parser: HTMLParser) -> Control:
@@ -98,8 +110,7 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 				# regular controls
 				SizingUtils.apply_regular_control_sizing(node, width, height, styles)
 	
-	# Apply centering for FlexContainers
-	apply_flexcontainer_centering(node, styles)
+	apply_element_centering(node, styles)
 
 	if label and label != node:
 		label.anchors_preset = Control.PRESET_FULL_RECT
@@ -805,3 +816,34 @@ static func apply_flexcontainer_centering(node: Control, styles: Dictionary) -> 
 	
 	if should_center_h or should_center_v:
 		node.set_meta("size_flags_set_by_style_manager", true)
+
+static func apply_element_centering(node: Control, styles: Dictionary) -> void:
+	var should_center_h = styles.has("mx-auto") or styles.has("justify-self-center") or (styles.has("text-align") and styles["text-align"] == "center")
+	var should_center_v = styles.has("my-auto") or styles.has("align-self-center")
+	
+	# For FlexContainers, use the existing logic with metadata checks
+	if node is FlexContainer:
+		if should_center_h and not node.has_meta("size_flags_horizontal_set"):
+			node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		
+		if should_center_v and not node.has_meta("size_flags_vertical_set"):
+			node.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		
+		if should_center_h or should_center_v:
+			node.set_meta("size_flags_set_by_style_manager", true)
+	else:
+		# For other controls, apply centering more directly
+		if should_center_h:
+			# Only apply if no explicit width was set, or if explicit sizing allows centering
+			var has_explicit_width = styles.has("width")
+			if not has_explicit_width or not node.has_meta("size_flags_horizontal_set"):
+				node.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		
+		if should_center_v:
+			# Only apply if no explicit height was set, or if explicit sizing allows centering
+			var has_explicit_height = styles.has("height")
+			if not has_explicit_height or not node.has_meta("size_flags_vertical_set"):
+				node.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		
+		if should_center_h or should_center_v:
+			node.set_meta("size_flags_set_by_style_manager", true)

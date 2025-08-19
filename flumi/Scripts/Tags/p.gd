@@ -1,7 +1,11 @@
 class_name HTMLP
 extends RichTextLabel
 
+var element_styles: Dictionary = {}
+
 func init(element: HTMLParser.HTMLElement, parser: HTMLParser) -> void:
+	element_styles = parser.get_element_styles_with_inheritance(element, "", [])
+	
 	text = "[font_size=24]%s[/font_size]" % element.get_bbcode_formatted_text(parser)
 	
 	# Allow mouse events to pass through to parent containers for hover effects while keeping text selection
@@ -30,6 +34,10 @@ func _auto_resize_to_content():
 	await get_tree().process_frame
 	
 	var natural_width = size.x
+	
+	var font_weight_multiplier = _get_font_weight_multiplier()
+	natural_width *= font_weight_multiplier
+	
 	var desired_width = clampf(natural_width, min_width, max_width)
 	
 	autowrap_mode = original_autowrap
@@ -42,3 +50,26 @@ func _auto_resize_to_content():
 	custom_minimum_size = Vector2(desired_width, final_height)
 	
 	queue_redraw()
+
+func _get_font_weight_multiplier() -> float:
+	if element_styles.has("font-black"):
+		return 1.12
+	elif element_styles.has("font-extrabold"):
+		return 1.10
+	elif element_styles.has("font-bold"):
+		return 1.08
+	elif element_styles.has("font-semibold"):
+		return 1.06
+	elif element_styles.has("font-medium"):
+		return 1.03
+	elif element_styles.has("font-light"):
+		return 0.98
+	elif element_styles.has("font-extralight") or element_styles.has("font-thin"):
+		return 0.95
+	
+	var text_content = get_parsed_text()
+	
+	if text_content.contains("[b]"):
+		return 1.08
+	
+	return 1.0

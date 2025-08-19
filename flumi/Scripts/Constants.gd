@@ -23,6 +23,9 @@ pre { text-xl font-mono }
 
 button { text-[16px] bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] px-3 py-1.5 }
 button[disabled] { bg-[#666666] text-[#999999] cursor-not-allowed }
+
+input[type="text"] { text-[#000000] border border-[#000000] rounded-[3px] bg-transparent px-3 py-1.5 }
+input[type="text"]:active { border-[3px] border-[#000000] }
 """
 
 var HTML_CONTENT = """

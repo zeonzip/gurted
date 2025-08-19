@@ -76,10 +76,21 @@ static func create_stylebox_from_styles(styles: Dictionary = {}, container: Cont
 			style_box.set(property_name, parsed_width)
 	
 	var border_color = Color.BLACK
+	var has_border_color = false
 	if styles.has("border-color"):
 		border_color = styles["border-color"]
+		has_border_color = true
 	elif container and container.has_meta("custom_css_border_color"):
 		border_color = container.get_meta("custom_css_border_color")
+		has_border_color = true
+	
+	# If we have a border color but no width set, default to 1px
+	if has_border_color and not has_border:
+		has_border = true
+		style_box.border_width_top = 1
+		style_box.border_width_right = 1
+		style_box.border_width_bottom = 1
+		style_box.border_width_left = 1
 	
 	if has_border:
 		style_box.border_color = border_color
