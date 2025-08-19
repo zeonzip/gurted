@@ -268,6 +268,8 @@ static func render_new_element(element: HTMLParser.HTMLElement, parent_node: Nod
 	if not main_scene:
 		return
 	
+	var element_id = element.get_attribute("id")
+	
 	# Create the visual node for the element
 	var element_node = await main_scene.create_element_node(element, dom_parser)
 	if not element_node:
@@ -279,7 +281,6 @@ static func render_new_element(element: HTMLParser.HTMLElement, parent_node: Nod
 
 	# Register the DOM node
 	dom_parser.register_dom_node(element, element_node)
-
 	# Add to parent - handle body special case
 	var container_node = parent_node
 	if parent_node is MarginContainer and parent_node.get_child_count() > 0:
@@ -945,6 +946,17 @@ static func _add_classlist_support(vm: LuauVM, lua_api: LuaAPI) -> void:
 	vm.lua_pushcallable(LuaDOMUtils._classlist_toggle_wrapper, "classList.toggle")
 	vm.lua_setfield(-2, "toggle")
 	
+	vm.lua_pushcallable(LuaDOMUtils._classlist_contains_wrapper, "classList.contains")
+	vm.lua_setfield(-2, "contains")
+	
+	vm.lua_pushcallable(LuaDOMUtils._classlist_item_wrapper, "classList.item")
+	vm.lua_setfield(-2, "item")
+	
+	vm.lua_newtable()
+	vm.lua_pushcallable(LuaDOMUtils._classlist_index_wrapper, "classList.__index")
+	vm.lua_setfield(-2, "__index")
+	vm.lua_setmetatable(-2)
+	
 	# Set classList on the element
 	vm.lua_setfield(-2, "classList")
 
@@ -1016,6 +1028,88 @@ static func _classlist_toggle_wrapper(vm: LuauVM) -> int:
 	
 	emit_dom_operation(lua_api, operation)
 	return 0
+
+static func _classlist_contains_wrapper(vm: LuauVM) -> int:
+	var start_time = Time.get_ticks_msec()
+
+	var lua_api = vm.get_meta("lua_api") as LuaAPI
+	if not lua_api:
+		vm.lua_pushboolean(false)
+		return 1
+	
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	var cls: String = vm.luaL_checkstring(2)
+	
+	vm.lua_getfield(1, "_element_id")
+	var element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	var element = lua_api.dom_parser.find_by_id(element_id) if element_id != "body" else lua_api.dom_parser.find_first("body")
+	if element:
+		var current_style = element.get_attribute("style", "")
+		var style_classes = CSSParser.smart_split_utility_classes(current_style) if current_style.length() > 0 else []
+		
+		var has_class = cls in style_classes
+		
+		vm.lua_pushboolean(has_class)
+		return 1
+	
+	vm.lua_pushboolean(false)
+	return 1
+
+static func _classlist_item_wrapper(vm: LuauVM) -> int:
+	var lua_api = vm.get_meta("lua_api") as LuaAPI
+	if not lua_api:
+		vm.lua_pushnil()
+		return 1
+	
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	var index: int = vm.luaL_checkint(2) - 1 # Convert from 1-based to 0-based indexing
+	
+	vm.lua_getfield(1, "_element_id")
+	var element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	var element = lua_api.dom_parser.find_by_id(element_id) if element_id != "body" else lua_api.dom_parser.find_first("body")
+	if element:
+		var current_style = element.get_attribute("style", "")
+		var style_classes = CSSParser.smart_split_utility_classes(current_style) if current_style.length() > 0 else []
+		if index >= 0 and index < style_classes.size():
+			vm.lua_pushstring(style_classes[index])
+			return 1
+	
+	vm.lua_pushnil()
+	return 1
+
+static func _classlist_index_wrapper(vm: LuauVM) -> int:
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	var key: String = vm.luaL_checkstring(2)
+	
+	if key == "length":
+		var lua_api = vm.get_meta("lua_api") as LuaAPI
+		if not lua_api:
+			vm.lua_pushinteger(0)
+			return 1
+		
+		vm.lua_getfield(1, "_element_id")
+		var element_id: String = vm.lua_tostring(-1)
+		vm.lua_pop(1)
+		
+		var element = lua_api.dom_parser.find_by_id(element_id) if element_id != "body" else lua_api.dom_parser.find_first("body")
+		if element:
+			var current_style = element.get_attribute("style", "")
+			var style_classes = CSSParser.smart_split_utility_classes(current_style) if current_style.length() > 0 else []
+			vm.lua_pushinteger(style_classes.size())
+			return 1
+		
+		vm.lua_pushinteger(0)
+		return 1
+	
+	vm.lua_pushvalue(1)
+	vm.lua_pushstring(key)
+	vm.lua_rawget(-2)
+	vm.lua_remove(-2)
+	return 1
 
 static func _element_newindex_wrapper(vm: LuauVM) -> int:
 	# Get lua_api from VM metadata

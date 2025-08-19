@@ -20,6 +20,7 @@ TODO:
 11. **< table >** component. [🔗 Related Godot proposal](https://github.com/godotengine/godot-proposals/issues/97)
 12. **< canvas >** component should be theoretically impossible by exposing Godot `_draw()` APIs to Lua.
 13. `grid` display property for CSS, using `GridContainer` in Godot.
+14. Position `absolute` can be achieved by wrapping inside a Control node with a 0,0 size (so it's ignored by the layout), and moving the inner child according to CSS.
 
 Issues:
 1. **< br />** counts as 1 element in **WebsiteContainer**, therefore despite being (0,0) in size, it counts as double in spacing

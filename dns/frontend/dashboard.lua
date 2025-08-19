@@ -8,6 +8,7 @@ local domainsList = gurt.select('#domains-list')
 local tldSelector = gurt.select('#tld-selector')
 local loadingElement = gurt.select('#tld-loading')
 local displayElement = gurt.select('#invite-code-display')
+local options
 
 displayElement:hide()
 
@@ -49,18 +50,23 @@ local function renderTLDSelector()
             ['data-tld'] = tld
         })
 
+        tldSelector:append(option)
+        
         option:on('click', function()
             -- Clear previous selection
-            local options = gurt.selectAll('.tld-option')
+            if not options then
+                options = gurt.selectAll('.tld-option')
+            end
+
             for j = 1, #options do
-                options[j].classList:remove('tld-selected')
+                if options[j].classList:contains('tld-selected') then
+                    options[j].classList:remove('tld-selected')
+                end
             end
 
             -- Select this option
             option.classList:add('tld-selected')
         end)
-
-        tldSelector:append(option)
         i = i + 1
     end, 16)
 end

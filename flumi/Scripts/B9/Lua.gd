@@ -23,6 +23,7 @@ var next_callback_ref: int = 1
 
 var element_id_counter: int = 1
 var element_id_registry: Dictionary = {}
+var pending_event_registrations: Array = []
 
 func _init():
 	timeout_manager = LuaTimeoutManager.new()
@@ -729,6 +730,19 @@ func _register_event_on_main_thread(element_id: String, event_name: String, call
 	# This runs on the main thread - safe to access DOM nodes
 	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
 	if not dom_node:
+		var pending_registration = {
+			"element_id": element_id,
+			"event_name": event_name,
+			"callback_ref": callback_ref,
+			"subscription_id": subscription_id if subscription_id != -1 else next_subscription_id
+		}
+		
+		if subscription_id == -1:
+			next_subscription_id += 1
+		
+		pending_event_registrations.append(pending_registration)
+		
+		call_deferred("_process_pending_event_registrations")
 		return
 	
 	# Use provided subscription_id or generate a new one
@@ -749,6 +763,29 @@ func _register_event_on_main_thread(element_id: String, event_name: String, call
 	
 	var signal_node = get_dom_node(dom_node, "signal")
 	LuaEventUtils.connect_element_event(signal_node, event_name, subscription)
+
+func _process_pending_event_registrations():
+	
+	var i = 0
+	while i < pending_event_registrations.size():
+		var registration = pending_event_registrations[i]
+		var element_id = registration.element_id
+		var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+		
+		if dom_node:
+			pending_event_registrations.remove_at(i)
+			
+			_register_event_on_main_thread(
+				registration.element_id,
+				registration.event_name, 
+				registration.callback_ref,
+				registration.subscription_id
+			)
+		else:
+			i += 1
+	
+	if pending_event_registrations.size() > 0:
+		call_deferred("_process_pending_event_registrations")
 
 func _unsubscribe_event_on_main_thread(subscription_id: int):
 	# This runs on the main thread - safe to cleanup event subscriptions
