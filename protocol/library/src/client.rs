@@ -184,12 +184,11 @@ impl GurtClient {
             
             let bytes_read = conn.connection.read(&mut temp_buffer).await?;
             if bytes_read == 0 {
-                break; // Connection closed
+                break;
             }
             
             buffer.extend_from_slice(&temp_buffer[..bytes_read]);
             
-            // Check for complete message
             let body_separator = BODY_SEPARATOR.as_bytes();
             
             if !headers_parsed {
@@ -197,7 +196,6 @@ impl GurtClient {
                     headers_end_pos = Some(pos + body_separator.len());
                     headers_parsed = true;
                     
-                    // Parse headers to get Content-Length
                     let headers_section = &buffer[..pos];
                     if let Ok(headers_str) = std::str::from_utf8(headers_section) {
                         for line in headers_str.lines() {
@@ -220,7 +218,6 @@ impl GurtClient {
                     return Ok(buffer);
                 }
             } else if headers_parsed && expected_body_length.is_none() {
-                // No Content-Length header, return what we have after headers
                 return Ok(buffer);
             }
         }
@@ -329,7 +326,7 @@ impl GurtClient {
             }
             
             match timeout(Duration::from_millis(100), tls_stream.read(&mut temp_buffer)).await {
-                Ok(Ok(0)) => break, // Connection closed
+                Ok(Ok(0)) => break,
                 Ok(Ok(n)) => {
                     buffer.extend_from_slice(&temp_buffer[..n]);
                     
@@ -394,7 +391,6 @@ impl GurtClient {
         self.send_request_internal(&host, port, request).await
     }
     
-    /// POST request with JSON body
     pub async fn post_json<T: serde::Serialize>(&self, url: &str, data: &T) -> Result<GurtResponse> {
         let (host, port, path) = self.parse_url(url)?;
         let json_body = serde_json::to_string(data)?;
@@ -408,7 +404,6 @@ impl GurtClient {
         self.send_request_internal(&host, port, request).await
     }
 
-    /// PUT request with body
     pub async fn put(&self, url: &str, body: &str) -> Result<GurtResponse> {
         let (host, port, path) = self.parse_url(url)?;
         let request = GurtRequest::new(GurtMethod::PUT, path)
@@ -420,7 +415,6 @@ impl GurtClient {
         self.send_request_internal(&host, port, request).await
     }
 
-    /// PUT request with JSON body
     pub async fn put_json<T: serde::Serialize>(&self, url: &str, data: &T) -> Result<GurtResponse> {
         let (host, port, path) = self.parse_url(url)?;
         let json_body = serde_json::to_string(data)?;
@@ -461,7 +455,6 @@ impl GurtClient {
         self.send_request_internal(&host, port, request).await
     }
 
-    /// PATCH request with body
     pub async fn patch(&self, url: &str, body: &str) -> Result<GurtResponse> {
         let (host, port, path) = self.parse_url(url)?;
         let request = GurtRequest::new(GurtMethod::PATCH, path)
@@ -473,7 +466,6 @@ impl GurtClient {
         self.send_request_internal(&host, port, request).await
     }
 
-    /// PATCH request with JSON body
     pub async fn patch_json<T: serde::Serialize>(&self, url: &str, data: &T) -> Result<GurtResponse> {
         let (host, port, path) = self.parse_url(url)?;
         let json_body = serde_json::to_string(data)?;
@@ -547,5 +539,39 @@ mod tests {
         assert_eq!(host, "example.com");
         assert_eq!(port, 8080);
         assert_eq!(path, "/api/v1");
+    }
+    
+    #[test]
+    fn test_connection_pooling_config() {
+        let config = GurtClientConfig {
+            enable_connection_pooling: true,
+            max_connections_per_host: 8,
+            ..Default::default()
+        };
+        
+        let client = GurtClient::with_config(config);
+        assert!(client.config.enable_connection_pooling);
+        assert_eq!(client.config.max_connections_per_host, 8);
+    }
+    
+    #[test]
+    fn test_connection_key() {
+        let key1 = ConnectionKey {
+            host: "example.com".to_string(),
+            port: 4878,
+        };
+        
+        let key2 = ConnectionKey {
+            host: "example.com".to_string(),
+            port: 4878,
+        };
+        
+        let key3 = ConnectionKey {
+            host: "other.com".to_string(),
+            port: 4878,
+        };
+        
+        assert_eq!(key1, key2);
+        assert_ne!(key1, key3);
     }
 }
