@@ -61,7 +61,7 @@ static func apply_flex_container_properties(node, styles: Dictionary) -> void:
 	
 	if styles.has("width"):
 		var width_val = styles["width"]
-		if width_val == "full":
+		if width_val == "full" or width_val == "100%":
 			# For flex containers, w-full should expand to fill parent
 			node.set_meta("should_fill_horizontal", true)
 		elif typeof(width_val) == TYPE_STRING and width_val.ends_with("%"):
@@ -79,6 +79,7 @@ static func apply_flex_container_properties(node, styles: Dictionary) -> void:
 			node.set_meta("custom_css_height", SizingUtils.parse_size_value(height_val))
 	if styles.has("background-color"):
 		node.set_meta("custom_css_background_color", styles["background-color"])
+	
 	node.update_layout()
 
 static func apply_flex_item_properties(node: Control, styles: Dictionary) -> void:

@@ -101,3 +101,19 @@ pub(crate) struct DomainList {
     pub(crate) domain: String,
     pub(crate) taken: bool,
 }
+
+#[derive(Debug, Serialize)]
+pub(crate) struct UserDomain {
+    pub(crate) name: String,
+    pub(crate) tld: String,
+    pub(crate) ip: String,
+    pub(crate) status: String,
+    pub(crate) denial_reason: Option<String>,
+}
+
+#[derive(Serialize)]
+pub(crate) struct UserDomainResponse {
+    pub(crate) domains: Vec<UserDomain>,
+    pub(crate) page: u32,
+    pub(crate) limit: u32,
+}

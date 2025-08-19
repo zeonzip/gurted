@@ -88,7 +88,7 @@ func _resort() -> void:
 	
 	if not auto_size_width:
 		available_width = calculate_available_dimension(true)
-	elif flex_wrap == FlexContainer.FlexWrap.Wrap:
+	elif flex_wrap != FlexContainer.FlexWrap.NoWrap:
 		available_width = get_parent_or_fallback_size(true)
 	
 	if not auto_size_height:

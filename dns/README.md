@@ -19,6 +19,7 @@ This is a Domain Management API built with Rust (Actix Web) and PostgreSQL. It p
   - [GET /auth/me](#get-authme)
   - [POST /auth/invite](#post-authinvite)
   - [POST /auth/redeem-invite](#post-authredeem-invite)
+  - [GET /auth/domains](#get-authdomains) 🔒
 - [Domain Endpoints](#domain-endpoints)
   - [GET /](#get-)
   - [POST /domain](#post-domain) 🔒
@@ -127,6 +128,50 @@ Redeem an invite code to get 3 additional domain registrations. Requires authent
 }
 ```
 
+### GET /auth/domains 🔒
+
+Get all domains owned by the authenticated user, including their status. Requires `Authorization: Bearer <token>` header.
+
+**Query Parameters:**
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 100, max: 1000)
+
+**Response:**
+```json
+{
+  "domains": [
+    {
+      "name": "myawesome",
+      "tld": "dev",
+      "ip": "192.168.1.100",
+      "status": "approved",
+      "denial_reason": null
+    },
+    {
+      "name": "pending",
+      "tld": "fr", 
+      "ip": "10.0.0.1",
+      "status": "pending",
+      "denial_reason": null
+    },
+    {
+      "name": "rejected",
+      "tld": "mf",
+      "ip": "172.16.0.1", 
+      "status": "denied",
+      "denial_reason": "Invalid IP address"
+    }
+  ],
+  "page": 1,
+  "limit": 100
+}
+```
+
+**Status Values:**
+- `pending` - Domain is awaiting approval
+- `approved` - Domain has been approved and is active
+- `denied` - Domain was rejected (see `denial_reason` for details)
+
 ## Domain Endpoints
 
 ### GET /
@@ -156,15 +201,6 @@ Submit a domain for approval. Requires authentication and consumes one registrat
   "tld": "dev",
   "ip": "192.168.1.100",
   "name": "myawesome"
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Domain registration submitted for approval",
-  "domain": "myawesome.dev",
-  "status": "pending"
 }
 ```
 

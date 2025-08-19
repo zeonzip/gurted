@@ -28,7 +28,6 @@ Issues:
 3. Certain properties like `scale` and `rotate` don't apply to the `active` pseudo-class because they rely on mouse_enter and mouse_exit events
 4. `<div style="bg-[#3b82f6] w-[100px] h-[100px] flex hover:scale-110 transition hover:rotate-45">Box</div>` something like this has the "Box" text (presumably the PanelContainer) as the target of the hover, not the div itself (which has the w/h size)
 5. font in button doesn't comply with CSS, its the projects default
-6. Flex containers, ironically enough, make the page unresponsive. This happens because of our custom `AutoSizingFlexContainer.gd` script, which aims to set a Godot UI size to the flex containers based on their content. However, they don't get resized when the window is resized, leading to unresponsiveness. The fact that we're setting the `custom_minimum_size` is not the root cause, but rather the fact that the script doesn't update the size when the window is resized - or, more likely, I just don't understand how flexbox works.
 
 Notes:
 - **< input />** is sort-of inline in normal web. We render it as a block element (new-line).

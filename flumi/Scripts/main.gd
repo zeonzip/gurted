@@ -53,18 +53,6 @@ func _ready():
 	ProjectSettings.set_setting("display/window/size/min_width", MIN_SIZE.x)
 	ProjectSettings.set_setting("display/window/size/min_height", MIN_SIZE.y)
 	DisplayServer.window_set_min_size(MIN_SIZE)
-	
-	get_viewport().size_changed.connect(_on_viewport_size_changed)
-
-func _on_viewport_size_changed():
-	recalculate_percentage_elements(website_container)
-
-func recalculate_percentage_elements(node: Node):
-	if node is Control and node.has_meta("needs_percentage_recalc"):
-		SizingUtils.apply_container_percentage_sizing(node)
-	
-	for child in node.get_children():
-		recalculate_percentage_elements(child)
 
 var current_domain = ""  # Store current domain for display
 
@@ -267,9 +255,6 @@ static func safe_add_child(parent: Node, child: Node) -> void:
 		child.get_parent().remove_child(child)
 	parent.add_child(child)
 	
-	if child.has_meta("container_percentage_width") or child.has_meta("container_percentage_height"):
-		SizingUtils.apply_container_percentage_sizing(child)
-		child.set_meta("needs_percentage_recalc", true)
 
 func contains_hyperlink(element: HTMLParser.HTMLElement) -> bool:
 	if element.tag_name == "a":
@@ -290,6 +275,7 @@ func is_text_only_element(element: HTMLParser.HTMLElement) -> bool:
 
 func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) -> Control:
 	var styles = parser.get_element_styles_with_inheritance(element, "", [])
+	var hover_styles = parser.get_element_styles_with_inheritance(element, "hover", [])
 	var is_flex_container = styles.has("display") and ("flex" in styles["display"])
 
 	var final_node: Control
@@ -308,10 +294,22 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 
 	if is_flex_container:
 		# The element's primary identity IS a flex container.
-		# We create it directly.
-		final_node = AUTO_SIZING_FLEX_CONTAINER.new()
-		final_node.name = "Flex_" + element.tag_name
-		container_for_children = final_node
+		if element.tag_name == "div":
+			if BackgroundUtils.needs_background_wrapper(styles) or hover_styles.size() > 0:
+				final_node = BackgroundUtils.create_panel_container_with_background(styles, hover_styles)
+				var flex_container = AUTO_SIZING_FLEX_CONTAINER.new()
+				flex_container.name = "Flex_" + element.tag_name
+				var vbox = final_node.get_child(0) as VBoxContainer
+				vbox.add_child(flex_container)
+				container_for_children = flex_container
+			else:
+				final_node = AUTO_SIZING_FLEX_CONTAINER.new()
+				final_node.name = "Flex_" + element.tag_name
+				container_for_children = final_node
+		else:
+			final_node = AUTO_SIZING_FLEX_CONTAINER.new()
+			final_node.name = "Flex_" + element.tag_name
+			container_for_children = final_node
 		
 		# For FLEX ul/ol elements, we need to create the li children directly in the flex container
 		if element.tag_name == "ul" or element.tag_name == "ol":
@@ -353,11 +351,20 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 	# Apply flex CONTAINER properties if it's a flex container
 	if is_flex_container:
 		var flex_container_node = final_node
-		# If the node was wrapped in a MarginContainer, get the inner FlexContainer
-		if final_node is MarginContainer and final_node.get_child_count() > 0:
+		
+		if final_node is FlexContainer:
+			# Direct FlexContainer
+			flex_container_node = final_node
+		elif final_node is MarginContainer and final_node.get_child_count() > 0:
 			var first_child = final_node.get_child(0)
 			if first_child is FlexContainer:
 				flex_container_node = first_child
+		elif final_node is PanelContainer and final_node.get_child_count() > 0:
+			var vbox = final_node.get_child(0)
+			if vbox is VBoxContainer and vbox.get_child_count() > 0:
+				var potential_flex = vbox.get_child(0)
+				if potential_flex is FlexContainer:
+					flex_container_node = potential_flex
 		
 		if flex_container_node is FlexContainer:
 			FlexUtils.apply_flex_container_properties(flex_container_node, styles)
@@ -476,7 +483,7 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			var hover_styles = parser.get_element_styles_with_inheritance(element, "hover", [])
 			var is_flex_container = styles.has("display") and ("flex" in styles["display"])
 			
-			# For flex divs, don't create div scene - the AutoSizingFlexContainer handles it
+			# For flex divs, let the general flex container logic handle them
 			if is_flex_container:
 				return null
 			

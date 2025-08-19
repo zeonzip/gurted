@@ -66,77 +66,55 @@ SpinBox/styles/down_background_pressed = SubResource("StyleBoxEmpty_xxc4c")
 SpinBox/styles/up_background_hovered = SubResource("StyleBoxEmpty_unki5")
 SpinBox/styles/up_background_pressed = SubResource("StyleBoxEmpty_3wmat")
 
-[node name="input" type="Control"]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = -1791.0
-offset_bottom = -996.0
-grow_horizontal = 2
-grow_vertical = 2
-size_flags_horizontal = 3
-size_flags_vertical = 0
+[node name="VBoxContainer" type="VBoxContainer"]
+offset_right = 40.0
+offset_bottom = 40.0
 script = ExtResource("1_input")
 
 [node name="LineEdit" type="LineEdit" parent="."]
 visible = false
-layout_mode = 1
-offset_right = 200.0
-offset_bottom = 35.0
+layout_mode = 2
 theme = ExtResource("2_theme")
 placeholder_text = "Enter text..."
 caret_blink = true
 
 [node name="CheckBox" type="CheckBox" parent="."]
 visible = false
-layout_mode = 0
-offset_right = 31.0
-offset_bottom = 31.0
+layout_mode = 2
 theme = ExtResource("2_theme")
 flat = true
 
 [node name="RadioButton" type="CheckBox" parent="."]
 visible = false
-layout_mode = 0
-offset_right = 31.0
-offset_bottom = 31.0
+layout_mode = 2
 theme = ExtResource("2_theme")
 theme_override_constants/icon_max_width = 24
 button_group = SubResource("ButtonGroup_06us3")
 flat = true
 
 [node name="ColorPickerButton" type="ColorPickerButton" parent="."]
-layout_mode = 0
-offset_right = 83.0
-offset_bottom = 35.0
+layout_mode = 2
 toggle_mode = false
 
 [node name="DateButton" parent="." instance=ExtResource("3_a88g6")]
 visible = false
-layout_mode = 0
+layout_mode = 2
 
 [node name="HSlider" type="HSlider" parent="."]
 visible = false
-layout_mode = 0
-offset_right = 200.0
-offset_bottom = 35.0
+layout_mode = 2
 theme = ExtResource("2_theme")
 value = 50.0
 
 [node name="SpinBox" type="SpinBox" parent="."]
 visible = false
-layout_mode = 0
-offset_right = 94.5625
-offset_bottom = 35.0
+layout_mode = 2
 theme = SubResource("Theme_poopw")
 min_value = -99999.0
 max_value = 99999.0
 
 [node name="FileContainer" type="HBoxContainer" parent="."]
-layout_mode = 0
-offset_right = 300.0
-offset_bottom = 35.0
+layout_mode = 2
 
 [node name="FileButton" type="Button" parent="FileContainer"]
 custom_minimum_size = Vector2(100, 0)
@@ -159,5 +137,3 @@ ok_button_text = "Open"
 file_mode = 0
 access = 2
 use_native_dialog = true
-
-[connection signal="popup_closed" from="ColorPickerButton" to="." method="_on_color_picker_popup_closed"]

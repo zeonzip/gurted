@@ -290,6 +290,84 @@ static func render_new_element(element: HTMLParser.HTMLElement, parent_node: Nod
 
 	main_scene.safe_add_child(container_node, element_node)
 
+static func _get_input_value(element: HTMLParser.HTMLElement, dom_node: Node) -> Variant:
+	var input_type = element.get_attribute("type").to_lower()
+	
+	match input_type:
+		"checkbox", "radio":
+			if dom_node is CheckBox:
+				return dom_node.button_pressed
+			return false
+		"color":
+			if dom_node is ColorPickerButton:
+				return "#" + dom_node.color.to_html(false)
+			return "#ffffff"
+		"range":
+			if dom_node is HSlider:
+				return dom_node.value
+			return 0.0
+		"number":
+			if dom_node is SpinBox:
+				return dom_node.value
+			return 0.0
+		"file":
+			# For file inputs, need to find the input control that has get_file_info method
+			var input_control = _find_input_control_with_file_info(dom_node)
+			if input_control:
+				var file_info = input_control.get_file_info()
+				return file_info.get("fileName", "")
+			return ""
+		"date":
+			if dom_node is DateButton:
+				if dom_node.has_method("get_date_text"):
+					return dom_node.get_date_text()
+			return ""
+		_: # text, password, email, etc.
+			if dom_node is LineEdit:
+				return dom_node.text
+			elif dom_node is TextEdit:
+				return dom_node.text
+			return ""
+
+static func _find_input_control_with_file_info(node: Node) -> Node:
+	if node and node.has_method("get_file_info"):
+		return node
+	
+	var current = node
+	while current:
+		current = current.get_parent()
+		if current and current.has_method("get_file_info"):
+			return current
+	
+	return null
+
+static func _set_input_value(element: HTMLParser.HTMLElement, dom_node: Node, value: Variant) -> void:
+	var input_type = element.get_attribute("type").to_lower()
+	
+	match input_type:
+		"checkbox", "radio":
+			if dom_node is CheckBox:
+				dom_node.button_pressed = bool(value)
+		"color":
+			if dom_node is ColorPickerButton:
+				var color_value = str(value)
+				if color_value.begins_with("#"):
+					dom_node.color = Color.from_string(color_value, Color.WHITE)
+		"range":
+			if dom_node is HSlider:
+				dom_node.value = float(value)
+		"number":
+			if dom_node is SpinBox:
+				dom_node.value = float(value)
+		"date":
+			if dom_node is DateButton and dom_node.has_method("set_date_from_string"):
+				dom_node.set_date_from_string(str(value))
+		_: # text, password, email, etc.
+			if dom_node is LineEdit:
+				dom_node.text = str(value)
+			elif dom_node is TextEdit:
+				dom_node.text = str(value)
+
 # Helper functions
 static func find_element_by_id(element_id: String, dom_parser: HTMLParser) -> HTMLParser.HTMLElement:
 	if element_id == "body":
@@ -852,6 +930,23 @@ static func _element_index_wrapper(vm: LuauVM) -> int:
 		return LuaAudioUtils.handle_dom_audio_index(vm, element_id, key)
 	
 	match key:
+		"value":
+			if lua_api and tag_name == "input":
+				vm.lua_getfield(1, "_element_id")
+				var element_id: String = vm.lua_tostring(-1)
+				vm.lua_pop(1)
+				
+				var element = lua_api.dom_parser.find_by_id(element_id) if element_id != "body" else lua_api.dom_parser.find_first("body")
+				var dom_node = lua_api.dom_parser.parse_result.dom_nodes.get(element_id, null)
+				
+				if element and dom_node:
+					var input_value = _get_input_value(element, dom_node)
+					vm.lua_pushstring(str(input_value))
+					return 1
+			
+			# Fallback to empty string
+			vm.lua_pushstring("")
+			return 1
 		"text":
 			if lua_api:
 				# Get element ID and find the element
@@ -929,12 +1024,10 @@ static func _element_index_wrapper(vm: LuauVM) -> int:
 			return 1
 
 static func _add_classlist_support(vm: LuauVM, lua_api: LuaAPI) -> void:
-	# Create classList table with threaded methods
 	vm.lua_newtable()
 	
-	# Store the element_id in the classList table
-	vm.lua_getfield(-2, "_element_id")  # Get element_id from parent element
-	vm.lua_setfield(-2, "_element_id")  # Store it in classList table
+	vm.lua_getfield(-2, "_element_id")
+	vm.lua_setfield(-2, "_element_id")
 	
 	# Add classList methods
 	vm.lua_pushcallable(LuaDOMUtils._classlist_add_wrapper, "classList.add")
@@ -961,12 +1054,11 @@ static func _add_classlist_support(vm: LuauVM, lua_api: LuaAPI) -> void:
 	vm.lua_setfield(-2, "classList")
 
 static func _classlist_add_wrapper(vm: LuauVM) -> int:
-	# Get lua_api from VM metadata
 	var lua_api = vm.get_meta("lua_api") as LuaAPI
 	if not lua_api:
 		return 0
 	
-	vm.luaL_checktype(1, vm.LUA_TTABLE)  # classList table
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
 	var cls: String = vm.luaL_checkstring(2)
 	
 	# Get element_id from classList table
@@ -1132,6 +1224,21 @@ static func _element_newindex_wrapper(vm: LuauVM) -> int:
 		return LuaAudioUtils.handle_dom_audio_newindex(vm, element_id, key, value)
 	
 	match key:
+		"value":
+			if tag_name == "input":
+				vm.lua_getfield(1, "_element_id")
+				var element_id: String = vm.lua_tostring(-1)
+				vm.lua_pop(1)
+				
+				var element = lua_api.dom_parser.find_by_id(element_id) if element_id != "body" else lua_api.dom_parser.find_first("body")
+				var dom_node = lua_api.dom_parser.parse_result.dom_nodes.get(element_id, null)
+				
+				if element and dom_node:
+					# Update the HTML element's value attribute
+					element.set_attribute("value", str(value))
+					
+					_set_input_value(element, dom_node, value)
+			return 0
 		"text":
 			var text: String = str(value)  # Convert value to string
 			

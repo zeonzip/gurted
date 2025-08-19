@@ -39,7 +39,7 @@ pub(crate) async fn create_logic(domain: Domain, user_id: i32, app: &AppState) -
     }
 
     let existing_count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM domains WHERE name = ? AND tld = ?"
+        "SELECT COUNT(*) FROM domains WHERE name = $1 AND tld = $2"
     )
     .bind(&domain.name)
     .bind(&domain.tld)
@@ -306,6 +306,56 @@ pub(crate) async fn delete_domain(ctx: &ServerContext, app_state: AppState, clai
     Ok(GurtResponse::ok().with_string_body("Domain deleted successfully"))
 }
 
+pub(crate) async fn get_user_domains(ctx: &ServerContext, app_state: AppState, claims: Claims) -> Result<GurtResponse> {
+    // Parse pagination from query parameters
+    let path = ctx.path();
+    let query_params = if let Some(query_start) = path.find('?') {
+        let query_string = &path[query_start + 1..];
+        parse_query_string(query_string)
+    } else {
+        HashMap::new()
+    };
+
+    let page = query_params.get("page")
+        .and_then(|p| p.parse::<u32>().ok())
+        .unwrap_or(1)
+        .max(1);
+
+    let page_size = query_params.get("limit")
+        .and_then(|l| l.parse::<u32>().ok())
+        .unwrap_or(100)
+        .clamp(1, 1000);
+
+    let offset = (page - 1) * page_size;
+
+    let domains: Vec<Domain> = sqlx::query_as::<_, Domain>(
+        "SELECT id, name, tld, ip, user_id, status, denial_reason, created_at FROM domains WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3"
+    )
+    .bind(claims.user_id)
+    .bind(page_size as i64)
+    .bind(offset as i64)
+    .fetch_all(&app_state.db)
+    .await
+    .map_err(|_| GurtError::invalid_message("Database error"))?;
+
+    let response_domains: Vec<UserDomain> = domains.into_iter().map(|domain| {
+        UserDomain {
+            name: domain.name,
+            tld: domain.tld,
+            ip: domain.ip,
+            status: domain.status.unwrap_or_else(|| "pending".to_string()),
+            denial_reason: domain.denial_reason,
+        }
+    }).collect();
+
+    let response = UserDomainResponse {
+        domains: response_domains,
+        page,
+        limit: page_size,
+    };
+
+    Ok(GurtResponse::ok().with_json_body(&response)?)
+}
 
 #[derive(serde::Serialize)]
 struct Error {

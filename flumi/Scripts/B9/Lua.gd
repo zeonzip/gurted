@@ -663,10 +663,7 @@ func _handle_text_setting(operation: Dictionary):
 			var text_node = get_dom_node(dom_node, "text")
 			if text_node:
 				if text_node is RichTextLabel:
-					var formatted_text = element.get_bbcode_formatted_text(dom_parser)
-					formatted_text = "[font_size=24]%s[/font_size]" % formatted_text
-					
-					text_node.text = formatted_text
+					StyleManager.apply_styles_to_label(text_node, dom_parser.get_element_styles_with_inheritance(element, "", []), element, dom_parser, text)
 					text_node.call_deferred("_auto_resize_to_content")
 				elif text_node.has_method("set_text"):
 					text_node.set_text(text)
@@ -677,10 +674,7 @@ func _handle_text_setting(operation: Dictionary):
 			else:
 				var rich_text_label = _find_rich_text_label_recursive(dom_node)
 				if rich_text_label:
-					var formatted_text = element.get_bbcode_formatted_text(dom_parser)
-					formatted_text = "[font_size=24]%s[/font_size]" % formatted_text
-					
-					rich_text_label.text = formatted_text
+					StyleManager.apply_styles_to_label(rich_text_label, dom_parser.get_element_styles_with_inheritance(element, "", []), element, dom_parser, text)
 					rich_text_label.call_deferred("_auto_resize_to_content")
 
 func _find_rich_text_label_recursive(node: Node) -> RichTextLabel:

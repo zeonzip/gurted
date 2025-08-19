@@ -26,15 +26,15 @@
 			}
 
 			.primary-btn {
-				p-3 rounded-lg font-medium cursor-pointer transition-colors bg-[#dc2626] text-white
+				p-3 rounded-lg font-medium cursor-pointer transition-colors bg-[#dc2626] text-white w-32 h-12
 			}
 
 			.success-btn {
-				p-3 rounded-lg font-medium cursor-pointer transition-colors bg-[#ef4444] text-white
+				p-3 rounded-lg font-medium cursor-pointer transition-colors bg-[#ef4444] text-white w-32 h-12
 			}
 
 			.danger-btn {
-				p-3 rounded-lg font-medium cursor-pointer transition-colors bg-[#b91c1c] text-white
+				p-3 rounded-lg font-medium cursor-pointer transition-colors bg-[#b91c1c] text-white w-32 h-12
 			}
 
 			.secondary-btn {
@@ -42,7 +42,7 @@
 			}
 
 			.warning-btn {
-				p-3 rounded-lg font-medium cursor-pointer transition-colors bg-[#dc2626] text-white
+				p-3 rounded-lg font-medium cursor-pointer transition-colors bg-[#dc2626] text-white w-32 h-12
 			}
 
 			.form-group {
@@ -58,7 +58,7 @@
 			}
 
 			.stats-card {
-				bg-[#1f1f1f] p-4 rounded-lg border border-[#dc2626]
+				p-4 rounded-lg border border-[#dc2626]
 			}
 
 			.domain-item {
@@ -98,48 +98,10 @@
 		<div style="stats-card mb-6">
 			<div style="flex justify-between items-center w-full">
 				<p id="user-info" style="text-white text-lg font-semibold">Loading...</p>
-				<button id="logout-btn" style="secondary-btn">Logout</button>
-			</div>
-		</div>
-
-		<div style="card mb-6">
-			<h2 style="mb-4">Register New Domain</h2>
-			<div style="form-group">
-				<p>Domain Name:</p>
-				<input id="domain-name" type="text" style="form-input" placeholder="myawesome" />
-			</div>
-			<div style="form-group">
-				<p>Select TLD:</p>
-				<div id="tld-selector" style="tld-selector">
-					<p id="tld-loading">Loading TLDs...</p>
-				</div>
-			</div>
-			<div style="form-group">
-				<p>IP Address:</p>
-				<input id="domain-ip" type="text" style="form-input" placeholder="192.168.1.100" />
-			</div>
-			<div id="domain-error" style="error-text hidden mb-2"></div>
-			<button id="submit-domain-btn" style="success-btn">Submit for Approval</button>
-		</div>
-
-		<div style="card mb-6">
-			<h2>Invite System</h2>
-			<p style="text-[#6b7280] mb-4">Create invite codes to share with friends, or redeem codes to get more domain
-				registrations.</p>
-
-			<p id="invite-code-display" style="invite-code-display mt-2">Placeholder</p>
-
-			<div style="flex flex-col gap-4 items-center justify-center mx-auto">
-				<h3>Create Invite</h3>
-				<button id="create-invite-btn" style="warning-btn">Generate Invite Code</button>
-			</div>
-			<div style="flex flex-col gap-4 mx-auto">
-				<h3>Redeem Invite</h3>
 				<div style="flex gap-2">
-					<input id="invite-code-input" type="text" style="form-input" placeholder="Enter invite code" />
-					<button id="redeem-invite-btn" style="primary-btn">Redeem</button>
+					<button id="new-btn" style="success-btn">New</button>
+					<button id="logout-btn" style="secondary-btn">Logout</button>
 				</div>
-				<div id="redeem-error" style="error-text hidden mt-2"></div>
 			</div>
 		</div>
 

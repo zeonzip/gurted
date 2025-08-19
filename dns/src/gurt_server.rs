@@ -93,6 +93,7 @@ enum HandlerType {
     CreateDomain,
     UpdateDomain,
     DeleteDomain,
+    GetUserDomains,
 }
 
 impl GurtHandler for AppHandler {
@@ -128,6 +129,7 @@ impl GurtHandler for AppHandler {
                 HandlerType::RedeemInvite => handle_authenticated!(ctx, app_state, auth_routes::redeem_invite),
                 HandlerType::CreateDomainInvite => handle_authenticated!(ctx, app_state, auth_routes::create_domain_invite),
                 HandlerType::RedeemDomainInvite => handle_authenticated!(ctx, app_state, auth_routes::redeem_domain_invite),
+                HandlerType::GetUserDomains => handle_authenticated!(ctx, app_state, routes::get_user_domains),
                 HandlerType::CreateDomain => {
                     // Check rate limit first
                     if let Some(ref rate_limit_state) = rate_limit_state {
@@ -205,6 +207,7 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
         .route(Route::post("/auth/redeem-invite"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::RedeemInvite })
         .route(Route::post("/auth/create-domain-invite"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::CreateDomainInvite })
         .route(Route::post("/auth/redeem-domain-invite"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::RedeemDomainInvite })
+        .route(Route::get("/auth/domains"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetUserDomains })
         .route(Route::post("/domain"), AppHandler { app_state: app_state.clone(), rate_limit_state: Some(rate_limit_state), handler_type: HandlerType::CreateDomain })
         .route(Route::put("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::UpdateDomain })
         .route(Route::delete("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::DeleteDomain });

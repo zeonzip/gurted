@@ -60,55 +60,24 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 	if styles.has("height"):
 		height = parse_size(styles["height"])
 
-	# Skip width/height inheritance for buttons when inheriting from auto-sized containers
 	var skip_sizing = SizingUtils.should_skip_sizing(node, element, parser)
 	
 	if (width != null or height != null) and not skip_sizing:
-		# FlexContainers handle percentage sizing differently than regular controls
-		if node is FlexContainer:
-			if width != null:
-				if SizingUtils.is_percentage(width):
-					# For FlexContainers with percentage width, use proportion sizing
-					var percentage_value = float(width.replace("%", "")) / 100.0
-					node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-					node.size_flags_stretch_ratio = percentage_value
-				else:
-					node.custom_minimum_size.x = width
-					node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-				node.set_meta("size_flags_horizontal_set", true)
-			
-			if height != null:
-				if SizingUtils.is_percentage(height):
-					node.size_flags_vertical = Control.SIZE_EXPAND_FILL
-				else:
-					node.custom_minimum_size.y = height
-					node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-				node.set_meta("size_flags_vertical_set", true)
-			
-			node.set_meta("size_flags_set_by_style_manager", true)
-		elif node is VBoxContainer or node is HBoxContainer or node is Container:
-			# Hcontainer nodes (like ul, ol)
-			SizingUtils.apply_container_dimension_sizing(node, width, height, styles)
-		elif node is HTMLP:
-			# Only apply sizing if element has explicit size, otherwise preserve natural sizing
-			var element_styles = parser.get_element_styles_internal(element, "")
-			if element_styles.has("width") or element_styles.has("height"):
-				var orig_h_flag = node.size_flags_horizontal
-				var orig_v_flag = node.size_flags_vertical
-				SizingUtils.apply_regular_control_sizing(node, width, height, styles)
-				if not element_styles.has("width"):
-					node.size_flags_horizontal = orig_h_flag
-				if not element_styles.has("height"):
-					node.size_flags_vertical = orig_v_flag
-		else:
-			if element.tag_name == "img" and SizingUtils.is_percentage(width) and SizingUtils.is_percentage(height):
+		if width != null:
+			if width is String and width == "100%":
 				node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				node.size_flags_vertical = Control.SIZE_EXPAND_FILL
-				# Clear any hardcoded sizing
-				node.custom_minimum_size = Vector2.ZERO
+				node.custom_minimum_size.x = 0
 			else:
-				# regular controls
-				SizingUtils.apply_regular_control_sizing(node, width, height, styles)
+				node.custom_minimum_size.x = width
+				node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		
+		if height != null:
+			if height is String and height == "100%":
+				node.size_flags_vertical = Control.SIZE_EXPAND_FILL
+				node.custom_minimum_size.y = 0
+			else:
+				node.custom_minimum_size.y = height
+				node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	
 	apply_element_centering(node, styles)
 
@@ -539,7 +508,7 @@ static func apply_body_styles(body: HTMLParser.HTMLElement, parser: HTMLParser, 
 		original_parent.move_child(margin_container, container_index)
 		margin_container.add_child(website_container)
 		
-		var padding_val = parse_size(styles["padding"])
+		var padding_val = parse_size(styles["padding"] if styles.has("padding") else 0)
 
 		margin_container.add_theme_constant_override("margin_left", padding_val)
 		margin_container.add_theme_constant_override("margin_right", padding_val)
