@@ -14,7 +14,7 @@ pub enum GurtMethod {
     HEAD,
     OPTIONS,
     PATCH,
-    HANDSHAKE, // Special method for protocol handshake
+    HANDSHAKE,
 }
 
 impl GurtMethod {
@@ -101,7 +101,6 @@ impl GurtRequest {
     }
     
     pub fn parse_bytes(data: &[u8]) -> Result<Self> {
-        // Find the header/body separator as bytes
         let body_separator = BODY_SEPARATOR.as_bytes();
         let body_separator_pos = data.windows(body_separator.len())
             .position(|window| window == body_separator);
@@ -114,7 +113,6 @@ impl GurtRequest {
             (data, Vec::new())
         };
         
-        // Convert headers section to string (should be valid UTF-8)
         let headers_str = std::str::from_utf8(headers_section)
             .map_err(|_| GurtError::invalid_message("Invalid UTF-8 in headers"))?;
         
@@ -124,7 +122,6 @@ impl GurtRequest {
             return Err(GurtError::invalid_message("Empty request"));
         }
         
-        // Parse request line (METHOD path GURT/version)
         let request_line = lines[0];
         let parts: Vec<&str> = request_line.split_whitespace().collect();
         
@@ -135,7 +132,6 @@ impl GurtRequest {
         let method = GurtMethod::parse(parts[0])?;
         let path = parts[1].to_string();
         
-        // Parse protocol version
         if !parts[2].starts_with(PROTOCOL_PREFIX) {
             return Err(GurtError::invalid_message("Invalid protocol identifier"));
         }
@@ -143,7 +139,6 @@ impl GurtRequest {
         let version_str = &parts[2][PROTOCOL_PREFIX.len()..];
         let version = version_str.to_string();
         
-        // Parse headers
         let mut headers = GurtHeaders::new();
         
         for line in lines.iter().skip(1) {
@@ -253,6 +248,10 @@ impl GurtResponse {
         Self::new(GurtStatusCode::BadRequest)
     }
     
+    pub fn forbidden() -> Self {
+        Self::new(GurtStatusCode::Forbidden)
+    }
+    
     pub fn internal_server_error() -> Self {
         Self::new(GurtStatusCode::InternalServerError)
     }
@@ -306,7 +305,6 @@ impl GurtResponse {
     }
     
     pub fn parse_bytes(data: &[u8]) -> Result<Self> {
-        // Find the header/body separator as bytes
         let body_separator = BODY_SEPARATOR.as_bytes();
         let body_separator_pos = data.windows(body_separator.len())
             .position(|window| window == body_separator);
@@ -319,7 +317,6 @@ impl GurtResponse {
             (data, Vec::new())
         };
         
-        // Convert headers section to string (should be valid UTF-8)
         let headers_str = std::str::from_utf8(headers_section)
             .map_err(|_| GurtError::invalid_message("Invalid UTF-8 in headers"))?;
         
@@ -329,7 +326,6 @@ impl GurtResponse {
             return Err(GurtError::invalid_message("Empty response"));
         }
         
-        // Parse status line (GURT/version status_code status_message)
         let status_line = lines[0];
         let parts: Vec<&str> = status_line.splitn(3, ' ').collect();
         
@@ -337,7 +333,6 @@ impl GurtResponse {
             return Err(GurtError::invalid_message("Invalid status line format"));
         }
         
-        // Parse protocol version
         if !parts[0].starts_with(PROTOCOL_PREFIX) {
             return Err(GurtError::invalid_message("Invalid protocol identifier"));
         }
@@ -356,7 +351,6 @@ impl GurtResponse {
                 .unwrap_or_else(|| "Unknown".to_string())
         };
         
-        // Parse headers
         let mut headers = GurtHeaders::new();
         
         for line in lines.iter().skip(1) {
@@ -394,7 +388,6 @@ impl GurtResponse {
         }
         
         if !headers.contains_key("date") {
-            // RFC 7231 compliant
             let now = Utc::now();
             let date_str = now.format("%a, %d %b %Y %H:%M:%S GMT").to_string();
             headers.insert("date".to_string(), date_str);
@@ -429,7 +422,6 @@ impl GurtResponse {
         }
         
         if !headers.contains_key("date") {
-            // RFC 7231 compliant
             let now = Utc::now();
             let date_str = now.format("%a, %d %b %Y %H:%M:%S GMT").to_string();
             headers.insert("date".to_string(), date_str);
@@ -441,7 +433,6 @@ impl GurtResponse {
         
         message.push_str(HEADER_SEPARATOR);
         
-        // Convert headers to bytes and append body as raw bytes
         let mut bytes = message.into_bytes();
         bytes.extend_from_slice(&self.body);
         
@@ -461,7 +452,6 @@ impl GurtMessage {
     }
     
     pub fn parse_bytes(data: &[u8]) -> Result<Self> {
-        // Convert first line to string to determine message type
         let header_separator = HEADER_SEPARATOR.as_bytes();
         let first_line_end = data.windows(header_separator.len())
             .position(|window| window == header_separator)
@@ -470,7 +460,6 @@ impl GurtMessage {
         let first_line = std::str::from_utf8(&data[..first_line_end])
             .map_err(|_| GurtError::invalid_message("Invalid UTF-8 in first line"))?;
         
-        // Check if it's a response (starts with GURT/version) or request (method first)
         if first_line.starts_with(PROTOCOL_PREFIX) {
             Ok(GurtMessage::Response(GurtResponse::parse_bytes(data)?))
         } else {

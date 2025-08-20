@@ -37,6 +37,7 @@ pub enum GurtStatusCode {
     Timeout = 408,
     TooLarge = 413,
     UnsupportedMediaType = 415,
+    TooManyRequests = 429,
     
     // Server errors
     InternalServerError = 500,
@@ -62,6 +63,7 @@ impl GurtStatusCode {
             408 => Some(Self::Timeout),
             413 => Some(Self::TooLarge),
             415 => Some(Self::UnsupportedMediaType),
+            429 => Some(Self::TooManyRequests),
             500 => Some(Self::InternalServerError),
             501 => Some(Self::NotImplemented),
             502 => Some(Self::BadGateway),
@@ -86,6 +88,7 @@ impl GurtStatusCode {
             Self::Timeout => "TIMEOUT",
             Self::TooLarge => "TOO_LARGE",
             Self::UnsupportedMediaType => "UNSUPPORTED_MEDIA_TYPE",
+            Self::TooManyRequests => "TOO_MANY_REQUESTS",
             Self::InternalServerError => "INTERNAL_SERVER_ERROR",
             Self::NotImplemented => "NOT_IMPLEMENTED",
             Self::BadGateway => "BAD_GATEWAY",
