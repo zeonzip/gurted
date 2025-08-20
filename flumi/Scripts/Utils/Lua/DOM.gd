@@ -341,32 +341,72 @@ static func _find_input_control_with_file_info(node: Node) -> Node:
 	
 	return null
 
+static func _get_select_value(element: HTMLParser.HTMLElement, dom_node: Node) -> String:
+	if dom_node is OptionButton:
+		var option_button = dom_node as OptionButton
+		var selected_index = option_button.selected
+		if selected_index >= 0 and selected_index < option_button.get_item_count():
+			var metadata = option_button.get_item_metadata(selected_index)
+			if metadata:
+				return str(metadata)
+			else:
+				return option_button.get_item_text(selected_index)
+	return ""
+
+static func _set_select_value(element: HTMLParser.HTMLElement, dom_node: Node, value: Variant) -> void:
+	if dom_node is OptionButton:
+		var option_button = dom_node as OptionButton
+		var target_value = str(value)
+		
+		# Find the correct index to select
+		var selected_index = -1
+		
+		# Find option with matching value
+		for i in range(option_button.get_item_count()):
+			var metadata = option_button.get_item_metadata(i)
+			var option_value = str(metadata) if metadata else option_button.get_item_text(i)
+			if option_value == target_value:
+				selected_index = i
+				break
+		
+		# If no matching value found, try to find by text
+		if selected_index == -1:
+			for i in range(option_button.get_item_count()):
+				if option_button.get_item_text(i) == target_value:
+					selected_index = i
+					break
+		
+		# Use call_deferred to set the property on main thread
+		if selected_index != -1:
+			option_button.call_deferred("set", "selected", selected_index)
+
 static func _set_input_value(element: HTMLParser.HTMLElement, dom_node: Node, value: Variant) -> void:
 	var input_type = element.get_attribute("type").to_lower()
 	
 	match input_type:
 		"checkbox", "radio":
 			if dom_node is CheckBox:
-				dom_node.button_pressed = bool(value)
+				dom_node.call_deferred("set", "button_pressed", bool(value))
 		"color":
 			if dom_node is ColorPickerButton:
 				var color_value = str(value)
 				if color_value.begins_with("#"):
-					dom_node.color = Color.from_string(color_value, Color.WHITE)
+					var color = Color.from_string(color_value, Color.WHITE)
+					dom_node.call_deferred("set", "color", color)
 		"range":
 			if dom_node is HSlider:
-				dom_node.value = float(value)
+				dom_node.call_deferred("set", "value", float(value))
 		"number":
 			if dom_node is SpinBox:
-				dom_node.value = float(value)
+				dom_node.call_deferred("set", "value", float(value))
 		"date":
 			if dom_node is DateButton and dom_node.has_method("set_date_from_string"):
-				dom_node.set_date_from_string(str(value))
+				dom_node.call_deferred("set_date_from_string", str(value))
 		_: # text, password, email, etc.
 			if dom_node is LineEdit:
-				dom_node.text = str(value)
+				dom_node.call_deferred("set", "text", str(value))
 			elif dom_node is TextEdit:
-				dom_node.text = str(value)
+				dom_node.call_deferred("set", "text", str(value))
 
 # Helper functions
 static func find_element_by_id(element_id: String, dom_parser: HTMLParser) -> HTMLParser.HTMLElement:
@@ -931,7 +971,7 @@ static func _element_index_wrapper(vm: LuauVM) -> int:
 	
 	match key:
 		"value":
-			if lua_api and tag_name == "input":
+			if lua_api and (tag_name == "input" or tag_name == "select"):
 				vm.lua_getfield(1, "_element_id")
 				var element_id: String = vm.lua_tostring(-1)
 				vm.lua_pop(1)
@@ -940,8 +980,13 @@ static func _element_index_wrapper(vm: LuauVM) -> int:
 				var dom_node = lua_api.dom_parser.parse_result.dom_nodes.get(element_id, null)
 				
 				if element and dom_node:
-					var input_value = _get_input_value(element, dom_node)
-					vm.lua_pushstring(str(input_value))
+					var value_result: String
+					if tag_name == "input":
+						value_result = str(_get_input_value(element, dom_node))
+					elif tag_name == "select":
+						value_result = _get_select_value(element, dom_node)
+					
+					vm.lua_pushstring(value_result)
 					return 1
 			
 			# Fallback to empty string
@@ -1225,7 +1270,7 @@ static func _element_newindex_wrapper(vm: LuauVM) -> int:
 	
 	match key:
 		"value":
-			if tag_name == "input":
+			if tag_name == "input" or tag_name == "select":
 				vm.lua_getfield(1, "_element_id")
 				var element_id: String = vm.lua_tostring(-1)
 				vm.lua_pop(1)
@@ -1234,10 +1279,12 @@ static func _element_newindex_wrapper(vm: LuauVM) -> int:
 				var dom_node = lua_api.dom_parser.parse_result.dom_nodes.get(element_id, null)
 				
 				if element and dom_node:
-					# Update the HTML element's value attribute
-					element.set_attribute("value", str(value))
-					
-					_set_input_value(element, dom_node, value)
+					if tag_name == "input":
+						element.set_attribute("value", str(value))
+						_set_input_value(element, dom_node, value)
+					elif tag_name == "select":
+						element.set_attribute("value", str(value))
+						_set_select_value(element, dom_node, value)
 			return 0
 		"text":
 			var text: String = str(value)  # Convert value to string

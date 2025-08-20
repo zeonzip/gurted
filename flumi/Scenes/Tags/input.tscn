@@ -93,6 +93,8 @@ button_group = SubResource("ButtonGroup_06us3")
 flat = true
 
 [node name="ColorPickerButton" type="ColorPickerButton" parent="."]
+visible = false
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 toggle_mode = false
 
@@ -107,13 +109,13 @@ theme = ExtResource("2_theme")
 value = 50.0
 
 [node name="SpinBox" type="SpinBox" parent="."]
-visible = false
 layout_mode = 2
 theme = SubResource("Theme_poopw")
 min_value = -99999.0
 max_value = 99999.0
 
 [node name="FileContainer" type="HBoxContainer" parent="."]
+visible = false
 layout_mode = 2
 
 [node name="FileButton" type="Button" parent="FileContainer"]

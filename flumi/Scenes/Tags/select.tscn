@@ -3,18 +3,12 @@
 [ext_resource type="Script" uid="uid://bmu8q4rm1wopd" path="res://Scripts/Tags/select.gd" id="1_select"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_xq313"]
 
-[node name="select" type="Control"]
-layout_mode = 3
-anchors_preset = 10
-anchor_right = 1.0
-grow_horizontal = 2
-size_flags_horizontal = 3
-size_flags_vertical = 0
+[node name="VBoxContainer" type="VBoxContainer"]
+offset_right = 40.0
+offset_bottom = 40.0
 script = ExtResource("1_select")
 
 [node name="OptionButton" type="OptionButton" parent="."]
-layout_mode = 0
-offset_right = 161.0
-offset_bottom = 32.0
+layout_mode = 2
 mouse_default_cursor_shape = 2
 theme = ExtResource("2_xq313")

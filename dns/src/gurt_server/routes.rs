@@ -103,31 +103,38 @@ pub(crate) async fn create_domain(ctx: &ServerContext, app_state: AppState, clai
     }
 }
 
-pub(crate) async fn get_domain(ctx: &ServerContext, app_state: AppState) -> Result<GurtResponse> {
+pub(crate) async fn get_domain(ctx: &ServerContext, app_state: AppState, claims: Claims) -> Result<GurtResponse> {
     let path_parts: Vec<&str> = ctx.path().split('/').collect();
-    if path_parts.len() < 4 {
-        return Ok(GurtResponse::bad_request().with_string_body("Invalid path format. Expected /domain/{name}/{tld}"));
+    if path_parts.len() < 3 {
+        return Ok(GurtResponse::bad_request().with_string_body("Invalid path format. Expected /domain/{domainName}"));
     }
 
-    let name = path_parts[2];
-    let tld = path_parts[3];
+    let domain_name = path_parts[2];
+
+    let domain_parts: Vec<&str> = domain_name.split('.').collect();
+    if domain_parts.len() < 2 {
+        return Ok(GurtResponse::bad_request().with_string_body("Invalid domain format. Expected name.tld"));
+    }
+
+    let name = domain_parts[0];
+    let tld = domain_parts[1];
 
     let domain: Option<Domain> = sqlx::query_as::<_, Domain>(
-        "SELECT id, name, tld, ip, user_id, status, denial_reason, created_at FROM domains WHERE name = $1 AND tld = $2 AND status = 'approved'"
+        "SELECT id, name, tld, ip, user_id, status, denial_reason, created_at FROM domains WHERE name = $1 AND tld = $2 AND user_id = $3"
     )
     .bind(name)
     .bind(tld)
+    .bind(claims.user_id)
     .fetch_optional(&app_state.db)
     .await
     .map_err(|_| GurtError::invalid_message("Database error"))?;
 
     match domain {
         Some(domain) => {
-            let response_domain = ResponseDomain {
+            let response_domain = DomainDetail {
                 name: domain.name,
                 tld: domain.tld,
-                ip: domain.ip,
-                records: None, // TODO: Implement DNS records
+                status: domain.status,
             };
             Ok(GurtResponse::ok().with_json_body(&response_domain)?)
         }
@@ -355,6 +362,192 @@ pub(crate) async fn get_user_domains(ctx: &ServerContext, app_state: AppState, c
     };
 
     Ok(GurtResponse::ok().with_json_body(&response)?)
+}
+
+pub(crate) async fn get_domain_records(ctx: &ServerContext, app_state: AppState, claims: Claims) -> Result<GurtResponse> {
+    let path_parts: Vec<&str> = ctx.path().split('/').collect();
+    if path_parts.len() < 4 {
+        return Ok(GurtResponse::bad_request().with_string_body("Invalid path format. Expected /domain/{domainName}/records"));
+    }
+
+    let domain_name = path_parts[2];
+
+    let domain_parts: Vec<&str> = domain_name.split('.').collect();
+    if domain_parts.len() < 2 {
+        return Ok(GurtResponse::bad_request().with_string_body("Invalid domain format. Expected name.tld"));
+    }
+
+    let name = domain_parts[0];
+    let tld = domain_parts[1];
+
+    let domain: Option<Domain> = sqlx::query_as::<_, Domain>(
+        "SELECT id, name, tld, ip, user_id, status, denial_reason, created_at FROM domains WHERE name = $1 AND tld = $2 AND user_id = $3"
+    )
+    .bind(name)
+    .bind(tld)
+    .bind(claims.user_id)
+    .fetch_optional(&app_state.db)
+    .await
+    .map_err(|_| GurtError::invalid_message("Database error"))?;
+
+    let domain = match domain {
+        Some(d) => d,
+        None => return Ok(GurtResponse::not_found().with_string_body("Domain not found or access denied"))
+    };
+
+    let records: Vec<DnsRecord> = sqlx::query_as::<_, DnsRecord>(
+        "SELECT id, domain_id, record_type, name, value, ttl, priority, created_at FROM dns_records WHERE domain_id = $1 ORDER BY created_at ASC"
+    )
+    .bind(domain.id.unwrap())
+    .fetch_all(&app_state.db)
+    .await
+    .map_err(|_| GurtError::invalid_message("Database error"))?;
+
+    let response_records: Vec<ResponseDnsRecord> = records.into_iter().map(|record| {
+        ResponseDnsRecord {
+            id: record.id.unwrap(),
+            record_type: record.record_type,
+            name: record.name,
+            value: record.value,
+            ttl: record.ttl.unwrap_or(3600),
+            priority: record.priority,
+        }
+    }).collect();
+
+    Ok(GurtResponse::ok().with_json_body(&response_records)?)
+}
+
+pub(crate) async fn create_domain_record(ctx: &ServerContext, app_state: AppState, claims: Claims) -> Result<GurtResponse> {
+    let path_parts: Vec<&str> = ctx.path().split('/').collect();
+    if path_parts.len() < 4 {
+        return Ok(GurtResponse::bad_request().with_string_body("Invalid path format. Expected /domain/{domainName}/records"));
+    }
+
+    let domain_name = path_parts[2];
+
+    let domain_parts: Vec<&str> = domain_name.split('.').collect();
+    if domain_parts.len() < 2 {
+        return Ok(GurtResponse::bad_request().with_string_body("Invalid domain format. Expected name.tld"));
+    }
+
+    let name = domain_parts[0];
+    let tld = domain_parts[1];
+
+    let domain: Option<Domain> = sqlx::query_as::<_, Domain>(
+        "SELECT id, name, tld, ip, user_id, status, denial_reason, created_at FROM domains WHERE name = $1 AND tld = $2 AND user_id = $3"
+    )
+    .bind(name)
+    .bind(tld)
+    .bind(claims.user_id)
+    .fetch_optional(&app_state.db)
+    .await
+    .map_err(|_| GurtError::invalid_message("Database error"))?;
+
+    let domain = match domain {
+        Some(d) => d,
+        None => return Ok(GurtResponse::not_found().with_string_body("Domain not found or access denied"))
+    };
+
+    let record_data: CreateDnsRecord = {
+        let body_bytes = ctx.body();
+        let body_str = std::str::from_utf8(body_bytes).unwrap_or("<invalid utf8>");
+        log::info!("Received JSON body: {}", body_str);
+        
+        serde_json::from_slice(body_bytes)
+            .map_err(|e| {
+                log::error!("JSON parsing error: {} for body: {}", e, body_str);
+                GurtError::invalid_message("Invalid JSON")
+            })?
+    };
+
+    if record_data.record_type.is_empty() {
+        return Ok(GurtResponse::bad_request().with_string_body("Record type is required"));
+    }
+    
+    let valid_types = ["A", "AAAA", "CNAME", "TXT", "MX", "NS", "SRV"];
+    if !valid_types.contains(&record_data.record_type.as_str()) {
+        return Ok(GurtResponse::bad_request().with_string_body("Invalid record type"));
+    }
+
+    let record_name = record_data.name.unwrap_or_else(|| "@".to_string());
+    let ttl = record_data.ttl.unwrap_or(3600);
+
+    let record_id: (i32,) = sqlx::query_as(
+        "INSERT INTO dns_records (domain_id, record_type, name, value, ttl, priority) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
+    )
+    .bind(domain.id.unwrap())
+    .bind(&record_data.record_type)
+    .bind(&record_name)
+    .bind(&record_data.value)
+    .bind(ttl)
+    .bind(record_data.priority)
+    .fetch_one(&app_state.db)
+    .await
+    .map_err(|e| {
+        log::error!("Failed to create DNS record: {}", e);
+        GurtError::invalid_message("Failed to create DNS record")
+    })?;
+
+    let response_record = ResponseDnsRecord {
+        id: record_id.0,
+        record_type: record_data.record_type,
+        name: record_name,
+        value: record_data.value,
+        ttl,
+        priority: record_data.priority,
+    };
+
+    Ok(GurtResponse::ok().with_json_body(&response_record)?)
+}
+
+pub(crate) async fn delete_domain_record(ctx: &ServerContext, app_state: AppState, claims: Claims) -> Result<GurtResponse> {
+    let path_parts: Vec<&str> = ctx.path().split('/').collect();
+    if path_parts.len() < 5 {
+        return Ok(GurtResponse::bad_request().with_string_body("Invalid path format. Expected /domain/{domainName}/records/{recordId}"));
+    }
+
+    let domain_name = path_parts[2];
+    let record_id_str = path_parts[4];
+
+    let record_id: i32 = record_id_str.parse()
+        .map_err(|_| GurtError::invalid_message("Invalid record ID"))?;
+
+    let domain_parts: Vec<&str> = domain_name.split('.').collect();
+    if domain_parts.len() < 2 {
+        return Ok(GurtResponse::bad_request().with_string_body("Invalid domain format. Expected name.tld"));
+    }
+
+    let name = domain_parts[0];
+    let tld = domain_parts[1];
+
+    let domain: Option<Domain> = sqlx::query_as::<_, Domain>(
+        "SELECT id, name, tld, ip, user_id, status, denial_reason, created_at FROM domains WHERE name = $1 AND tld = $2 AND user_id = $3"
+    )
+    .bind(name)
+    .bind(tld)
+    .bind(claims.user_id)
+    .fetch_optional(&app_state.db)
+    .await
+    .map_err(|_| GurtError::invalid_message("Database error"))?;
+
+    let domain = match domain {
+        Some(d) => d,
+        None => return Ok(GurtResponse::not_found().with_string_body("Domain not found or access denied"))
+    };
+
+    let rows_affected = sqlx::query("DELETE FROM dns_records WHERE id = $1 AND domain_id = $2")
+        .bind(record_id)
+        .bind(domain.id.unwrap())
+        .execute(&app_state.db)
+        .await
+        .map_err(|_| GurtError::invalid_message("Database error"))?
+        .rows_affected();
+
+    if rows_affected == 0 {
+        return Ok(GurtResponse::not_found().with_string_body("DNS record not found"));
+    }
+
+    Ok(GurtResponse::ok().with_string_body("DNS record deleted successfully"))
 }
 
 #[derive(serde::Serialize)]

@@ -25,7 +25,7 @@ static func connect_element_event(signal_node: Node, event_name: String, subscri
 			elif signal_node is Control:
 				var wrapper = func(event: InputEvent):
 					LuaAudioUtils.mark_user_event() 
-					subscription.lua_api._on_gui_input_click(subscription, event)
+					subscription.lua_api._on_gui_input_click(event, subscription)
 				signal_node.gui_input.connect(wrapper)
 				subscription.connected_signal = "gui_input"
 				subscription.connected_node = signal_node

@@ -44,7 +44,7 @@ local function renderDomains()
     
     for i, domain in ipairs(domains) do
         local domainItem = gurt.create('div', {
-            style = 'domain-item'
+            style = 'domain-item cursor-pointer hover:bg-[#4b5563]'
         })
         
         local domainInfo = gurt.create('div', { style = 'w-full' })
@@ -54,51 +54,20 @@ local function renderDomains()
             style = 'font-bold text-lg'
         })
         
-        local domainIP = gurt.create('div', {
-            text = 'IP: ' .. domain.ip,
-            style = 'text-[#6b7280]'
-        })
-        
         local domainStatus = gurt.create('div', {
             text = 'Status: ' .. (domain.status or 'Unknown'),
             style = 'text-[#6b7280]'
         })
         
         domainInfo:append(domainName)
-        domainInfo:append(domainIP)
         domainInfo:append(domainStatus)
         
-        local actions = gurt.create('div', {
-            style = 'flex gap-2'
-        })
-        
-        -- Update IP button
-        local updateBtn = gurt.create('button', {
-            text = 'Update IP',
-            style = 'secondary-btn'
-        })
-        
-        updateBtn:on('click', function()
-            local newIP = prompt('Enter new IP address for ' .. domain.name .. '.' .. domain.tld .. ':')
-            if newIP and newIP ~= '' then
-                updateDomainIP(domain.name, domain.tld, newIP)
-            end
-        end)
-        
-        -- Delete button
-        local deleteBtn = gurt.create('button', { text = 'Delete', style = 'danger-btn' })
-
-        deleteBtn:on('click', function()
-            if confirm('Are you sure you want to delete ' .. domain.name .. '.' .. domain.tld .. '?') then
-                deleteDomain(domain.name, domain.tld)
-            end
-        end)
-        
-        actions:append(updateBtn)
-        actions:append(deleteBtn)
-        
         domainItem:append(domainInfo)
-        domainItem:append(actions)
+        
+        domainItem:on('click', function()
+            gurt.location.goto('/domain.html?name=' .. domain.name .. '.' .. domain.tld)
+        end)
+        
         domainsList:append(domainItem)
     end
 end

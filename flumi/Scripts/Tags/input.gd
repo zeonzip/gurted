@@ -197,16 +197,40 @@ func _on_text_changed(new_text: String, minlength: String, pattern: String) -> v
 				is_valid = false
 
 	if is_valid:
-		line_edit.remove_theme_stylebox_override("normal")
-		line_edit.remove_theme_stylebox_override("focus")
-		line_edit.modulate = Color.WHITE
+		if line_edit.has_focus():
+			apply_active_styles()
+		else:
+			apply_normal_styles()
 	else:
-		var normal_style = create_red_border_style_from_theme(line_edit, "normal")
-		var focus_style = create_red_border_style_from_theme(line_edit, "focus")
+		var normal_style = get_current_or_create_style(line_edit, "normal")
+		var focus_style = get_current_or_create_style(line_edit, "focus")
+		
+		normal_style.border_color = Color.RED
+		normal_style.border_width_left = max(normal_style.border_width_left, 2)
+		normal_style.border_width_right = max(normal_style.border_width_right, 2)
+		normal_style.border_width_top = max(normal_style.border_width_top, 2)
+		normal_style.border_width_bottom = max(normal_style.border_width_bottom, 2)
+		
+		focus_style.border_color = Color.RED
+		focus_style.border_width_left = max(focus_style.border_width_left, 2)
+		focus_style.border_width_right = max(focus_style.border_width_right, 2)
+		focus_style.border_width_top = max(focus_style.border_width_top, 2)
+		focus_style.border_width_bottom = max(focus_style.border_width_bottom, 2)
 
 		line_edit.add_theme_stylebox_override("normal", normal_style)
 		line_edit.add_theme_stylebox_override("focus", focus_style)
-		line_edit.modulate = Color.WHITE
+
+func get_current_or_create_style(line_edit: LineEdit, style_name: String) -> StyleBoxFlat:
+	if line_edit.has_theme_stylebox_override(style_name):
+		var current_style = line_edit.get_theme_stylebox(style_name)
+		if current_style is StyleBoxFlat:
+			return (current_style as StyleBoxFlat).duplicate()
+	
+	var theme_style = line_edit.get_theme_stylebox(style_name)
+	if theme_style is StyleBoxFlat:
+		return (theme_style as StyleBoxFlat).duplicate()
+	
+	return StyleBoxFlat.new()
 
 func create_red_border_style_from_theme(line_edit: LineEdit, style_name: String) -> StyleBoxFlat:
 	var original_style: StyleBoxFlat = line_edit.get_theme_stylebox(style_name)
@@ -393,7 +417,6 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 	
 	var styles = parser.get_element_styles_with_inheritance(element, "", [])
 	
-	
 	# Apply text color to the active input control
 	var active_child = null
 	for child in get_children():
@@ -422,21 +445,15 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 					line_edit.add_theme_color_override("font_placeholder_color", placeholder_color)
 		
 		# Apply stylebox for borders, background, padding, etc.
-		if BackgroundUtils.needs_background_wrapper(styles):
+		if BackgroundUtils.needs_background_wrapper(styles) or active_child is SpinBox:
 			apply_stylebox_to_input(active_child, styles)
 	
 	var width = null
 	var height = null
 	
 	if styles.has("width"):
-		if styles["width"] == "full":
-			var parent_styles = parser.get_element_styles_with_inheritance(element.parent, "", []) if element.parent else {}
-			if parent_styles.has("width"):
-				var parent_width = SizingUtils.parse_size_value(parent_styles["width"])
-				if parent_width:
-					width = parent_width
-		else:
-			width = SizingUtils.parse_size_value(styles["width"])
+		width = SizingUtils.parse_size_value(styles["width"])
+
 	if styles.has("height"):
 		height = SizingUtils.parse_size_value(styles["height"])
 	
@@ -447,7 +464,11 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 			var new_height = max(active_child.custom_minimum_size.y, active_child.size.y)
 			
 			if width:
-				if SizingUtils.is_percentage(width):
+				if width == "100%":
+					active_child.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					new_width = 0
+				elif SizingUtils.is_percentage(width):
 					new_width = SizingUtils.calculate_percentage_size(width, SizingUtils.DEFAULT_VIEWPORT_WIDTH)
 				else:
 					new_width = width
@@ -462,7 +483,7 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 			
 			active_child.custom_minimum_size = new_child_size
 			
-			if width:
+			if width and width != "100%":
 				active_child.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			if height:
 				active_child.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -473,7 +494,7 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 			custom_minimum_size = new_child_size
 			
 			# Root Control adjusts size flags to match child
-			if width:
+			if width and width != "100%":
 				size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			else:
 				size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -526,8 +547,9 @@ func apply_active_styles() -> void:
 	if not active_child:
 		return
 	
-	# Apply merged styles
 	if BackgroundUtils.needs_background_wrapper(merged_styles):
+		apply_stylebox_to_input(active_child, merged_styles)
+	elif active_child is SpinBox:
 		apply_stylebox_to_input(active_child, merged_styles)
 
 func apply_normal_styles() -> void:
@@ -536,7 +558,6 @@ func apply_normal_styles() -> void:
 	
 	var normal_styles = _parser.get_element_styles_with_inheritance(_element, "", [])
 	
-	# Find the active input control
 	var active_child = null
 	for child in get_children():
 		if child.visible:
@@ -546,25 +567,27 @@ func apply_normal_styles() -> void:
 	if not active_child:
 		return
 	
-	# Apply normal border styles
 	if BackgroundUtils.needs_background_wrapper(normal_styles):
 		apply_stylebox_to_input(active_child, normal_styles)
+	elif active_child is SpinBox:
+		apply_stylebox_to_input(active_child, normal_styles)
 	else:
-		# Remove style overrides to use default theme
 		if active_child is LineEdit:
 			active_child.remove_theme_stylebox_override("normal")
 			active_child.remove_theme_stylebox_override("focus")
 		elif active_child is SpinBox:
 			active_child.remove_theme_stylebox_override("normal")
-			active_child.remove_theme_stylebox_override("focus")
+			active_child.remove_theme_stylebox_override("updown")
+			var line_edit = active_child.get_line_edit()
+			if line_edit:
+				line_edit.remove_theme_stylebox_override("normal")
+				line_edit.remove_theme_stylebox_override("focus")
 		elif active_child is Button:
 			active_child.remove_theme_stylebox_override("normal")
 
 func apply_stylebox_to_input(control: Control, styles: Dictionary) -> void:
 	var style_box = BackgroundUtils.create_stylebox_from_styles(styles)
 	
-	# Set appropriate content margins for inputs if no padding is specified
-	# Check for all possible padding-related styles
 	var has_left_padding = styles.has("padding") or styles.has("padding-left")
 	var has_right_padding = styles.has("padding") or styles.has("padding-right")
 	var has_top_padding = styles.has("padding") or styles.has("padding-top")
@@ -580,13 +603,17 @@ func apply_stylebox_to_input(control: Control, styles: Dictionary) -> void:
 	if not has_bottom_padding:
 		style_box.content_margin_bottom = 2.0
 	
-	
-	# Apply the style to the appropriate states
 	if control is LineEdit:
 		control.add_theme_stylebox_override("normal", style_box)
 		control.add_theme_stylebox_override("focus", style_box)
 	elif control is SpinBox:
-		control.add_theme_stylebox_override("normal", style_box)
-		control.add_theme_stylebox_override("focus", style_box)
+		# NOTE: currently broken, it goes over the buttons, dont have time to fix
+		#style_box.expand_margin_right += 32.0 # More space for stepper buttons
+		
+		var line_edit = control.get_line_edit()
+		if line_edit:
+			line_edit.add_theme_stylebox_override("normal", style_box)
+			line_edit.add_theme_stylebox_override("focus", style_box)
+		
 	elif control is Button:
 		control.add_theme_stylebox_override("normal", style_box)

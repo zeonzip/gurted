@@ -173,6 +173,76 @@ func _gurt_location_get_href_handler(vm: LuauVM) -> int:
 		vm.lua_pushstring("")
 	return 1
 
+func _gurt_location_query_get_handler(vm: LuauVM) -> int:
+	var key: String = vm.luaL_checkstring(1)
+	var query_params = get_current_query_params()
+	
+	if query_params.has(key):
+		vm.lua_pushstring(query_params[key])
+	else:
+		vm.lua_pushnil()
+	return 1
+
+func _gurt_location_query_has_handler(vm: LuauVM) -> int:
+	var key: String = vm.luaL_checkstring(1)
+	var query_params = get_current_query_params()
+	
+	vm.lua_pushboolean(query_params.has(key))
+	return 1
+
+func _gurt_location_query_getAll_handler(vm: LuauVM) -> int:
+	var key: String = vm.luaL_checkstring(1)
+	var query_params = get_current_query_params()
+	
+	vm.lua_newtable()
+	
+	if query_params.has(key):
+		var value = query_params[key]
+		if value is Array:
+			for i in range(value.size()):
+				vm.lua_pushstring(str(value[i]))
+				vm.lua_rawseti(-2, i + 1)
+		else:
+			vm.lua_pushstring(str(value))
+			vm.lua_rawseti(-2, 1)
+	
+	return 1
+
+func get_current_query_params() -> Dictionary:
+	var main_node = Engine.get_main_loop().current_scene
+	var current_url = ""
+	
+	if main_node and main_node.has_method("get_current_url"):
+		current_url = main_node.get_current_url()
+	elif main_node and main_node.has_property("current_domain"):
+		current_url = main_node.current_domain
+	
+	var query_params = {}
+	
+	if "?" in current_url:
+		var query_string = current_url.split("?")[1]
+		if "#" in query_string:
+			query_string = query_string.split("#")[0]
+		
+		for param in query_string.split("&"):
+			if "=" in param:
+				var key_value = param.split("=", false, 1)
+				var key = key_value[0].uri_decode()
+				var value = key_value[1].uri_decode() if key_value.size() > 1 else ""
+				
+				if query_params.has(key):
+					if query_params[key] is Array:
+						query_params[key].append(value)
+					else:
+						query_params[key] = [query_params[key], value]
+				else:
+					query_params[key] = value
+			else:
+				var key = param.uri_decode()
+				query_params[key] = ""
+	
+	return query_params
+
 func _reload_current_page():
 	var main_node = Engine.get_main_loop().current_scene
 	if main_node and main_node.has_method("reload_current_page"):
@@ -660,6 +730,12 @@ func _handle_text_setting(operation: Dictionary):
 		var element_id = get_or_assign_element_id(element)
 		var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
 		if dom_node:
+			if element.tag_name == "button":
+				var button_node = dom_node.get_node_or_null("ButtonNode")
+				if button_node and button_node is Button:
+					button_node.text = text
+					return
+			
 			var text_node = get_dom_node(dom_node, "text")
 			if text_node:
 				if text_node is RichTextLabel:

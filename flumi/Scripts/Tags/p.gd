@@ -57,7 +57,7 @@ func _get_font_weight_multiplier() -> float:
 	elif element_styles.has("font-extrabold"):
 		return 1.10
 	elif element_styles.has("font-bold"):
-		return 1.08
+		return 1.0
 	elif element_styles.has("font-semibold"):
 		return 1.06
 	elif element_styles.has("font-medium"):

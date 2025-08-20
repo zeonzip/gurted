@@ -315,6 +315,15 @@ func _setup_threaded_gurt_api():
 	lua_vm.lua_pushstring(current_href)
 	lua_vm.lua_setfield(-2, "href")
 	
+	lua_vm.lua_newtable()
+	lua_vm.lua_pushcallable(lua_api._gurt_location_query_get_handler, "gurt.location.query.get")
+	lua_vm.lua_setfield(-2, "get")
+	lua_vm.lua_pushcallable(lua_api._gurt_location_query_has_handler, "gurt.location.query.has")
+	lua_vm.lua_setfield(-2, "has")
+	lua_vm.lua_pushcallable(lua_api._gurt_location_query_getAll_handler, "gurt.location.query.getAll")
+	lua_vm.lua_setfield(-2, "getAll")
+	lua_vm.lua_setfield(-2, "query")
+	
 	lua_vm.lua_setfield(-2, "location")
 	
 	var body_element = dom_parser.find_first("body")
@@ -345,6 +354,7 @@ func _setup_additional_lua_apis():
 	LuaWebSocketUtils.setup_websocket_api(lua_vm)
 	LuaAudioUtils.setup_audio_api(lua_vm)
 	LuaCrumbsUtils.setup_crumbs_api(lua_vm)
+	LuaRegexUtils.setup_regex_api(lua_vm)
 
 func _table_tostring_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)

@@ -77,10 +77,12 @@ pub(crate) struct ResponseDomain {
 
 #[derive(Debug, Serialize)]
 pub(crate) struct ResponseDnsRecord {
+    pub(crate) id: i32,
+    #[serde(rename = "type")]
     pub(crate) record_type: String,
     pub(crate) name: String,
     pub(crate) value: String,
-    pub(crate) ttl: Option<i32>,
+    pub(crate) ttl: i32,
     pub(crate) priority: Option<i32>,
 }
 
@@ -116,4 +118,44 @@ pub(crate) struct UserDomainResponse {
     pub(crate) domains: Vec<UserDomain>,
     pub(crate) page: u32,
     pub(crate) limit: u32,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct CreateDnsRecord {
+    #[serde(rename = "type")]
+    pub(crate) record_type: String,
+    pub(crate) name: Option<String>,
+    pub(crate) value: String,
+    #[serde(deserialize_with = "deserialize_ttl")]
+    pub(crate) ttl: Option<i32>,
+    pub(crate) priority: Option<i32>,
+}
+
+fn deserialize_ttl<'de, D>(deserializer: D) -> Result<Option<i32>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    
+    let value: Option<serde_json::Value> = Option::deserialize(deserializer)?;
+    match value {
+        Some(serde_json::Value::Number(n)) => {
+            if let Some(f) = n.as_f64() {
+                Ok(Some(f as i32))
+            } else if let Some(i) = n.as_i64() {
+                Ok(Some(i as i32))
+            } else {
+                Ok(None)
+            }
+        }
+        Some(_) => Ok(None),
+        None => Ok(None),
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct DomainDetail {
+    pub(crate) name: String,
+    pub(crate) tld: String,
+    pub(crate) status: Option<String>,
 }

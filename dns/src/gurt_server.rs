@@ -94,6 +94,7 @@ enum HandlerType {
     UpdateDomain,
     DeleteDomain,
     GetUserDomains,
+    CreateDomainRecord,
 }
 
 impl GurtHandler for AppHandler {
@@ -118,7 +119,13 @@ impl GurtHandler for AppHandler {
             
             let result = match handler_type {
                 HandlerType::Index => routes::index(app_state).await,
-                HandlerType::GetDomain => routes::get_domain(&ctx, app_state).await,
+                HandlerType::GetDomain => {
+                    if ctx.path().contains("/records") {
+                        handle_authenticated!(ctx, app_state, routes::get_domain_records)
+                    } else {
+                        handle_authenticated!(ctx, app_state, routes::get_domain)
+                    }
+                },
                 HandlerType::GetDomains => routes::get_domains(&ctx, app_state).await,
                 HandlerType::GetTlds => routes::get_tlds(app_state).await,
                 HandlerType::CheckDomain => routes::check_domain(&ctx, app_state).await,
@@ -130,6 +137,13 @@ impl GurtHandler for AppHandler {
                 HandlerType::CreateDomainInvite => handle_authenticated!(ctx, app_state, auth_routes::create_domain_invite),
                 HandlerType::RedeemDomainInvite => handle_authenticated!(ctx, app_state, auth_routes::redeem_domain_invite),
                 HandlerType::GetUserDomains => handle_authenticated!(ctx, app_state, routes::get_user_domains),
+                HandlerType::CreateDomainRecord => {
+                    if ctx.path().contains("/records") {
+                        handle_authenticated!(ctx, app_state, routes::create_domain_record)
+                    } else {
+                        Ok(GurtResponse::new(GurtStatusCode::MethodNotAllowed).with_string_body("Method not allowed"))
+                    }
+                },
                 HandlerType::CreateDomain => {
                     // Check rate limit first
                     if let Some(ref rate_limit_state) = rate_limit_state {
@@ -142,7 +156,13 @@ impl GurtHandler for AppHandler {
                     handle_authenticated!(ctx, app_state, routes::create_domain)
                 },
                 HandlerType::UpdateDomain => handle_authenticated!(ctx, app_state, routes::update_domain),
-                HandlerType::DeleteDomain => handle_authenticated!(ctx, app_state, routes::delete_domain),
+                HandlerType::DeleteDomain => {
+                    if ctx.path().contains("/records/") {
+                        handle_authenticated!(ctx, app_state, routes::delete_domain_record)
+                    } else {
+                        handle_authenticated!(ctx, app_state, routes::delete_domain)
+                    }
+                },
             };
             
             let duration = start_time.elapsed();
@@ -196,7 +216,6 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
 
     server = server
         .route(Route::get("/"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::Index })
-        .route(Route::get("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetDomain })
         .route(Route::get("/domains"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetDomains })
         .route(Route::get("/tlds"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetTlds })
         .route(Route::get("/check"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::CheckDomain })
@@ -209,6 +228,8 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
         .route(Route::post("/auth/redeem-domain-invite"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::RedeemDomainInvite })
         .route(Route::get("/auth/domains"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetUserDomains })
         .route(Route::post("/domain"), AppHandler { app_state: app_state.clone(), rate_limit_state: Some(rate_limit_state), handler_type: HandlerType::CreateDomain })
+        .route(Route::get("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetDomain })
+        .route(Route::post("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::CreateDomainRecord })
         .route(Route::put("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::UpdateDomain })
         .route(Route::delete("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::DeleteDomain });
 

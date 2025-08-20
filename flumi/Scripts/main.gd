@@ -27,7 +27,6 @@ const BUTTON = preload("res://Scenes/Tags/button.tscn")
 const UL = preload("res://Scenes/Tags/ul.tscn")
 const OL = preload("res://Scenes/Tags/ol.tscn")
 const SELECT = preload("res://Scenes/Tags/select.tscn")
-const OPTION = preload("res://Scenes/Tags/option.tscn")
 const TEXTAREA = preload("res://Scenes/Tags/textarea.tscn")
 const DIV = preload("res://Scenes/Tags/div.tscn")
 const AUDIO = preload("res://Scenes/Tags/audio.tscn")
@@ -53,6 +52,8 @@ func _ready():
 	ProjectSettings.set_setting("display/window/size/min_width", MIN_SIZE.x)
 	ProjectSettings.set_setting("display/window/size/min_height", MIN_SIZE.y)
 	DisplayServer.window_set_min_size(MIN_SIZE)
+	
+	call_deferred("render")
 
 var current_domain = ""  # Store current domain for display
 
@@ -277,13 +278,14 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 	var styles = parser.get_element_styles_with_inheritance(element, "", [])
 	var hover_styles = parser.get_element_styles_with_inheritance(element, "hover", [])
 	var is_flex_container = styles.has("display") and ("flex" in styles["display"])
+	var is_grid_container = styles.has("display") and ("grid" in styles["display"])
 
 	var final_node: Control
 	var container_for_children: Node
 
-	# If this is an inline element AND not a flex container, do NOT recursively add child nodes for its children.
+	# If this is an inline element AND not a flex or grid container, do NOT recursively add child nodes for its children.
 	# Only create a node for the outermost inline group; nested inline tags are handled by BBCode.
-	if element.is_inline_element() and not is_flex_container:
+	if element.is_inline_element() and not is_flex_container and not is_grid_container:
 		final_node = await create_element_node_internal(element, parser)
 		if not final_node:
 			return null
@@ -292,7 +294,24 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 		FlexUtils.apply_flex_item_properties(final_node, styles)
 		return final_node
 
-	if is_flex_container:
+	if is_grid_container:
+		if element.tag_name == "div":
+			if BackgroundUtils.needs_background_wrapper(styles) or hover_styles.size() > 0:
+				final_node = BackgroundUtils.create_panel_container_with_background(styles, hover_styles)
+				var grid_container = GridContainer.new()
+				grid_container.name = "Grid_" + element.tag_name
+				var vbox = final_node.get_child(0) as VBoxContainer
+				vbox.add_child(grid_container)
+				container_for_children = grid_container
+			else:
+				final_node = GridContainer.new()
+				final_node.name = "Grid_" + element.tag_name
+				container_for_children = final_node
+		else:
+			final_node = GridContainer.new()
+			final_node.name = "Grid_" + element.tag_name
+			container_for_children = final_node
+	elif is_flex_container:
 		# The element's primary identity IS a flex container.
 		if element.tag_name == "div":
 			if BackgroundUtils.needs_background_wrapper(styles) or hover_styles.size() > 0:
@@ -369,8 +388,29 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 		if flex_container_node is FlexContainer:
 			FlexUtils.apply_flex_container_properties(flex_container_node, styles)
 
-	# Apply flex ITEM properties
+	if is_grid_container:
+		var grid_container_node = final_node
+		
+		if final_node is GridContainer:
+			grid_container_node = final_node
+		elif final_node is MarginContainer and final_node.get_child_count() > 0:
+			var first_child = final_node.get_child(0)
+			if first_child is GridContainer:
+				grid_container_node = first_child
+		elif final_node is PanelContainer and final_node.get_child_count() > 0:
+			var vbox = final_node.get_child(0)
+			if vbox is VBoxContainer and vbox.get_child_count() > 0:
+				var potential_grid = vbox.get_child(0)
+				if potential_grid is GridContainer:
+					grid_container_node = potential_grid
+		
+		if grid_container_node is GridContainer:
+			GridUtils.apply_grid_container_properties(grid_container_node, styles)
+
 	FlexUtils.apply_flex_item_properties(final_node, styles)
+	
+	if not is_grid_container:
+		GridUtils.apply_grid_item_properties(final_node, styles)
 
 	# Skip ul/ol and non-flex forms, they handle their own children
 	var skip_general_processing = false
@@ -378,13 +418,13 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 	if element.tag_name == "ul" or element.tag_name == "ol":
 		skip_general_processing = true
 	elif element.tag_name == "form":
-		skip_general_processing = not is_flex_container
+		skip_general_processing = not is_flex_container and not is_grid_container
 	
 	if not skip_general_processing:
 		for child_element in element.children:
 			# Only add child nodes if the child is NOT an inline element
-			# UNLESS the parent is a flex container (inline elements become flex items)
-			if not child_element.is_inline_element() or is_flex_container:
+			# UNLESS the parent is a flex or grid container (inline elements become flex/grid items)
+			if not child_element.is_inline_element() or is_flex_container or is_grid_container:
 				var child_node = await create_element_node(child_element, parser)
 				if child_node and is_instance_valid(container_for_children):
 					# Input elements register their own DOM nodes in their init() function
@@ -469,9 +509,6 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 		"select":
 			node = SELECT.instantiate()
 			node.init(element, parser)
-		"option":
-			node = OPTION.instantiate()
-			node.init(element, parser)
 		"textarea":
 			node = TEXTAREA.instantiate()
 			node.init(element, parser)
@@ -482,9 +519,10 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			var styles = parser.get_element_styles_with_inheritance(element, "", [])
 			var hover_styles = parser.get_element_styles_with_inheritance(element, "hover", [])
 			var is_flex_container = styles.has("display") and ("flex" in styles["display"])
+			var is_grid_container = styles.has("display") and ("grid" in styles["display"])
 			
-			# For flex divs, let the general flex container logic handle them
-			if is_flex_container:
+			# For flex or grid divs, let the general flex/grid container logic handle them
+			if is_flex_container or is_grid_container:
 				return null
 			
 			# Create div container

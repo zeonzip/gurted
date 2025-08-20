@@ -584,6 +584,13 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 	if utility_name == "inline-flex":
 		rule.properties["display"] = "inline-flex"
 		return
+	
+	if utility_name == "grid":
+		rule.properties["display"] = "grid"
+		return
+	if utility_name == "inline-grid":
+		rule.properties["display"] = "inline-grid"
+		return
 
 	# Flex direction
 	match utility_name:
@@ -637,6 +644,52 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 		var val = utility_name.substr(8)
 		rule.properties["column-gap"] = SizeUtils.parse_size(val)
 		return
+
+	if utility_name.begins_with("grid-cols-"):
+		var val = utility_name.substr(10)
+		if val.is_valid_int():
+			rule.properties["grid-template-columns"] = val.to_int()
+		else:
+			rule.properties["grid-template-columns"] = val
+		return
+	if utility_name.begins_with("grid-rows-"):
+		var val = utility_name.substr(10)
+		if val.is_valid_int():
+			rule.properties["grid-template-rows"] = val.to_int()
+		else:
+			rule.properties["grid-template-rows"] = val
+		return
+	
+	if utility_name.begins_with("col-span-"):
+		var val = utility_name.substr(9)
+		if val == "full":
+			rule.properties["grid-column"] = "1 / -1"
+		elif val.is_valid_int():
+			rule.properties["grid-column"] = "span " + val
+		return
+	if utility_name.begins_with("row-span-"):
+		var val = utility_name.substr(9)
+		if val == "full":
+			rule.properties["grid-row"] = "1 / -1"
+		elif val.is_valid_int():
+			rule.properties["grid-row"] = "span " + val
+		return
+	
+	match utility_name:
+		"grid-cols-1": rule.properties["grid-template-columns"] = 1; return
+		"grid-cols-2": rule.properties["grid-template-columns"] = 2; return
+		"grid-cols-3": rule.properties["grid-template-columns"] = 3; return
+		"grid-cols-4": rule.properties["grid-template-columns"] = 4; return
+		"grid-cols-5": rule.properties["grid-template-columns"] = 5; return
+		"grid-cols-6": rule.properties["grid-template-columns"] = 6; return
+		"grid-cols-12": rule.properties["grid-template-columns"] = 12; return
+		"col-span-1": rule.properties["grid-column"] = "span 1"; return
+		"col-span-2": rule.properties["grid-column"] = "span 2"; return
+		"col-span-3": rule.properties["grid-column"] = "span 3"; return
+		"col-span-4": rule.properties["grid-column"] = "span 4"; return
+		"col-span-5": rule.properties["grid-column"] = "span 5"; return
+		"col-span-6": rule.properties["grid-column"] = "span 6"; return
+		"col-span-full": rule.properties["grid-column"] = "1 / -1"; return
 
 	# FLEX ITEM PROPERTIES
 	if utility_name.begins_with("flex-grow-"):
