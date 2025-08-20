@@ -66,7 +66,7 @@ impl DirectoryHandler for DefaultDirectoryHandler {
             let class = if is_dir { "dir" } else { "file" };
             
             listing.push_str(&format!(
-                r#"        <a href="{}" class="{}">{}</a>"#,
+                r#"        <a href="{}" style="{}">{}</a>"#,
                 name, class, display_name
             ));
             listing.push('\n');

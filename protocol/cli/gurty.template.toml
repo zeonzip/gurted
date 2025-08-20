@@ -13,8 +13,8 @@ connection = 10
 pool_idle = 300
 
 [tls]
-certificate = "/path/to/certificate.pem"
-private_key = "/path/to/private_key.pem"
+certificate = "localhost+2.pem"
+private_key = "localhost+2-key.pem"
 
 [logging]
 level = "info"
