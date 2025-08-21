@@ -1,6 +1,5 @@
 mod config;
 mod gurt_server;
-mod secret;
 mod auth;
 mod discord_bot;
 

@@ -3,6 +3,9 @@ class_name GurtProtocol
 
 const DNS_API_URL = "gurt://localhost:8877"
 
+# DNS resolution cache: domain.tld -> IP address
+static var _dns_cache: Dictionary = {}
+
 static func is_gurt_domain(url: String) -> bool:
 	if url.begins_with("gurt://"):
 		return true
@@ -15,27 +18,63 @@ static func is_gurt_domain(url: String) -> bool:
 
 static func parse_gurt_domain(url: String) -> Dictionary:
 	var domain_part = url
+	var path = "/"
 	
 	if url.begins_with("gurt://"):
 		domain_part = url.substr(7)
 	
+	# Extract path from domain_part (e.g., "test.dawg/script.lua" -> "test.dawg" + "/script.lua")
+	var path_start = domain_part.find("/")
+	if path_start != -1:
+		path = domain_part.substr(path_start)
+		domain_part = domain_part.substr(0, path_start)
+	
+	# Check if domain is cached (resolved before)
+	var domain_key = domain_part
+	if _dns_cache.has(domain_key):
+		return {
+			"direct_address": _dns_cache[domain_key],
+			"display_url": domain_part + path,
+			"is_direct": true,
+			"path": path,
+			"full_domain": domain_part
+		}
+	
 	if domain_part.contains(":") or domain_part.begins_with("127.0.0.1") or domain_part.begins_with("localhost") or is_ip_address(domain_part):
 		return {
 			"direct_address": domain_part,
-			"display_url": domain_part,
-			"is_direct": true
+			"display_url": domain_part + path,
+			"is_direct": true,
+			"path": path,
+			"full_domain": domain_part
 		}
 	
 	var parts = domain_part.split(".")
-	if parts.size() != 2:
+	if parts.size() < 2:
 		return {}
 	
-	return {
-		"name": parts[0],
-		"tld": parts[1],
-		"display_url": domain_part,
-		"is_direct": false
-	}
+	# Support subdomains (e.g., api.blog.example.com)
+	if parts.size() == 2:
+		return {
+			"name": parts[0],
+			"tld": parts[1],
+			"display_url": domain_part + path,
+			"is_direct": false,
+			"path": path,
+			"full_domain": domain_part,
+			"is_subdomain": false
+		}
+	else:
+		return {
+			"name": parts[parts.size() - 2],  # The domain name part
+			"tld": parts[parts.size() - 1],   # The TLD part
+			"display_url": domain_part + path,
+			"is_direct": false,
+			"path": path,
+			"full_domain": domain_part,
+			"is_subdomain": true,
+			"subdomain_parts": parts.slice(0, parts.size() - 2)
+		}
 
 static func is_ip_address(address: String) -> bool:
 	var parts = address.split(".")
@@ -51,40 +90,103 @@ static func is_ip_address(address: String) -> bool:
 	
 	return true
 
-static func fetch_domain_info(name: String, tld: String) -> Dictionary:	
-	var path = "/domain/" + name + "/" + tld
-	var dns_address = "localhost:8877"
+static func fetch_domain_info(name: String, tld: String) -> Dictionary:
+	var request_data = JSON.stringify({"name": name, "tld": tld})
+	var result = await fetch_dns_post_working("localhost:8877", "/resolve", request_data)
 	
-	print("DNS API URL: gurt://" + dns_address + path)
+	if result.has("error"):
+		return {"error": result.error}
 	
-	var response = await fetch_content_via_gurt_direct(dns_address, path)
+	if not result.has("content"):
+		return {"error": "No content in DNS response"}
 	
-	if response.has("error"):
-		if "No response from GURT server" in response.error or "Failed to create GURT client" in response.error:
-			return {"error": "DNS server is not responding"}
-		else:
-			return {"error": "Failed to make DNS request"}
-	
-	if not response.has("content"):
-		return {"error": "DNS server is not responding"}
-	
-	var content = response.content
-	if content.is_empty():
-		return {"error": "DNS server is not responding"}
-	
+	var content_str = result.content.get_string_from_utf8()
 	var json = JSON.new()
-	var parse_result = json.parse(content.get_string_from_utf8())
+	var parse_result = json.parse(content_str)
 	
 	if parse_result != OK:
-		return {"error": "Invalid JSON response from DNS server"}
+		return {"error": "Invalid JSON in DNS response"}
 	
-	var data = json.data
+	return json.data
+
+static func fetch_full_domain_info(full_domain: String, record_type: String = "") -> Dictionary:
+	var request_data = {"domain": full_domain}
+	if not record_type.is_empty():
+		request_data["record_type"] = record_type
 	
-	# Check if the response indicates an error (like 404)
-	if data is Dictionary and data.has("error"):
-		return {"error": "Domain not found or not approved"}
+	var json_data = JSON.stringify(request_data)
+	var result = await fetch_dns_post_working("localhost:8877", "/resolve-full", json_data)
 	
-	return data
+	if result.has("error"):
+		return {"error": result.error}
+	
+	if not result.has("content"):
+		return {"error": "No content in DNS response"}
+	
+	var content_str = result.content.get_string_from_utf8()
+	var json = JSON.new()
+	var parse_result = json.parse(content_str)
+	
+	if parse_result != OK:
+		return {"error": "Invalid JSON in DNS response"}
+	
+	return json.data
+
+static func fetch_dns_post_working(server: String, path: String, json_data: String) -> Dictionary:
+	var shared_result = {"finished": false}
+	var thread = Thread.new()
+	var mutex = Mutex.new()
+	
+	var thread_func = func():
+		var local_result = {}
+		var client = GurtProtocolClient.new()
+		
+		if not client.create_client(10):
+			local_result = {"error": "Failed to create client"}
+		else:
+			var url = "gurt://" + server + path
+			
+			# Prepare request options
+			var options = {
+				"method": "POST",
+				"headers": {"Content-Type": "application/json"},
+				"body": json_data
+			}
+			
+			var response = client.request(url, options)
+			
+			client.disconnect()
+			
+			if not response:
+				local_result = {"error": "No response from server"}
+			elif not response.is_success:
+				local_result = {"error": "Server error: " + str(response.status_code) + " " + str(response.status_message)}
+			else:
+				local_result = {"content": response.body}
+		
+		mutex.lock()
+		shared_result.clear()
+		for key in local_result:
+			shared_result[key] = local_result[key]
+		shared_result["finished"] = true
+		mutex.unlock()
+	
+	thread.start(thread_func)
+	
+	# Non-blocking wait
+	while not shared_result.get("finished", false):
+		await Engine.get_main_loop().process_frame
+	
+	thread.wait_to_finish()
+	
+	mutex.lock()
+	var final_result = {}
+	for key in shared_result:
+		if key != "finished":
+			final_result[key] = shared_result[key]
+	mutex.unlock()
+	
+	return final_result
 
 static func fetch_content_via_gurt(ip: String, path: String = "/") -> Dictionary:	
 	var client = GurtProtocolClient.new()
@@ -150,14 +252,10 @@ static func fetch_content_via_gurt_direct(address: String, path: String = "/") -
 	
 	thread.start(thread_func)
 	
-	var finished = false
-	while not finished:
+	# Non-blocking wait using signals instead of polling
+	while not shared_result.get("finished", false):
 		await Engine.get_main_loop().process_frame
-		OS.delay_msec(10)
-		
-		mutex.lock()
-		finished = shared_result.get("finished", false)
-		mutex.unlock()
+		# Yield control back to the main thread without blocking delays
 	
 	thread.wait_to_finish()
 	
@@ -176,33 +274,124 @@ static func handle_gurt_domain(url: String) -> Dictionary:
 		return {"error": "Invalid domain format. Use: domain.tld or IP:port", "html": create_error_page("Invalid domain format. Use: domain.tld or IP:port")}
 	
 	var target_address: String
-	var path = "/"
+	var path = parsed.get("path", "/")
 	
 	if parsed.get("is_direct", false):
 		target_address = parsed.direct_address
 	else:
-		var domain_info = await fetch_domain_info(parsed.name, parsed.tld)
+		var domain_info: Dictionary
+		
+		# Use the new full domain resolution for subdomains
+		if parsed.get("is_subdomain", false):
+			domain_info = await fetch_full_domain_info(parsed.full_domain)
+		else:
+			domain_info = await fetch_domain_info(parsed.name, parsed.tld)
+		
 		if domain_info.has("error"):
 			return {"error": domain_info.error, "html": create_error_page(domain_info.error)}
-		target_address = domain_info.ip
+		
+		# Process DNS records to find target address
+		var target_result = await resolve_target_address(domain_info, parsed.full_domain)
+		if target_result.has("error"):
+			return {"error": target_result.error, "html": create_error_page(target_result.error)}
+		
+		target_address = target_result.address
+		
+		# Cache the resolved address
+		var domain_key = parsed.full_domain
+		_dns_cache[domain_key] = target_address
 	
 	var content_result = await fetch_content_via_gurt_direct(target_address, path)
 	if content_result.has("error"):
-		var error_msg = "Failed to fetch content from " + target_address + " via GURT protocol - " + content_result.error
+		var error_msg = "Failed to fetch content from " + target_address + path + " via GURT protocol - " + content_result.error
 		if content_result.has("content") and not content_result.content.is_empty():
 			return {"html": content_result.content, "display_url": parsed.display_url}
 		return {"error": error_msg, "html": create_error_page(error_msg)}
 	
 	if not content_result.has("content"):
-		var error_msg = "No content received from " + target_address
+		var error_msg = "No content received from " + target_address + path
 		return {"error": error_msg, "html": create_error_page(error_msg)}
 	
 	var html_content = content_result.content
 	if html_content.is_empty():
-		var error_msg = "Empty content received from " + target_address
+		var error_msg = "Empty content received from " + target_address + path
 		return {"error": error_msg, "html": create_error_page(error_msg)}
 	
 	return {"html": html_content, "display_url": parsed.display_url}
+
+static func resolve_target_address(domain_info: Dictionary, original_domain: String) -> Dictionary:
+	if not domain_info.has("records") or domain_info.records == null:
+		return {"error": "No DNS records found for domain"}
+	
+	var records = domain_info.records
+	var max_cname_depth = 5  # Prevent infinite CNAME loops
+	var cname_depth = 0
+	
+	# First pass: Look for direct A/AAAA records
+	var a_records = []
+	var aaaa_records = []
+	var cname_records = []
+	var ns_records = []
+	
+	for record in records:
+		if not record.has("type") or not record.has("value"):
+			continue
+			
+		match record.type:
+			"A":
+				a_records.append(record.value)
+			"AAAA":
+				aaaa_records.append(record.value)
+			"CNAME":
+				cname_records.append(record.value)
+			"NS":
+				ns_records.append(record.value)
+	
+	# If we have direct A records, use the first one
+	if not a_records.is_empty():
+		return {"address": a_records[0]}
+	
+	# If we have IPv6 AAAA records and no A records, we need to handle this
+	if not aaaa_records.is_empty() and a_records.is_empty():
+		return {"error": "Only IPv6 (AAAA) records found, but IPv4 required for GURT protocol"}
+	
+	# Follow CNAME chain
+	if not cname_records.is_empty():
+		var current_cname = cname_records[0]
+		
+		while cname_depth < max_cname_depth:
+			cname_depth += 1
+			
+			# Try to resolve the CNAME target
+			var cname_info = await fetch_full_domain_info(current_cname, "A")
+			if cname_info.has("error"):
+				return {"error": "Failed to resolve CNAME target: " + current_cname + " - " + cname_info.error}
+			
+			if not cname_info.has("records") or cname_info.records == null:
+				return {"error": "No records found for CNAME target: " + current_cname}
+			
+			# Look for A records in the CNAME target
+			var found_next_cname = false
+			for record in cname_info.records:
+				if record.has("type") and record.type == "A" and record.has("value"):
+					return {"address": record.value}
+				elif record.has("type") and record.type == "CNAME" and record.has("value"):
+					# Another CNAME, continue the chain
+					current_cname = record.value
+					found_next_cname = true
+					break
+			
+			if not found_next_cname:
+				# No more CNAMEs found, but also no A record
+				return {"error": "CNAME chain ended without A record for: " + current_cname}
+		
+		return {"error": "CNAME chain too deep (max " + str(max_cname_depth) + " levels)"}
+	
+	# If we have NS records, this indicates delegation
+	if not ns_records.is_empty():
+		return {"error": "Domain is delegated to nameservers: " + str(ns_records) + ". Cannot resolve directly."}
+	
+	return {"error": "No A record found for domain"}
 
 static func get_error_type(error_message: String) -> Dictionary:
 	if "DNS server is not responding" in error_message or "Domain not found" in error_message:

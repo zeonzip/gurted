@@ -95,6 +95,8 @@ enum HandlerType {
     DeleteDomain,
     GetUserDomains,
     CreateDomainRecord,
+    ResolveDomain,
+    ResolveFullDomain,
 }
 
 impl GurtHandler for AppHandler {
@@ -163,6 +165,8 @@ impl GurtHandler for AppHandler {
                         handle_authenticated!(ctx, app_state, routes::delete_domain)
                     }
                 },
+                HandlerType::ResolveDomain => routes::resolve_domain(&ctx, app_state).await,
+                HandlerType::ResolveFullDomain => routes::resolve_full_domain(&ctx, app_state).await,
             };
             
             let duration = start_time.elapsed();
@@ -231,7 +235,9 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
         .route(Route::get("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetDomain })
         .route(Route::post("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::CreateDomainRecord })
         .route(Route::put("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::UpdateDomain })
-        .route(Route::delete("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::DeleteDomain });
+        .route(Route::delete("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::DeleteDomain })
+        .route(Route::post("/resolve"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::ResolveDomain })
+        .route(Route::post("/resolve-full"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::ResolveFullDomain });
 
     log::info!("GURT server listening on {}", config.get_address());
     server.listen(&config.get_address()).await.map_err(|e| {
