@@ -7,22 +7,20 @@ mod ca;
 use crate::{auth::jwt_middleware_gurt, config::Config, discord_bot};
 use colored::Colorize;
 use macros_rs::fmt::{crashln, string};
-use std::{net::IpAddr, str::FromStr, sync::Arc, collections::HashMap};
+use std::{sync::Arc, collections::HashMap};
 use gurt::prelude::*;
 use gurt::{GurtStatusCode, Route};
 
 #[derive(Clone)]
 pub(crate) struct AppState {
-    trusted: IpAddr,
     config: Config,
     db: sqlx::PgPool,
     jwt_secret: String,
 }
 
 impl AppState {
-    pub fn new(trusted: IpAddr, config: Config, db: sqlx::PgPool, jwt_secret: String) -> Self {
+    pub fn new(config: Config, db: sqlx::PgPool, jwt_secret: String) -> Self {
         Self {
-            trusted,
             config,
             db,
             jwt_secret,
@@ -198,11 +196,6 @@ impl GurtHandler for AppHandler {
 pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
     let config = Config::new().set_path(&cli.config).read();
 
-    let trusted_ip = match IpAddr::from_str(&config.server.address) {
-        Ok(addr) => addr,
-        Err(err) => crashln!("Cannot parse address.\n{}", string!(err).white()),
-    };
-
     let db = match config.connect_to_db().await {
         Ok(pool) => pool,
         Err(err) => crashln!("Failed to connect to PostgreSQL database.\n{}", string!(err).white()),
@@ -216,7 +209,7 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
     }
 
     let jwt_secret = config.auth.jwt_secret.clone();
-    let app_state = AppState::new(trusted_ip, config.clone(), db, jwt_secret);
+    let app_state = AppState::new(config.clone(), db, jwt_secret);
     let rate_limit_state = RateLimitState::new();
 
     // Create GURT server

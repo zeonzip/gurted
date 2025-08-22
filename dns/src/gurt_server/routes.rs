@@ -1,6 +1,7 @@
 use super::{models::*, AppState};
 use crate::auth::Claims;
 use crate::discord_bot::{send_domain_approval_request, DomainRegistration};
+use base64::{engine::general_purpose, Engine as _};
 use gurt::prelude::*;
 use rand::{rngs::OsRng, Rng};
 use sha2::{Digest, Sha256};
@@ -1101,7 +1102,7 @@ fn generate_challenge_data(domain: &str, token: &str) -> Result<String> {
 
     let mut rng = OsRng;
     let random_bytes: [u8; 32] = rng.gen();
-    let secure_entropy = base64::encode(random_bytes);
+    let secure_entropy = general_purpose::STANDARD.encode(random_bytes);
 
     let uuid_entropy = uuid::Uuid::new_v4().to_string();
 
@@ -1113,7 +1114,7 @@ fn generate_challenge_data(domain: &str, token: &str) -> Result<String> {
     hasher.update(data.as_bytes());
     let hash = hasher.finalize();
 
-    Ok(base64::encode(hash))
+    Ok(general_purpose::STANDARD.encode(hash))
 }
 
 #[derive(serde::Serialize)]

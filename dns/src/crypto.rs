@@ -31,7 +31,6 @@ pub fn generate_ca_cert() -> Result<(String, String)> {
     let serial = openssl::bn::BigNum::from_u32(1)?.to_asn1_integer()?;
     cert_builder.set_serial_number(&serial)?;
     
-    let context = cert_builder.x509v3_context(None, None);
     let basic_constraints = openssl::x509::extension::BasicConstraints::new()
         .critical()
         .ca()
