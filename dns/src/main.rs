@@ -1,8 +1,8 @@
 mod config;
 mod gurt_server;
-mod secret;
 mod auth;
 mod discord_bot;
+mod crypto;
 
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::{LogLevel, Verbosity};

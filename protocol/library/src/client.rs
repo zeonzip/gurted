@@ -23,6 +23,7 @@ pub struct GurtClientConfig {
     pub max_redirects: usize,
     pub enable_connection_pooling: bool,
     pub max_connections_per_host: usize,
+    pub custom_ca_certificates: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -46,6 +47,7 @@ impl Default for GurtClientConfig {
             max_redirects: 5,
             enable_connection_pooling: true,
             max_connections_per_host: 4,
+            custom_ca_certificates: Vec::new(),
         }
     }
 }
@@ -53,21 +55,18 @@ impl Default for GurtClientConfig {
 #[derive(Debug)]
 enum Connection {
     Plain(TcpStream),
-    Tls(tokio_rustls::client::TlsStream<TcpStream>),
 }
 
 impl Connection {
     async fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         match self {
             Connection::Plain(stream) => stream.read(buf).await.map_err(|e| GurtError::connection(e.to_string())),
-            Connection::Tls(stream) => stream.read(buf).await.map_err(|e| GurtError::connection(e.to_string())),
         }
     }
     
     async fn write_all(&mut self, buf: &[u8]) -> Result<()> {
         match self {
             Connection::Plain(stream) => stream.write_all(buf).await.map_err(|e| GurtError::connection(e.to_string())),
-            Connection::Tls(stream) => stream.write_all(buf).await.map_err(|e| GurtError::connection(e.to_string())),
         }
     }
 }
@@ -80,10 +79,6 @@ struct PooledConnection {
 impl PooledConnection {
     fn new(stream: TcpStream) -> Self {
         Self { connection: Connection::Plain(stream) }
-    }
-    
-    fn with_tls(stream: tokio_rustls::client::TlsStream<TcpStream>) -> Self {
-        Self { connection: Connection::Tls(stream) }
     }
 }
 
@@ -257,7 +252,6 @@ impl GurtClient {
         
         let tcp_stream = match plain_conn.connection {
             Connection::Plain(stream) => stream,
-            _ => return Err(GurtError::protocol("Expected plain connection for handshake")),
         };
         
         self.upgrade_to_tls(tcp_stream, host).await
@@ -275,8 +269,27 @@ impl GurtClient {
                 added += 1;
             }
         }
+        
+        for ca_cert_pem in &self.config.custom_ca_certificates {
+            let mut pem_bytes = ca_cert_pem.as_bytes();
+            let cert_iter = rustls_pemfile::certs(&mut pem_bytes);
+            for cert_result in cert_iter {
+                match cert_result {
+                    Ok(cert) => {
+                        if root_store.add(cert).is_ok() {
+                            added += 1;
+                            debug!("Added custom CA certificate");
+                        }
+                    }
+                    Err(e) => {
+                        debug!("Failed to parse CA certificate: {}", e);
+                    }
+                }
+            }
+        }
+        
         if added == 0 {
-            return Err(GurtError::crypto("No valid system certificates found".to_string()));
+            return Err(GurtError::crypto("No valid certificates found (system or custom)".to_string()));
         }
         
         let mut client_config = TlsClientConfig::builder()

@@ -2,26 +2,25 @@ mod auth_routes;
 mod helpers;
 mod models;
 mod routes;
+mod ca;
 
 use crate::{auth::jwt_middleware_gurt, config::Config, discord_bot};
 use colored::Colorize;
 use macros_rs::fmt::{crashln, string};
-use std::{net::IpAddr, str::FromStr, sync::Arc, collections::HashMap};
+use std::{sync::Arc, collections::HashMap};
 use gurt::prelude::*;
 use gurt::{GurtStatusCode, Route};
 
 #[derive(Clone)]
 pub(crate) struct AppState {
-    trusted: IpAddr,
     config: Config,
     db: sqlx::PgPool,
     jwt_secret: String,
 }
 
 impl AppState {
-    pub fn new(trusted: IpAddr, config: Config, db: sqlx::PgPool, jwt_secret: String) -> Self {
+    pub fn new(config: Config, db: sqlx::PgPool, jwt_secret: String) -> Self {
         Self {
-            trusted,
             config,
             db,
             jwt_secret,
@@ -95,6 +94,12 @@ enum HandlerType {
     DeleteDomain,
     GetUserDomains,
     CreateDomainRecord,
+    ResolveDomain,
+    ResolveFullDomain,
+    VerifyDomainOwnership,
+    RequestCertificate,
+    GetCertificate,
+    GetCaCertificate,
 }
 
 impl GurtHandler for AppHandler {
@@ -163,6 +168,12 @@ impl GurtHandler for AppHandler {
                         handle_authenticated!(ctx, app_state, routes::delete_domain)
                     }
                 },
+                HandlerType::ResolveDomain => routes::resolve_domain(&ctx, app_state).await,
+                HandlerType::ResolveFullDomain => routes::resolve_full_domain(&ctx, app_state).await,
+                HandlerType::VerifyDomainOwnership => routes::verify_domain_ownership(&ctx, app_state).await,
+                HandlerType::RequestCertificate => routes::request_certificate(&ctx, app_state).await,
+                HandlerType::GetCertificate => routes::get_certificate(&ctx, app_state).await,
+                HandlerType::GetCaCertificate => routes::get_ca_certificate(&ctx, app_state).await,
             };
             
             let duration = start_time.elapsed();
@@ -185,11 +196,6 @@ impl GurtHandler for AppHandler {
 pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
     let config = Config::new().set_path(&cli.config).read();
 
-    let trusted_ip = match IpAddr::from_str(&config.server.address) {
-        Ok(addr) => addr,
-        Err(err) => crashln!("Cannot parse address.\n{}", string!(err).white()),
-    };
-
     let db = match config.connect_to_db().await {
         Ok(pool) => pool,
         Err(err) => crashln!("Failed to connect to PostgreSQL database.\n{}", string!(err).white()),
@@ -203,7 +209,7 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
     }
 
     let jwt_secret = config.auth.jwt_secret.clone();
-    let app_state = AppState::new(trusted_ip, config.clone(), db, jwt_secret);
+    let app_state = AppState::new(config.clone(), db, jwt_secret);
     let rate_limit_state = RateLimitState::new();
 
     // Create GURT server
@@ -231,7 +237,13 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
         .route(Route::get("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetDomain })
         .route(Route::post("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::CreateDomainRecord })
         .route(Route::put("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::UpdateDomain })
-        .route(Route::delete("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::DeleteDomain });
+        .route(Route::delete("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::DeleteDomain })
+        .route(Route::post("/resolve"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::ResolveDomain })
+        .route(Route::post("/resolve-full"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::ResolveFullDomain })
+        .route(Route::get("/verify-ownership/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::VerifyDomainOwnership })
+        .route(Route::post("/ca/request-certificate"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::RequestCertificate })
+        .route(Route::get("/ca/certificate/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetCertificate })
+        .route(Route::get("/ca/root"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetCaCertificate });
 
     log::info!("GURT server listening on {}", config.get_address());
     server.listen(&config.get_address()).await.map_err(|e| {

@@ -53,6 +53,8 @@ func _ready():
 	ProjectSettings.set_setting("display/window/size/min_height", MIN_SIZE.y)
 	DisplayServer.window_set_min_size(MIN_SIZE)
 	
+	CertificateManager.initialize()
+	
 	call_deferred("render")
 
 var current_domain = ""  # Store current domain for display

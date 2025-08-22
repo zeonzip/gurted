@@ -6,11 +6,12 @@ use sqlx::{FromRow, types::chrono::{DateTime, Utc}};
 pub struct Domain {
     #[serde(skip_deserializing)]
     pub(crate) id: Option<i32>,
-    pub(crate) ip: String,
-    #[serde(deserialize_with = "deserialize_lowercase")]
-    pub(crate) tld: String,
     #[serde(deserialize_with = "deserialize_lowercase")]
     pub(crate) name: String,
+    #[serde(deserialize_with = "deserialize_lowercase")]
+    pub(crate) tld: String,
+    #[serde(skip_deserializing)]
+    pub(crate) ip: Option<String>,
     #[serde(skip_deserializing)]
     pub(crate) user_id: Option<i32>,
     #[serde(skip_deserializing)]
@@ -70,7 +71,6 @@ pub struct DomainInviteCode {
 #[derive(Debug, Serialize)]
 pub(crate) struct ResponseDomain {
     pub(crate) tld: String,
-    pub(crate) ip: String,
     pub(crate) name: String,
     pub(crate) records: Option<Vec<ResponseDnsRecord>>,
 }
@@ -82,13 +82,21 @@ pub(crate) struct ResponseDnsRecord {
     pub(crate) record_type: String,
     pub(crate) name: String,
     pub(crate) value: String,
-    pub(crate) ttl: i32,
+    pub(crate) ttl: Option<i32>,
     pub(crate) priority: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct UpdateDomain {
-    pub(crate) ip: String,
+pub(crate) struct DnsResolutionRequest {
+    pub(crate) name: String,
+    pub(crate) tld: String,
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct DnsResolutionResponse {
+    pub(crate) name: String,
+    pub(crate) tld: String,
+    pub(crate) records: Vec<ResponseDnsRecord>,
 }
 
 #[derive(Serialize)]
@@ -108,7 +116,6 @@ pub(crate) struct DomainList {
 pub(crate) struct UserDomain {
     pub(crate) name: String,
     pub(crate) tld: String,
-    pub(crate) ip: String,
     pub(crate) status: String,
     pub(crate) denial_reason: Option<String>,
 }

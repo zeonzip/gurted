@@ -92,10 +92,16 @@ renderRecords = function(appendOnly)
     if #records == 0 then
         local emptyMessage = gurt.create('div', {
             text = 'No DNS records found. Add your first record below!',
-            style = 'text-center text-[#6b7280] py-8'
+            style = 'text-center text-[#6b7280] py-8',
+            id = '404'
         })
         recordsList:append(emptyMessage)
         return
+    else
+        local err = gurt.select('#404')
+        if err then
+            gurt.select('#404'):remove()
+        end
     end
     
     -- Create header only if not appending or if list is empty
@@ -125,7 +131,7 @@ renderRecords = function(appendOnly)
         local typeCell = gurt.create('div', { text = record.type, style = 'font-bold' })
         local nameCell = gurt.create('div', { text = record.name or '@' })
         local valueCell = gurt.create('div', { text = record.value, style = 'font-mono text-sm break-all' })
-        local ttlCell = gurt.create('div', { text = record.ttl or '3600' })
+        local ttlCell = gurt.create('div', { text = record.ttl or 'none' })
         
         local actionsCell = gurt.create('div')
         local deleteBtn = gurt.create('button', {
@@ -221,11 +227,10 @@ end
 
 local function addRecord(type, name, value, ttl)
     hideError('record-error')
-    print('Adding DNS record: ' .. type .. ' ' .. name .. ' ' .. value)
-    
+
     local response = fetch('gurt://localhost:8877/domain/' .. domainName .. '/records', {
         method = 'POST',
-        headers = { 
+        headers = {
             ['Content-Type'] = 'application/json',
             Authorization = 'Bearer ' .. authToken
         },
@@ -237,30 +242,36 @@ local function addRecord(type, name, value, ttl)
         })
     })
     
-    if response:ok() then
-        print('DNS record added successfully')
-        
-        -- Clear form
-        gurt.select('#record-name').value = ''
-        gurt.select('#record-value').value = ''
-        gurt.select('#record-ttl').value = '3600'
-        
-        -- Add the new record to existing records array
-        local newRecord = response:json()
-        if newRecord and newRecord.id then
-            -- Server returned the created record, add it to our local array
-            table.insert(records, newRecord)
-            -- Render only the new record
-            renderRecords(true)
+    if response then
+        if response:ok() then
+            gurt.select('#record-name').value = ''
+            gurt.select('#record-value').value = ''
+            gurt.select('#record-ttl').value = ''
+            
+            local newRecord = response:json()
+            if newRecord and newRecord.id then
+                table.insert(records, newRecord)
+                
+                local wasEmpty = (#records == 1)
+                
+                if wasEmpty then
+                    renderRecords(false)
+                else
+                    renderRecords(true)
+                end
+            else
+                loadRecords()
+            end
         else
-            -- Server didn't return record details, reload to get the actual data
-            loadRecords()
+            local error = response:text()
+            showError('record-error', 'Failed to add record: ' .. error)
+            print('Failed to add DNS record: ' .. error)
         end
     else
-        local error = response:text()
-        showError('record-error', 'Failed to add record: ' .. error)
-        print('Failed to add DNS record: ' .. error)
+        showError('record-error', 'No response from server - connection failed')
+        print('Failed to add DNS record: No response')
     end
+    
 end
 
 local function logout()
@@ -273,15 +284,48 @@ local function goBack()
     --gurt.location.goto("/dashboard.html")
 end
 
+-- Function to update help text based on record type
+local function updateHelpText()
+    local recordType = gurt.select('#record-type').value
+    
+    -- Hide all help texts
+    local helpTypes = {'A', 'AAAA', 'CNAME', 'TXT'}
+    for _, helpType in ipairs(helpTypes) do
+        local helpElement = gurt.select('#help-' .. helpType)
+        if helpElement then
+            helpElement.classList:add('hidden')
+        end
+    end
+    
+    -- Show the relevant help text
+    local currentHelp = gurt.select('#help-' .. recordType)
+    if currentHelp then
+        currentHelp.classList:remove('hidden')
+    end
+    
+    -- Update placeholder text based on record type
+    local valueInput = gurt.select('#record-value')
+    if recordType == 'A' then
+        valueInput.placeholder = '192.168.1.1'
+    elseif recordType == 'AAAA' then
+        valueInput.placeholder = '2001:db8::1'
+    elseif recordType == 'CNAME' then
+        valueInput.placeholder = 'example.com'
+    elseif recordType == 'TXT' then
+        valueInput.placeholder = 'Any text content'
+    end
+end
+
 -- Event handlers
 gurt.select('#logout-btn'):on('click', logout)
 gurt.select('#back-btn'):on('click', goBack)
+gurt.select('#record-type'):on('change', updateHelpText)
 
 gurt.select('#add-record-btn'):on('click', function()
     local recordType = gurt.select('#record-type').value
     local recordName = gurt.select('#record-name').value
     local recordValue = gurt.select('#record-value').value
-    local recordTTL = tonumber(gurt.select('#record-ttl').value) or 3600
+    local recordTTL = tonumber(gurt.select('#record-ttl').value) or ''
 
     if not recordValue or recordValue == '' then
         showError('record-error', 'Record value is required')
@@ -297,4 +341,5 @@ end)
 
 -- Initialize
 print('Domain management page initialized')
+updateHelpText() -- Set initial help text
 checkAuth()

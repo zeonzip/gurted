@@ -122,7 +122,7 @@ local function goToDashboard()
     gurt.location.goto("/dashboard.html")
 end
 
-local function submitDomain(name, tld, ip)
+local function submitDomain(name, tld)
     hideError('domain-error')
     print('Submitting domain: ' .. name .. '.' .. tld)
     
@@ -132,7 +132,7 @@ local function submitDomain(name, tld, ip)
             ['Content-Type'] = 'application/json',
             Authorization = 'Bearer ' .. authToken
         },
-        body = JSON.stringify({ name = name, tld = tld, ip = ip })
+        body = JSON.stringify({ name = name, tld = tld })
     })
     
     if response:ok() then
@@ -144,7 +144,6 @@ local function submitDomain(name, tld, ip)
         
         -- Clear form
         gurt.select('#domain-name').text = ''
-        gurt.select('#domain-ip').text = ''
         
         -- Redirect to dashboard
         gurt.location.goto('/dashboard.html')
@@ -212,23 +211,15 @@ gurt.select('#dashboard-btn'):on('click', goToDashboard)
 
 gurt.select('#submit-domain-btn'):on('click', function()
     local name = gurt.select('#domain-name').value
-    local ip = gurt.select('#domain-ip').value
     local selectedTLD = gurt.select('.tld-selected')
 
     print('Submit domain button clicked')
     print('Input name:', name)
-    print('Input IP:', ip)
     print('Selected TLD element:', selectedTLD)
 
     if not name or name == '' then
         print('Validation failed: Domain name is required')
         showError('domain-error', 'Domain name is required')
-        return
-    end
-
-    if not ip or ip == '' then
-        print('Validation failed: IP address is required')
-        showError('domain-error', 'IP address is required')
         return
     end
 
@@ -239,8 +230,8 @@ gurt.select('#submit-domain-btn'):on('click', function()
     end
 
     local tld = selectedTLD:getAttribute('data-tld')
-    print('Submitting domain with name:', name, 'tld:', tld, 'ip:', ip)
-    submitDomain(name, tld, ip)
+    print('Submitting domain with name:', name, 'tld:', tld)
+    submitDomain(name, tld)
 end)
 
 gurt.select('#create-invite-btn'):on('click', createInvite)

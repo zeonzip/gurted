@@ -7,35 +7,33 @@
 	<font name="roboto" src="https://fonts.gstatic.com/s/roboto/v48/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3KUBGEe.woff2" />
 
 	<style>
-		body { bg-[#2a2a2a] text-[#ffffff] font-roboto flex items-center justify-center p-4 }
-		.login-card { p-8 }
-		h1 { text-3xl font-bold text-center mb-6 text-[#ffffff] }
+		body {
+			bg-[#171616] font-sans text-white
+		}
+
+		.login-card {
+			bg-[#262626] p-8 rounded-lg shadow-lg max-w-md mx-auto my-auto h-full
+		}
+
+		h1 {
+			text-3xl font-bold text-center mb-6
+		}
+
 		input {
-			bg-[#3b3b3b]
-			border-none
-			rounded-md
-			p-3
-			w-full
-			text-[#ffffff]
-			placeholder:text-[#999999]
-			outline-none
-			focus:ring-2
-			focus:ring-[#5b5b5b]
-			mb-4
+			w-full p-3 border border-gray-600 rounded-md bg-[#374151] text-white mb-4 placeholder:text-[#999999] outline-none active:border-red-500
 		}
+
 		button {
-			bg-[#4ade80]
-			text-[#1b1b1b]
-			font-bold
-			p-3
-			rounded-md
-			w-full
-			hover:bg-[#22c55e]
-			active:bg-[#15803d]
-			cursor-pointer
+			bg-[#dc2626] text-white font-medium p-3 rounded-lg w-full cursor-pointer transition-colors hover:bg-[#b91c1c] active:bg-[#991b1b]
 		}
-		a { text-[#4ade80] hover:text-[#22c55e] cursor-pointer }
-		#log-output { text-white p-4 rounded-md mt-4 font-mono max-h-40 }
+
+		a {
+			text-[#ef4444] hover:text-[#dc2626] cursor-pointer
+		}
+
+		#log-output {
+			text-[#fca5a5] p-4 rounded-md mt-4 font-mono max-h-40
+		}
 	</style>
 	
 	<script src="script.lua" />
@@ -49,7 +47,7 @@
 			<input id="password" type="password" placeholder="Password" required="true" />
 			<button type="submit" id="submit">Log In</button>
 		</form>
-		<p style="text-center mt-4 text-[#999999] text-base">Don't have an account? <a href="#">Register here</a></p>
+		<p style="text-center mt-4 text-[#999999] text-base">Don't have an account? <a href="/signup.html">Register here</a></p>
 		
 		<p id="log-output" style="min-h-24"></p>
 	</div>

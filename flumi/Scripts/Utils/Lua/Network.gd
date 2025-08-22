@@ -1,29 +1,31 @@
 class_name LuaNetworkUtils
 extends RefCounted
 
+
+static var gurt_client: GurtProtocolClient = null
+static var current_domain: String = ""
+static var client_last_used: int = 0
+static var client_timeout_ms: int = 30000 # 30 seconds timeout for idle connections
+
 static func setup_network_api(vm: LuauVM):
 	vm.lua_pushcallable(_lua_fetch_handler, "fetch")
 	vm.lua_setglobal("fetch")
 
 static func resolve_fetch_url(url: String) -> String:
-	# If URL is already absolute, return as-is
 	if url.begins_with("http://") or url.begins_with("https://") or url.begins_with("gurt://"):
 		return url
 	
-	# Get current domain from main scene
 	var main_node = Engine.get_main_loop().current_scene
-	var current_domain = ""
+
 	if main_node and main_node.has_method("get_current_url"):
 		current_domain = main_node.get_current_url()
 	
-	# If no current domain, default to gurt:// protocol for relative URLs
 	if current_domain.is_empty():
 		if url.begins_with("/"):
 			return "gurt://" + url.substr(1)
 		else:
 			return "gurt://" + url
 	
-	# Use URLUtils to resolve relative URL against current domain
 	return URLUtils.resolve_url(current_domain, url)
 
 static func _lua_fetch_handler(vm: LuauVM) -> int:
@@ -272,7 +274,36 @@ static func make_http_request(url: String, method: String, headers: PackedString
 	http_client.close()
 	return response_data
 
-static var _gurt_client: GurtProtocolClient = null
+static func cleanup_idle_client():
+	if gurt_client != null and Time.get_ticks_msec() - client_last_used > client_timeout_ms:
+		gurt_client.disconnect()
+		gurt_client = null
+		current_domain = ""
+
+static func get_or_create_gurt_client(domain: String) -> GurtProtocolClient:
+	cleanup_idle_client()
+	
+	if gurt_client != null and current_domain == domain:
+		client_last_used = Time.get_ticks_msec()
+		return gurt_client
+	
+	if gurt_client != null:
+		gurt_client.disconnect()
+		gurt_client = null
+	
+	gurt_client = GurtProtocolClient.new()
+	
+	for ca_cert in CertificateManager.trusted_ca_certificates:
+		gurt_client.add_ca_certificate(ca_cert)
+	
+	if not gurt_client.create_client(10):
+		gurt_client = null
+		current_domain = ""
+		return null
+	
+	current_domain = domain
+	client_last_used = Time.get_ticks_msec()
+	return gurt_client
 
 static func make_gurt_request(url: String, method: String, headers: PackedStringArray, body: String) -> Dictionary:
 	var response_data = {
@@ -282,15 +313,17 @@ static func make_gurt_request(url: String, method: String, headers: PackedString
 		"body": ""
 	}
 	
-	# Reuse existing client or create new one
-	if _gurt_client == null:
-		_gurt_client = GurtProtocolClient.new()
-		if not _gurt_client.create_client(10):
-			response_data.status = 0
-			response_data.status_text = "Connection Failed"
-			return response_data
+	var domain_part = url.replace("gurt://", "")
+	if domain_part.contains("/"):
+		domain_part = domain_part.split("/")[0]
+	if domain_part.contains(":"):
+		domain_part = domain_part.split(":")[0]
 	
-	var client = _gurt_client
+	var client = get_or_create_gurt_client(domain_part)
+	if client == null:
+		response_data.status = 0
+		response_data.status_text = "Connection Failed"
+		return response_data
 	
 	# Convert headers array to dictionary
 	var headers_dict = {}
@@ -312,9 +345,6 @@ static func make_gurt_request(url: String, method: String, headers: PackedString
 	
 	var response = client.request(url, options)
 	
-	# Keep connection alive for reuse instead of disconnecting after every request
-	# client.disconnect()
-	
 	if not response:
 		response_data.status = 0
 		response_data.status_text = "No Response"
@@ -331,3 +361,9 @@ static func make_gurt_request(url: String, method: String, headers: PackedString
 		response_data.body = str(body_content)
 	
 	return response_data
+
+static func cleanup_connections():
+	if gurt_client != null:
+		gurt_client.disconnect()
+		gurt_client = null
+		current_domain = ""
