@@ -45,8 +45,8 @@ func _auto_resize_to_content():
 	await get_tree().process_frame
 	
 	var content_height = get_content_height()
-	var explicit_height = custom_minimum_size.y if custom_minimum_size.y > 0 else -1.0
-	var final_height = explicit_height if explicit_height >= 0 else max(content_height, min_height)
+	var explicit_height = custom_minimum_size.y if custom_minimum_size.y > 0 else 0.0
+	var final_height = explicit_height if explicit_height > 0 else max(content_height, min_height)
 	custom_minimum_size = Vector2(desired_width, final_height)
 	
 	queue_redraw()

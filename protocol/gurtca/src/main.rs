@@ -34,7 +34,7 @@ enum Commands {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
     
-    let client = client::GurtCAClient::new_with_ca_discovery(cli.ca_url).await?
+    let client = client::GurtCAClient::new_with_ca_discovery(cli.ca_url).await?;
     
     match cli.command {
         Commands::Request { domain, output } => {
