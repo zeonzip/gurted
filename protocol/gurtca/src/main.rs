@@ -14,9 +14,6 @@ struct Cli {
     
     #[arg(long, default_value = "gurt://localhost:8877")]
     ca_url: String,
-    
-    #[arg(long, help = "Skip TLS certificate verification (insecure, for bootstrapping only)")]
-    insecure: bool,
 }
 
 #[derive(Subcommand)]
@@ -37,11 +34,7 @@ enum Commands {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
     
-    let client = if cli.insecure {
-        client::GurtCAClient::new_insecure(cli.ca_url)?
-    } else {
-        client::GurtCAClient::new_with_ca_discovery(cli.ca_url).await?
-    };
+    let client = client::GurtCAClient::new_with_ca_discovery(cli.ca_url).await?
     
     match cli.command {
         Commands::Request { domain, output } => {

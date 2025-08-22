@@ -39,26 +39,11 @@ impl GurtCAClient {
         })
     }
     
-    pub fn new_insecure(ca_url: String) -> Result<Self> {
-        println!("⚠️ WARNING: Using insecure mode - TLS certificates will not be verified!");
-        println!("⚠️ This should only be used for bootstrapping or testing purposes.");
-        
-        // For now, just use default client - we'd need to add insecure support to GURT library
-        let gurt_client = GurtClient::new();
-            
-        Ok(Self {
-            ca_url,
-            gurt_client,
-        })
-    }
-    
     pub async fn new_with_ca_discovery(ca_url: String) -> Result<Self> {
         println!("🔍 Attempting to connect with system CA trust store...");
         
-        // Try default connection first - might work if server uses publicly trusted cert
         let test_client = Self::new(ca_url.clone())?;
         
-        // Test connection to see if it works
         match test_client.test_connection().await {
             Ok(_) => {
                 println!("✅ Connection successful with system CA trust store");
@@ -66,11 +51,6 @@ impl GurtCAClient {
             }
             Err(e) => {
                 if e.to_string().contains("UnknownIssuer") {
-                    println!("❌ Server uses custom CA certificate not in system trust store");
-                    println!("💡 Solutions:");
-                    println!("   1. Ask server admin to provide CA certificate");
-                    println!("   2. Use --insecure flag for testing (not recommended)");
-                    println!("   3. Install server's CA certificate in system trust store");
                     anyhow::bail!("Custom CA certificate required - server not trusted by system")
                 } else {
                     return Err(e);
