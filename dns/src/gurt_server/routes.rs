@@ -4,6 +4,8 @@ use crate::discord_bot::{send_domain_approval_request, DomainRegistration};
 use gurt::prelude::*;
 use std::{env, collections::HashMap};
 
+const VALID_DNS_RECORD_TYPES: &[&str] = &["A", "AAAA", "CNAME", "TXT"];
+
 fn parse_query_string(query: &str) -> HashMap<String, String> {
     let mut params = HashMap::new();
     for pair in query.split('&') {
@@ -445,8 +447,7 @@ pub(crate) async fn create_domain_record(ctx: &ServerContext, app_state: AppStat
         return Ok(GurtResponse::bad_request().with_string_body("Record type is required"));
     }
     
-    let valid_types = ["A", "AAAA", "CNAME", "TXT"];
-    if !valid_types.contains(&record_data.record_type.as_str()) {
+    if !VALID_DNS_RECORD_TYPES.contains(&record_data.record_type.as_str()) {
         return Ok(GurtResponse::bad_request().with_string_body("Invalid record type. Only A, AAAA, CNAME, and TXT records are supported."));
     }
 
