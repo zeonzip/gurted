@@ -9,7 +9,12 @@ use colored::Colorize;
 use macros_rs::fmt::{crashln, string};
 use std::{sync::Arc, collections::HashMap};
 use gurt::prelude::*;
+use warp::Filter;
 use gurt::{GurtStatusCode, Route};
+
+#[derive(Debug)]
+struct CertificateError;
+impl warp::reject::Reject for CertificateError {}
 
 #[derive(Clone)]
 pub(crate) struct AppState {
@@ -245,8 +250,74 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
         .route(Route::get("/ca/certificate/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetCertificate })
         .route(Route::get("/ca/root"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetCaCertificate });
 
+    let http_port = 8876;
+    let ca_bootstrap_server = start_ca_bootstrap_server(app_state.clone(), http_port, config.server.address.clone());
+    
+    log::info!("Starting CA bootstrap HTTP server on {}:{}", config.server.address, http_port);
     log::info!("GURT server listening on {}", config.get_address());
-    server.listen(&config.get_address()).await.map_err(|e| {
-        std::io::Error::new(std::io::ErrorKind::Other, format!("GURT server error: {}", e))
-    })
+    
+    let result = tokio::try_join!(
+        ca_bootstrap_server,
+        async {
+            server.listen(&config.get_address()).await.map_err(|e| {
+                std::io::Error::new(std::io::ErrorKind::Other, format!("GURT server error: {}", e))
+            })
+        }
+    );
+    
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e),
+    }
+}
+
+async fn start_ca_bootstrap_server(app_state: AppState, port: u16, address: String) -> std::result::Result<(), std::io::Error> {
+    let ca_root = warp::path("ca")
+        .and(warp::path("root"))
+        .and(warp::path::end())
+        .and_then({
+            let app_state = app_state.clone();
+            move || {
+                let app_state = app_state.clone();
+                async move {
+                    match get_ca_certificate_content(&app_state).await {
+                        Ok(cert_pem) => {
+                            Ok(warp::reply::with_header(
+                                cert_pem,
+                                "content-type",
+                                "application/x-pem-file"
+                            ))
+                        }
+                        Err(e) => {
+                            log::error!("Failed to get CA certificate: {}", e);
+                            Err(warp::reject::custom(CertificateError))
+                        }
+                    }
+                }
+            }
+        });
+    
+    let routes = ca_root
+        .with(warp::cors().allow_any_origin().allow_methods(vec!["GET"]));
+    
+    let addr: std::net::SocketAddr = format!("{}:{}", address, port).parse()
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, e))?;
+    
+    warp::serve(routes).run(addr).await;
+    Ok(())
+}
+
+async fn get_ca_certificate_content(app_state: &AppState) -> std::result::Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let query = "SELECT ca_cert_pem FROM ca_certificates WHERE is_active = TRUE ORDER BY created_at DESC LIMIT 1";
+    let row: std::result::Result<(String,), _> = sqlx::query_as(query)
+        .fetch_one(&app_state.db)
+        .await;
+    
+    match row {
+        Ok((ca_cert_pem,)) => Ok(ca_cert_pem),
+        Err(e) => {
+            log::error!("Failed to retrieve CA certificate from database: {}", e);
+            Err(format!("No active CA certificate found in database: {}", e).into())
+        }
+    }
 }

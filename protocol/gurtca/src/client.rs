@@ -144,4 +144,49 @@ impl GurtCAClient {
         
         anyhow::bail!("Certificate issuance timed out")
     }
+    
+    pub async fn fetch_ca_certificate(&self) -> Result<String> {
+        if let Ok(ca_cert) = self.fetch_ca_via_http().await {
+            return Ok(ca_cert);
+        }
+        
+        let response = self.gurt_client
+            .get(&format!("{}/ca/root", self.ca_url))
+            .await?;
+            
+        if response.is_success() {
+            let ca_cert = response.text()?;
+            if ca_cert.contains("BEGIN CERTIFICATE") && ca_cert.contains("END CERTIFICATE") {
+                Ok(ca_cert)
+            } else {
+                anyhow::bail!("Invalid CA certificate format received")
+            }
+        } else {
+            anyhow::bail!("Failed to fetch CA certificate: HTTP {}", response.status_code)
+        }
+    }
+    
+    async fn fetch_ca_via_http(&self) -> Result<String> {
+        let http_url = self.ca_url
+            .replace("gurt://", "http://")
+            .replace(":8877", ":8876");
+        
+        let client = reqwest::Client::new();
+        let response = client
+            .get(&format!("{}/ca/root", http_url))
+            .send()
+            .await?;
+            
+        if response.status().is_success() {
+            let ca_cert = response.text().await?;
+            if ca_cert.contains("BEGIN CERTIFICATE") && ca_cert.contains("END CERTIFICATE") {
+                println!("✅ Fetched CA certificate via HTTP bootstrap");
+                Ok(ca_cert)
+            } else {
+                anyhow::bail!("Invalid CA certificate format received via HTTP")
+            }
+        } else {
+            anyhow::bail!("HTTP bootstrap failed: {}", response.status())
+        }
+    }
 }
