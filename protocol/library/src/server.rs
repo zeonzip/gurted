@@ -293,7 +293,6 @@ impl GurtServer {
     }
     
     async fn handle_connection(&self, mut stream: TcpStream, addr: SocketAddr) -> Result<()> {
-        // Remove timeout wrapper that causes connection aborts
         self.handle_initial_handshake(&mut stream, addr).await?;
         
         if let Some(tls_acceptor) = &self.tls_acceptor {
@@ -311,7 +310,6 @@ impl GurtServer {
     }
     
     async fn handle_initial_handshake(&self, stream: &mut TcpStream, addr: SocketAddr) -> Result<()> {
-        // Remove timeout wrapper that causes connection aborts
         let mut buffer = Vec::new();
         let mut temp_buffer = [0u8; 8192];
         
