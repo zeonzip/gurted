@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crate::client::{Challenge, GurtCAClient};
 
-pub async fn complete_dns_challenge(challenge: &Challenge, _client: &GurtCAClient) -> Result<()> {
+pub async fn complete_dns_challenge(challenge: &Challenge, client: &GurtCAClient) -> Result<()> {
     println!("Please add this TXT record to your domain:");
     println!("   1. Go to gurt://dns.web (or your DNS server)");
     println!("   2. Login and navigate to your domain: {}", challenge.domain);
@@ -15,7 +15,7 @@ pub async fn complete_dns_challenge(challenge: &Challenge, _client: &GurtCAClien
     
     println!("🔍 Verifying DNS record...");
     
-    if verify_dns_txt_record(&challenge.domain, &challenge.verification_data).await? {
+    if verify_dns_txt_record(&challenge.domain, &challenge.verification_data, client).await? {
         println!("✅ DNS challenge completed successfully!");
         Ok(())
     } else {
@@ -23,10 +23,7 @@ pub async fn complete_dns_challenge(challenge: &Challenge, _client: &GurtCAClien
     }
 }
 
-async fn verify_dns_txt_record(domain: &str, expected_value: &str) -> Result<bool> {
-    use gurt::prelude::*;
-    let client = GurtClient::new();
-    
+async fn verify_dns_txt_record(domain: &str, expected_value: &str, client: &GurtCAClient) -> Result<bool> {
     let request = serde_json::json!({
         "domain": format!("_gurtca-challenge.{}", domain),
         "record_type": "TXT"
