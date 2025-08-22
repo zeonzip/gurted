@@ -17,6 +17,7 @@ struct GurtProtocolClient {
     
     client: Arc<RefCell<Option<GurtClient>>>,
     runtime: Arc<RefCell<Option<Runtime>>>,
+    ca_certificates: Arc<RefCell<Vec<String>>>,
 }
 
 #[derive(GodotClass)]
@@ -94,6 +95,15 @@ struct GurtProtocolServer {
 
 #[godot_api]
 impl GurtProtocolClient {
+    fn init(base: Base<RefCounted>) -> Self {
+        Self {
+            base,
+            client: Arc::new(RefCell::new(None)),
+            runtime: Arc::new(RefCell::new(None)),
+            ca_certificates: Arc::new(RefCell::new(Vec::new())),
+        }
+    }
+
     #[signal]
     fn request_completed(response: Gd<GurtGDResponse>);
     
@@ -109,6 +119,9 @@ impl GurtProtocolClient {
         
         let mut config = GurtClientConfig::default();
         config.request_timeout = tokio::time::Duration::from_secs(timeout_seconds as u64);
+        
+        // Add custom CA certificates
+        config.custom_ca_certificates = self.ca_certificates.borrow().clone();
         
         let client = GurtClient::with_config(config);
         
@@ -226,6 +239,21 @@ impl GurtProtocolClient {
     #[func]
     fn get_default_port(&self) -> i32 {
         gurt::DEFAULT_PORT as i32
+    }
+    
+    #[func]
+    fn add_ca_certificate(&self, cert_pem: GString) {
+        self.ca_certificates.borrow_mut().push(cert_pem.to_string());
+    }
+    
+    #[func]
+    fn clear_ca_certificates(&self) {
+        self.ca_certificates.borrow_mut().clear();
+    }
+    
+    #[func]
+    fn get_ca_certificate_count(&self) -> i32 {
+        self.ca_certificates.borrow().len() as i32
     }
     
     fn convert_response(&self, response: GurtResponse) -> Gd<GurtGDResponse> {

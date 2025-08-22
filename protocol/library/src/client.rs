@@ -23,6 +23,7 @@ pub struct GurtClientConfig {
     pub max_redirects: usize,
     pub enable_connection_pooling: bool,
     pub max_connections_per_host: usize,
+    pub custom_ca_certificates: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -46,6 +47,7 @@ impl Default for GurtClientConfig {
             max_redirects: 5,
             enable_connection_pooling: true,
             max_connections_per_host: 4,
+            custom_ca_certificates: Vec::new(),
         }
     }
 }
@@ -275,8 +277,27 @@ impl GurtClient {
                 added += 1;
             }
         }
+        
+        for ca_cert_pem in &self.config.custom_ca_certificates {
+            let mut pem_bytes = ca_cert_pem.as_bytes();
+            let cert_iter = rustls_pemfile::certs(&mut pem_bytes);
+            for cert_result in cert_iter {
+                match cert_result {
+                    Ok(cert) => {
+                        if root_store.add(cert).is_ok() {
+                            added += 1;
+                            debug!("Added custom CA certificate");
+                        }
+                    }
+                    Err(e) => {
+                        debug!("Failed to parse CA certificate: {}", e);
+                    }
+                }
+            }
+        }
+        
         if added == 0 {
-            return Err(GurtError::crypto("No valid system certificates found".to_string()));
+            return Err(GurtError::crypto("No valid certificates found (system or custom)".to_string()));
         }
         
         let mut client_config = TlsClientConfig::builder()

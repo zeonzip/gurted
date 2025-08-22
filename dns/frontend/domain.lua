@@ -131,7 +131,7 @@ renderRecords = function(appendOnly)
         local typeCell = gurt.create('div', { text = record.type, style = 'font-bold' })
         local nameCell = gurt.create('div', { text = record.name or '@' })
         local valueCell = gurt.create('div', { text = record.value, style = 'font-mono text-sm break-all' })
-        local ttlCell = gurt.create('div', { text = record.ttl or '3600' })
+        local ttlCell = gurt.create('div', { text = record.ttl or 'none' })
         
         local actionsCell = gurt.create('div')
         local deleteBtn = gurt.create('button', {
@@ -227,16 +227,10 @@ end
 
 local function addRecord(type, name, value, ttl)
     hideError('record-error')
-    print('Adding DNS record: ' .. type .. ' ' .. name .. ' ' .. value)
-    print('Network request details:')
-    print('  URL: gurt://localhost:8877/domain/' .. domainName .. '/records')
-    print('  Method: POST')
-    print('  Auth token: ' .. (authToken and 'present' or 'missing'))
-    print('  Domain name: ' .. (domainName or 'nil'))
-    
+
     local response = fetch('gurt://localhost:8877/domain/' .. domainName .. '/records', {
         method = 'POST',
-        headers = { 
+        headers = {
             ['Content-Type'] = 'application/json',
             Authorization = 'Bearer ' .. authToken
         },
@@ -248,38 +242,24 @@ local function addRecord(type, name, value, ttl)
         })
     })
     
-    print('Response received: ' .. tostring(response))
-    
     if response then
-        print('Response status: ' .. tostring(response.status))
-        print('Response ok: ' .. tostring(response:ok()))
-        
         if response:ok() then
-            print('DNS record added successfully')
-            
-            -- Clear form
             gurt.select('#record-name').value = ''
             gurt.select('#record-value').value = ''
-            gurt.select('#record-ttl').value = '3600'
+            gurt.select('#record-ttl').value = ''
             
-            -- Add the new record to existing records array
             local newRecord = response:json()
             if newRecord and newRecord.id then
-                -- Server returned the created record, add it to our local array
                 table.insert(records, newRecord)
                 
-                -- Check if we had no records before (showing empty message)
-                local wasEmpty = (#records == 1) -- If this is the first record
+                local wasEmpty = (#records == 1)
                 
                 if wasEmpty then
-                    -- Full re-render to replace empty message with proper table
                     renderRecords(false)
                 else
-                    -- Just append the new record to existing table
                     renderRecords(true)
                 end
             else
-                -- Server didn't return record details, reload to get the actual data
                 loadRecords()
             end
         else
@@ -288,7 +268,6 @@ local function addRecord(type, name, value, ttl)
             print('Failed to add DNS record: ' .. error)
         end
     else
-        print('No response received from server')
         showError('record-error', 'No response from server - connection failed')
         print('Failed to add DNS record: No response')
     end
@@ -310,7 +289,7 @@ local function updateHelpText()
     local recordType = gurt.select('#record-type').value
     
     -- Hide all help texts
-    local helpTypes = {'A', 'AAAA', 'CNAME', 'TXT', 'NS'}
+    local helpTypes = {'A', 'AAAA', 'CNAME', 'TXT'}
     for _, helpType in ipairs(helpTypes) do
         local helpElement = gurt.select('#help-' .. helpType)
         if helpElement then
@@ -330,7 +309,7 @@ local function updateHelpText()
         valueInput.placeholder = '192.168.1.1'
     elseif recordType == 'AAAA' then
         valueInput.placeholder = '2001:db8::1'
-    elseif recordType == 'CNAME' or recordType == 'NS' then
+    elseif recordType == 'CNAME' then
         valueInput.placeholder = 'example.com'
     elseif recordType == 'TXT' then
         valueInput.placeholder = 'Any text content'
@@ -346,7 +325,7 @@ gurt.select('#add-record-btn'):on('click', function()
     local recordType = gurt.select('#record-type').value
     local recordName = gurt.select('#record-name').value
     local recordValue = gurt.select('#record-value').value
-    local recordTTL = tonumber(gurt.select('#record-ttl').value) or 3600
+    local recordTTL = tonumber(gurt.select('#record-ttl').value) or ''
 
     if not recordValue or recordValue == '' then
         showError('record-error', 'Record value is required')

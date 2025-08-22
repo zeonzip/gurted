@@ -53,7 +53,7 @@ static func _lua_fetch_handler(vm: LuauVM) -> int:
 	if not has_user_agent:
 		headers_array.append("User-Agent: " + UserAgent.get_user_agent())
 	
-	var response_data = make_http_request(url, method, headers_array, body)
+	var response_data = await make_http_request(url, method, headers_array, body)
 	
 	# Create response object with actual data
 	vm.lua_newtable()
@@ -127,7 +127,7 @@ static func _response_ok_handler(vm: LuauVM) -> int:
 
 static func make_http_request(url: String, method: String, headers: PackedStringArray, body: String) -> Dictionary:
 	if url.begins_with("gurt://"):
-		return make_gurt_request(url, method, headers, body)
+		return await make_gurt_request(url, method, headers, body)
 	var http_client = HTTPClient.new()
 	var response_data = {
 		"status": 0,
@@ -282,13 +282,24 @@ static func make_gurt_request(url: String, method: String, headers: PackedString
 		"body": ""
 	}
 	
-	# Reuse existing client or create new one
-	if _gurt_client == null:
-		_gurt_client = GurtProtocolClient.new()
-		if not _gurt_client.create_client(10):
-			response_data.status = 0
-			response_data.status_text = "Connection Failed"
-			return response_data
+	var domain_part = url.replace("gurt://", "")
+	if domain_part.contains("/"):
+		domain_part = domain_part.split("/")[0]
+	if domain_part.contains(":"):
+		domain_part = domain_part.split(":")[0]
+	
+	if _gurt_client != null:
+		_gurt_client.disconnect()
+	
+	_gurt_client = GurtProtocolClient.new()
+	
+	for ca_cert in CertificateManager.trusted_ca_certificates:
+		_gurt_client.add_ca_certificate(ca_cert)
+	
+	if not _gurt_client.create_client(10):
+		response_data.status = 0
+		response_data.status_text = "Connection Failed"
+		return response_data
 	
 	var client = _gurt_client
 	

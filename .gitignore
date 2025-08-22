@@ -1,3 +1,4 @@
 *target*
 *.pem
-*gurty.toml
+gurty.toml
+certs

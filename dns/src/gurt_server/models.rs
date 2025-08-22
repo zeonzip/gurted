@@ -82,7 +82,7 @@ pub(crate) struct ResponseDnsRecord {
     pub(crate) record_type: String,
     pub(crate) name: String,
     pub(crate) value: String,
-    pub(crate) ttl: i32,
+    pub(crate) ttl: Option<i32>,
     pub(crate) priority: Option<i32>,
 }
 

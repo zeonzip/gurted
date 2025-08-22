@@ -31,35 +31,34 @@ Gurty uses a TOML configuration file to manage server settings. The `gurty.templ
 
 ## Setup for Production
 
-For production deployments, you'll need to generate your own certificates since traditional Certificate Authorities don't support custom protocols:
+For production deployments, you can use the Gurted Certificate Authority to get proper TLS certificates:
 
-1. **Generate production certificates with OpenSSL:**
+1. **Install the Gurted CA CLI:**
+   
+   🔗 https://gurted.com/download
+
+2. **Request a certificate for your domain:**
    ```bash
-   # Generate private key
-   openssl genpkey -algorithm RSA -out gurt-server.key -pkcs8 -v
-
-   # Generate certificate signing request
-   openssl req -new -key gurt-server.key -out gurt-server.csr
-
-   # Generate self-signed certificate (valid for 365 days)
-   openssl x509 -req -days 365 -in gurt-server.csr -signkey gurt-server.key -out gurt-server.crt
-
-   # Or generate both key and certificate in one step
-   openssl req -x509 -newkey rsa:4096 -keyout gurt-server.key -out gurt-server.crt -days 365 -nodes
+   gurtca request yourdomain.web --output ./certs
    ```
 
-2. **Copy the configuration template and customize:**
+3. **Follow the DNS challenge instructions:**
+   When prompted, add the TXT record to your domain:
+   - Go to gurt://localhost:8877 (or your DNS server)
+   - Login and navigate to your domain
+   - Add a TXT record with:
+     - Name: `_gurtca-challenge`
+     - Value: (provided by the CLI tool)
+   - Press Enter to continue verification
+
+4. **Copy the configuration template and customize:**
    ```bash
    cp gurty.template.toml gurty.toml
    ```
 
-3. **Deploy with production certificates and configuration:**
+5. **Deploy with CA-issued certificates:**
    ```bash
-   gurty serve --config gurty.toml
-   ```
-   Or specify certificates explicitly:
-   ```bash
-   gurty serve --cert gurt-server.crt --key gurt-server.key --config gurty.toml
+   gurty serve --cert ./certs/yourdomain.web.crt --key ./certs/yourdomain.web.key --config gurty.toml
    ```
 
 ## Development Environment Setup

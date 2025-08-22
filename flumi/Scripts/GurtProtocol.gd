@@ -141,6 +141,9 @@ static func fetch_dns_post_working(server: String, path: String, json_data: Stri
 		var local_result = {}
 		var client = GurtProtocolClient.new()
 		
+		for ca_cert in CertificateManager.trusted_ca_certificates:
+			client.add_ca_certificate(ca_cert)
+		
 		if not client.create_client(10):
 			local_result = {"error": "Failed to create client"}
 		else:
@@ -191,6 +194,9 @@ static func fetch_dns_post_working(server: String, path: String, json_data: Stri
 static func fetch_content_via_gurt(ip: String, path: String = "/") -> Dictionary:	
 	var client = GurtProtocolClient.new()
 	
+	for ca_cert in CertificateManager.trusted_ca_certificates:
+		client.add_ca_certificate(ca_cert)
+	
 	if not client.create_client(30):
 		return {"error": "Failed to create GURT client"}
 	
@@ -218,6 +224,9 @@ static func fetch_content_via_gurt_direct(address: String, path: String = "/") -
 	var thread_func = func():
 		var local_result = {}
 		var client = GurtProtocolClient.new()
+		
+		for ca_cert in CertificateManager.trusted_ca_certificates:
+			client.add_ca_certificate(ca_cert)
 		
 		if not client.create_client(10):
 			local_result = {"error": "Failed to create GURT client"}
