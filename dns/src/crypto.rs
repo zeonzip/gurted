@@ -4,6 +4,7 @@ use openssl::rsa::Rsa;
 use openssl::x509::X509Req;
 use openssl::x509::X509Name;
 use openssl::hash::MessageDigest;
+use std::process::Command;
 
 pub fn generate_ca_cert() -> Result<(String, String)> {
     let rsa = Rsa::generate(4096)?;
@@ -86,11 +87,17 @@ pub fn sign_csr_with_ca(
     
     let context = cert_builder.x509v3_context(Some(&ca_cert), None);
     
-    let subject_alt_name = openssl::x509::extension::SubjectAlternativeName::new()
+    let mut san_builder = openssl::x509::extension::SubjectAlternativeName::new();
+    san_builder
         .dns(domain)
         .dns("localhost")
-        .ip("127.0.0.1")
-        .build(&context)?;
+        .ip("127.0.0.1");
+    
+    if let Ok(public_ip) = get_public_ip() {
+        san_builder.ip(&public_ip);
+    }
+    
+    let subject_alt_name = san_builder.build(&context)?;
     cert_builder.append_extension(subject_alt_name)?;
     
     let key_usage = openssl::x509::extension::KeyUsage::new()
@@ -111,4 +118,56 @@ pub fn sign_csr_with_ca(
     
     let cert_pem = cert.to_pem()?;
     Ok(String::from_utf8(cert_pem)?)
+}
+
+fn get_public_ip() -> Result<String, Box<dyn std::error::Error>> {
+    // Method 1: Check if we can get it from environment or interface
+    if let Ok(output) = Command::new("curl")
+        .args(&["-s", "--max-time", "5", "https://api.ipify.org"])
+        .output()
+    {
+        if output.status.success() {
+            let ip = String::from_utf8(output.stdout)?.trim().to_string();
+            if is_valid_ip(&ip) {
+                return Ok(ip);
+            }
+        }
+    }
+    
+    // Method 2: Try ifconfig.me
+    if let Ok(output) = Command::new("curl")
+        .args(&["-s", "--max-time", "5", "https://ifconfig.me/ip"])
+        .output()
+    {
+        if output.status.success() {
+            let ip = String::from_utf8(output.stdout)?.trim().to_string();
+            if is_valid_ip(&ip) {
+                return Ok(ip);
+            }
+        }
+    }
+    
+    // Method 3: Try to get from network interfaces
+    if let Ok(output) = Command::new("hostname")
+        .args(&["-I"])
+        .output()
+    {
+        if output.status.success() {
+            let ips = String::from_utf8(output.stdout)?;
+            for ip in ips.split_whitespace() {
+                if is_valid_ip(ip) && !ip.starts_with("127.") && !ip.starts_with("192.168.") && !ip.starts_with("10.") {
+                    return Ok(ip.to_string());
+                }
+            }
+        }
+    }
+    
+    Err("Could not determine public IP".into())
+}
+
+fn is_valid_ip(ip: &str) -> bool {
+    ip.split('.')
+        .count() == 4
+        && ip.split('.')
+            .all(|part| part.parse::<u8>().is_ok())
 }
