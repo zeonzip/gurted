@@ -45,31 +45,31 @@ func _auto_resize_to_content():
 	await get_tree().process_frame
 	
 	var content_height = get_content_height()
-	var explicit_height = custom_minimum_size.y if custom_minimum_size.y > 0 else null
-	var final_height = explicit_height if explicit_height != null else max(content_height, min_height)
+	var explicit_height = custom_minimum_size.y if custom_minimum_size.y > 0 else -1.0
+	var final_height = explicit_height if explicit_height >= 0 else max(content_height, min_height)
 	custom_minimum_size = Vector2(desired_width, final_height)
 	
 	queue_redraw()
 
 func _get_font_weight_multiplier() -> float:
-	if element_styles.has("font-black"):
-		return 1.12
-	elif element_styles.has("font-extrabold"):
-		return 1.10
-	elif element_styles.has("font-bold"):
-		return 1.04
-	elif element_styles.has("font-semibold"):
-		return 1.06
-	elif element_styles.has("font-medium"):
-		return 1.03
-	elif element_styles.has("font-light"):
-		return 0.98
-	elif element_styles.has("font-extralight") or element_styles.has("font-thin"):
-		return 0.95
+	#if element_styles.has("font-black"):
+	#	return 1.12
+	#elif element_styles.has("font-extrabold"):
+	#	return 1.10
+	#elif element_styles.has("font-bold"):
+	#	return 1.04
+	#elif element_styles.has("font-semibold"):
+	#	return 1.06
+	#elif element_styles.has("font-medium"):
+	#	return 1.03
+	#elif element_styles.has("font-light"):
+	#	return 0.98
+	#elif element_styles.has("font-extralight") or element_styles.has("font-thin"):
+	#	return 0.95
 	
-	var text_content = get_parsed_text()
+	#var text_content = get_parsed_text()
 	
-	if text_content.contains("[b]"):
-		return 1.08
+	#if text_content.contains("[b]"):
+	#	return 1.08
 	
 	return 1.0
