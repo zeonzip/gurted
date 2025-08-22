@@ -2,6 +2,7 @@ use super::{models::*, AppState};
 use crate::auth::Claims;
 use crate::discord_bot::{send_domain_approval_request, DomainRegistration};
 use gurt::prelude::*;
+use rand::{rngs::OsRng, Rng};
 use sha2::{Digest, Sha256};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{collections::HashMap, env};
@@ -1098,9 +1099,16 @@ fn generate_challenge_data(domain: &str, token: &str) -> Result<String> {
         .map_err(|_| GurtError::invalid_message("System time error"))?
         .as_nanos();
 
-    let entropy = uuid::Uuid::new_v4().to_string();
+    let mut rng = OsRng;
+    let random_bytes: [u8; 32] = rng.gen();
+    let secure_entropy = base64::encode(random_bytes);
 
-    let data = format!("{}:{}:{}:{}", domain, token, timestamp, entropy);
+    let uuid_entropy = uuid::Uuid::new_v4().to_string();
+
+    let data = format!(
+        "{}:{}:{}:{}:{}",
+        domain, token, timestamp, secure_entropy, uuid_entropy
+    );
     let mut hasher = Sha256::new();
     hasher.update(data.as_bytes());
     let hash = hasher.finalize();
