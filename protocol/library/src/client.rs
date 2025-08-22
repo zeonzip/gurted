@@ -55,21 +55,18 @@ impl Default for GurtClientConfig {
 #[derive(Debug)]
 enum Connection {
     Plain(TcpStream),
-    Tls(tokio_rustls::client::TlsStream<TcpStream>),
 }
 
 impl Connection {
     async fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         match self {
             Connection::Plain(stream) => stream.read(buf).await.map_err(|e| GurtError::connection(e.to_string())),
-            Connection::Tls(stream) => stream.read(buf).await.map_err(|e| GurtError::connection(e.to_string())),
         }
     }
     
     async fn write_all(&mut self, buf: &[u8]) -> Result<()> {
         match self {
             Connection::Plain(stream) => stream.write_all(buf).await.map_err(|e| GurtError::connection(e.to_string())),
-            Connection::Tls(stream) => stream.write_all(buf).await.map_err(|e| GurtError::connection(e.to_string())),
         }
     }
 }
@@ -82,10 +79,6 @@ struct PooledConnection {
 impl PooledConnection {
     fn new(stream: TcpStream) -> Self {
         Self { connection: Connection::Plain(stream) }
-    }
-    
-    fn with_tls(stream: tokio_rustls::client::TlsStream<TcpStream>) -> Self {
-        Self { connection: Connection::Tls(stream) }
     }
 }
 
@@ -259,7 +252,6 @@ impl GurtClient {
         
         let tcp_stream = match plain_conn.connection {
             Connection::Plain(stream) => stream,
-            _ => return Err(GurtError::protocol("Expected plain connection for handshake")),
         };
         
         self.upgrade_to_tls(tcp_stream, host).await

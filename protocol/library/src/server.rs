@@ -7,7 +7,7 @@ use crate::{
 };
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::time::{timeout, Duration};
+use tokio::time::Duration;
 use tokio_rustls::{TlsAcceptor, server::TlsStream};
 use rustls::pki_types::CertificateDer;
 use std::collections::HashMap;
