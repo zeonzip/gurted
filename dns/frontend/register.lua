@@ -7,6 +7,7 @@ local tldSelector = gurt.select('#tld-selector')
 local loadingElement = gurt.select('#tld-loading')
 local displayElement = gurt.select('#invite-code-display')
 local remainingElement = gurt.select('#remaining')
+local redeemBtn = gurt.select('#redeem-invite-btn')
 
 local options
 
@@ -169,6 +170,10 @@ local function createInvite()
         displayElement.text = 'Invite code: ' .. inviteCode .. ' (copied to clipboard)'
         displayElement:show()
         Clipboard.write(inviteCode)
+        
+        user.registrations_remaining = user.registrations_remaining - 1
+        updateUserInfo()
+        
         print('Invite code created and copied to clipboard: ' .. inviteCode)
     else
         print('Failed to create invite: ' .. response:text())
@@ -197,7 +202,11 @@ local function redeemInvite(code)
         updateUserInfo()
         
         -- Clear form
-        gurt.select('#invite-code-input').text = ''
+        gurt.select('#invite-code-input').value = ''
+        redeemBtn.text = 'Success!'
+        gurt.setTimeout(function()
+            redeemBtn.text = 'Redeem'
+        end, 1000)
     else
         local error = response:text()
         showError('redeem-error', 'Failed to redeem invite: ' .. error)
@@ -236,8 +245,8 @@ end)
 
 gurt.select('#create-invite-btn'):on('click', createInvite)
 
-gurt.select('#redeem-invite-btn'):on('click', function()
-    local code = gurt.select('#invite-code-input').text
+redeemBtn:on('click', function()
+    local code = gurt.select('#invite-code-input').value
     if code and code ~= '' then
         redeemInvite(code)
     end

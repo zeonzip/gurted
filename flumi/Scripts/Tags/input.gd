@@ -464,17 +464,17 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 			var new_height = max(active_child.custom_minimum_size.y, active_child.size.y)
 			
 			if width:
-				if width == "100%":
+				if typeof(width) == TYPE_STRING and width == "100%":
 					active_child.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 					size_flags_horizontal = Control.SIZE_EXPAND_FILL
 					new_width = 0
-				elif SizingUtils.is_percentage(width):
+				elif typeof(width) == TYPE_STRING and SizingUtils.is_percentage(width):
 					new_width = SizingUtils.calculate_percentage_size(width, SizingUtils.DEFAULT_VIEWPORT_WIDTH)
 				else:
 					new_width = width
 			
 			if height:
-				if SizingUtils.is_percentage(height):
+				if typeof(height) == TYPE_STRING and SizingUtils.is_percentage(height):
 					new_height = SizingUtils.calculate_percentage_size(height, SizingUtils.DEFAULT_VIEWPORT_HEIGHT)
 				else:
 					new_height = height
@@ -483,7 +483,7 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 			
 			active_child.custom_minimum_size = new_child_size
 			
-			if width and width != "100%":
+			if width and not (typeof(width) == TYPE_STRING and width == "100%"):
 				active_child.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			if height:
 				active_child.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -494,7 +494,7 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 			custom_minimum_size = new_child_size
 			
 			# Root Control adjusts size flags to match child
-			if width and width != "100%":
+			if width and not (typeof(width) == TYPE_STRING and width == "100%"):
 				size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			else:
 				size_flags_horizontal = Control.SIZE_EXPAND_FILL

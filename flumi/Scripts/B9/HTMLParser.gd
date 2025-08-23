@@ -436,7 +436,9 @@ static func apply_element_bbcode_formatting(element: HTMLElement, styles: Dictio
 			color = "#" + color.to_html(false)
 		else:
 			color = str(color)
-		formatted_content = "[color=%s]%s[/color]" % [color, formatted_content]
+		var color_pattern = "[color=%s]" % color
+		if not formatted_content.contains(color_pattern):
+			formatted_content = "[color=%s]%s[/color]" % [color, formatted_content]
 	
 	# Apply tag-specific formatting
 	match element.tag_name:
@@ -471,8 +473,8 @@ static func apply_element_bbcode_formatting(element: HTMLElement, styles: Dictio
 			var href = element.get_attribute("href")
 			
 			if href.length() > 0:
-				# Pass raw href - URL resolution happens in handle_link_click
-				formatted_content = "[url=%s]%s[/url]" % [href, formatted_content]
+				if not formatted_content.contains("[url="):
+					formatted_content = "[url=%s]%s[/url]" % [href, formatted_content]
 	
 	return formatted_content
 

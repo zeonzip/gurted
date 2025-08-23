@@ -489,6 +489,10 @@ func _on_input_focus_lost(subscription: EventSubscription) -> void:
 			current_text = dom_node.get_text()
 		elif "text" in dom_node:
 			current_text = dom_node.text
+		else:
+			var element = dom_parser.find_by_id(subscription.element_id)
+			if element:
+				current_text = element.text_content
 		
 		var event_info = {"value": current_text}
 		_execute_lua_callback(subscription, [event_info])
@@ -723,10 +727,7 @@ func _handle_text_setting(operation: Dictionary):
 	
 	var element = SelectorUtils.find_first_matching(selector, dom_parser.parse_result.all_elements)
 	if element:
-		# Always update the HTML element's text content first
-		element.text_content = text
-		
-		# If the element has a DOM node, update it too
+		# If the element has a DOM node, update it directly without updating text_content
 		var element_id = get_or_assign_element_id(element)
 		var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
 		if dom_node:
@@ -734,24 +735,37 @@ func _handle_text_setting(operation: Dictionary):
 				var button_node = dom_node.get_node_or_null("ButtonNode")
 				if button_node and button_node is Button:
 					button_node.text = text
+					element.text_content = text
 					return
 			
+			if element.tag_name == "p" and dom_node.has_method("set_text"):
+				dom_node.set_text(text)
+				element.text_content = text
+				return
+		
+		element.text_content = text
+		
+		if dom_node:
 			var text_node = get_dom_node(dom_node, "text")
 			if text_node:
 				if text_node is RichTextLabel:
 					StyleManager.apply_styles_to_label(text_node, dom_parser.get_element_styles_with_inheritance(element, "", []), element, dom_parser, text)
-					text_node.call_deferred("_auto_resize_to_content")
+					try_apply_auto_resize(text_node)
 				elif text_node.has_method("set_text"):
 					text_node.set_text(text)
 				elif "text" in text_node:
 					text_node.text = text
-					if text_node.has_method("_auto_resize_to_content"):
-						text_node.call_deferred("_auto_resize_to_content")
+					try_apply_auto_resize(text_node)
 			else:
 				var rich_text_label = _find_rich_text_label_recursive(dom_node)
 				if rich_text_label:
 					StyleManager.apply_styles_to_label(rich_text_label, dom_parser.get_element_styles_with_inheritance(element, "", []), element, dom_parser, text)
-					rich_text_label.call_deferred("_auto_resize_to_content")
+					try_apply_auto_resize(rich_text_label)
+
+func try_apply_auto_resize(text_node: Node) -> void:
+	var parent = text_node.get_parent()
+	if parent and parent.has_method("_apply_auto_resize_to_label"):
+		parent.call_deferred("_apply_auto_resize_to_label", text_node)
 
 func _find_rich_text_label_recursive(node: Node) -> RichTextLabel:
 	if node is RichTextLabel:

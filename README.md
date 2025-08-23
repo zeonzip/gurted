@@ -31,5 +31,4 @@ Issues:
 
 Notes:
 - **< input />** is sort-of inline in normal web. We render it as a block element (new-line).
-- A single `RichTextLabel` for inline text tags should stop, we should use invididual ones so it's easier to style and achieve separation through a `vboxcontainer`.
 - Fonts use **Flash of Unstyled Text (FOUT)** as opposed to **Flash of Invisible Text (FOIT)**, meaning the text with custom fonts will render with a generic font (sans-serif) while the custom ones downloads.

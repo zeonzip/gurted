@@ -85,14 +85,23 @@ pub(crate) async fn create_logic(domain: Domain, user_id: i32, app: &AppState) -
 
     let domain_id = domain_row.0;
 
-    // Decrease user's registrations remaining
-    sqlx::query(
-        "UPDATE users SET registrations_remaining = registrations_remaining - 1 WHERE id = $1",
+    let affected_rows = sqlx::query(
+        "UPDATE users SET registrations_remaining = registrations_remaining - 1 WHERE id = $1 AND registrations_remaining > 0",
     )
     .bind(user_id)
     .execute(&app.db)
     .await
-    .map_err(|_| GurtError::invalid_message("Failed to update user registrations"))?;
+    .map_err(|_| GurtError::invalid_message("Failed to update user registrations"))?
+    .rows_affected();
+
+    if affected_rows == 0 {
+        sqlx::query("DELETE FROM domains WHERE id = $1")
+            .bind(domain_id)
+            .execute(&app.db)
+            .await
+            .map_err(|_| GurtError::invalid_message("Database cleanup error"))?;
+        return Err(GurtError::invalid_message("No registrations remaining"));
+    }
 
     if !app.config.discord.bot_token.is_empty() && app.config.discord.channel_id != 0 {
         let domain_registration = DomainRegistration {
@@ -123,20 +132,6 @@ pub(crate) async fn create_domain(
     app_state: AppState,
     claims: Claims,
 ) -> Result<GurtResponse> {
-    // Check if user has registrations remaining
-    let user: (i32,) = sqlx::query_as("SELECT registrations_remaining FROM users WHERE id = $1")
-        .bind(claims.user_id)
-        .fetch_one(&app_state.db)
-        .await
-        .map_err(|_| GurtError::invalid_message("User not found"))?;
-
-    if user.0 <= 0 {
-        return Ok(GurtResponse::bad_request().with_json_body(&Error {
-            msg: "Failed to create domain",
-            error: "No registrations remaining".into(),
-        })?);
-    }
-
     let domain: Domain = serde_json::from_slice(ctx.body())
         .map_err(|_| GurtError::invalid_message("Invalid JSON"))?;
 

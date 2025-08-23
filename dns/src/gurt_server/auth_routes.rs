@@ -197,17 +197,32 @@ pub(crate) async fn create_invite(_ctx: &ServerContext, app_state: AppState, cla
             .collect()
     };
 
-    // Insert invite code into database
-    let insert_result = sqlx::query(
-        "INSERT INTO invite_codes (code, created_by, created_at) VALUES ($1, $2, $3)"
-    )
-    .bind(&invite_code)
-    .bind(claims.user_id)
-    .bind(Utc::now())
-    .execute(&app_state.db)
-    .await;
+    let mut tx = app_state.db.begin().await
+        .map_err(|_| GurtError::invalid_message("Database error"))?;
 
-    match insert_result {
+    let affected_rows = sqlx::query("UPDATE users SET registrations_remaining = registrations_remaining - 1 WHERE id = $1 AND registrations_remaining > 0")
+        .bind(claims.user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|_| GurtError::invalid_message("Database error"))?
+        .rows_affected();
+
+    if affected_rows == 0 {
+        return Ok(GurtResponse::bad_request().with_json_body(&Error {
+            msg: "No registrations remaining to create invite",
+            error: "INSUFFICIENT_REGISTRATIONS".into(),
+        })?);
+    }
+
+    sqlx::query("INSERT INTO invite_codes (code, created_by, created_at) VALUES ($1, $2, $3)")
+        .bind(&invite_code)
+        .bind(claims.user_id)
+        .bind(Utc::now())
+        .execute(&mut *tx)
+        .await
+        .map_err(|_| GurtError::invalid_message("Database error"))?;
+
+    match tx.commit().await {
         Ok(_) => {
             let response = serde_json::json!({
                 "invite_code": invite_code
@@ -252,7 +267,7 @@ pub(crate) async fn redeem_invite(ctx: &ServerContext, app_state: AppState, clai
                 .await
                 .map_err(|_| GurtError::invalid_message("Database error"))?;
 
-            sqlx::query("UPDATE users SET registrations_remaining = registrations_remaining + 3 WHERE id = $1")
+            sqlx::query("UPDATE users SET registrations_remaining = registrations_remaining + 1 WHERE id = $1")
                 .bind(claims.user_id)
                 .execute(&mut *tx)
                 .await
@@ -262,7 +277,7 @@ pub(crate) async fn redeem_invite(ctx: &ServerContext, app_state: AppState, clai
                 .map_err(|_| GurtError::invalid_message("Database error"))?;
 
             let response = serde_json::json!({
-                "registrations_added": 3
+                "registrations_added": 1
             });
             Ok(GurtResponse::ok().with_json_body(&response)?)
         }
@@ -282,20 +297,6 @@ pub(crate) async fn redeem_invite(ctx: &ServerContext, app_state: AppState, clai
 }
 
 pub(crate) async fn create_domain_invite(_ctx: &ServerContext, app_state: AppState, claims: Claims) -> Result<GurtResponse> {
-    // Check if user has domain invite codes remaining
-    let user: (i32,) = sqlx::query_as("SELECT domain_invite_codes FROM users WHERE id = $1")
-        .bind(claims.user_id)
-        .fetch_one(&app_state.db)
-        .await
-        .map_err(|_| GurtError::invalid_message("User not found"))?;
-
-    if user.0 <= 0 {
-        return Ok(GurtResponse::bad_request().with_json_body(&Error {
-            msg: "No domain invite codes remaining",
-            error: "NO_INVITES_REMAINING".into(),
-        })?);
-    }
-
     // Generate random domain invite code
     let invite_code: String = {
         use rand::Rng;
@@ -312,6 +313,20 @@ pub(crate) async fn create_domain_invite(_ctx: &ServerContext, app_state: AppSta
     let mut tx = app_state.db.begin().await
         .map_err(|_| GurtError::invalid_message("Database error"))?;
 
+    let affected_rows = sqlx::query("UPDATE users SET domain_invite_codes = domain_invite_codes - 1 WHERE id = $1 AND domain_invite_codes > 0")
+        .bind(claims.user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|_| GurtError::invalid_message("Database error"))?
+        .rows_affected();
+
+    if affected_rows == 0 {
+        return Ok(GurtResponse::bad_request().with_json_body(&Error {
+            msg: "No domain invite codes remaining",
+            error: "NO_INVITES_REMAINING".into(),
+        })?);
+    }
+
     sqlx::query(
         "INSERT INTO domain_invite_codes (code, created_by, created_at) VALUES ($1, $2, $3)"
     )
@@ -321,12 +336,6 @@ pub(crate) async fn create_domain_invite(_ctx: &ServerContext, app_state: AppSta
     .execute(&mut *tx)
     .await
     .map_err(|_| GurtError::invalid_message("Database error"))?;
-
-    sqlx::query("UPDATE users SET domain_invite_codes = domain_invite_codes - 1 WHERE id = $1")
-        .bind(claims.user_id)
-        .execute(&mut *tx)
-        .await
-        .map_err(|_| GurtError::invalid_message("Database error"))?;
 
     tx.commit().await
         .map_err(|_| GurtError::invalid_message("Database error"))?;
