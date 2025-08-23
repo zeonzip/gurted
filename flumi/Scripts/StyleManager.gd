@@ -774,7 +774,7 @@ static func apply_flexcontainer_centering(node: Control, styles: Dictionary) -> 
 	if not node is FlexContainer:
 		return
 		
-	var should_center_h = styles.has("mx-auto") or styles.has("justify-self-center") or (styles.has("text-align") and styles["text-align"] == "center")
+	var should_center_h = styles.has("mx-auto") or styles.has("justify-self-center")
 	var should_center_v = styles.has("my-auto") or styles.has("align-self-center")
 	
 	if should_center_h and not node.has_meta("size_flags_horizontal_set"):
@@ -787,7 +787,7 @@ static func apply_flexcontainer_centering(node: Control, styles: Dictionary) -> 
 		node.set_meta("size_flags_set_by_style_manager", true)
 
 static func apply_element_centering(node: Control, styles: Dictionary) -> void:
-	var should_center_h = styles.has("mx-auto") or styles.has("justify-self-center") or (styles.has("text-align") and styles["text-align"] == "center")
+	var should_center_h = styles.has("mx-auto") or styles.has("justify-self-center")
 	var should_center_v = styles.has("my-auto") or styles.has("align-self-center")
 	
 	# For FlexContainers, use the existing logic with metadata checks

@@ -24,11 +24,14 @@ pre { text-xl font-mono }
 button { text-[16px] bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] px-3 py-1.5 }
 button[disabled] { bg-[#666666] text-[#999999] cursor-not-allowed }
 
-input { text-[#000000] border border-[#000000] rounded-[3px] bg-transparent px-3 py-1.5 }
-input:active { border-[3px] border-[#000000] }
-
 select { text-[#000000] border border-[#000000] rounded-[3px] bg-transparent px-3 py-1.5 }
 select:active { text-[#000000] border-[3px] border-[#000000] }
+
+input[type="color"] { w-32 }
+input[type="range"] { w-32 }
+input[type="text"] { w-64 }
+input[type="number"] { w-32 text-[16px] bg-transparent border border-[#000000] rounded-[3px] text-[#000000] hover:border-[3px] hover:border-[#000000] px-3 py-1.5 }
+input[type="date"] { w-28 text-[16px] bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] px-3 py-1.5 }
 """
 
 var HTML_CONTENT = """

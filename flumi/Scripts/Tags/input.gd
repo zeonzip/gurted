@@ -603,9 +603,40 @@ func apply_stylebox_to_input(control: Control, styles: Dictionary) -> void:
 	if not has_bottom_padding:
 		style_box.content_margin_bottom = 2.0
 	
+	var hover_styles = _parser.get_element_styles_with_inheritance(_element, "hover", [])
+	var active_styles = _parser.get_element_styles_with_inheritance(_element, "active", [])
+	var hover_style_box = null
+	var active_style_box = null
+	
+	if not hover_styles.is_empty():
+		hover_style_box = BackgroundUtils.create_stylebox_from_styles(hover_styles)
+		if not hover_styles.has("padding") and not hover_styles.has("padding-left"):
+			hover_style_box.content_margin_left = 5.0
+		if not hover_styles.has("padding") and not hover_styles.has("padding-right"):
+			hover_style_box.content_margin_right = 5.0
+		if not hover_styles.has("padding") and not hover_styles.has("padding-top"):
+			hover_style_box.content_margin_top = 2.0
+		if not hover_styles.has("padding") and not hover_styles.has("padding-bottom"):
+			hover_style_box.content_margin_bottom = 2.0
+	
+	if not active_styles.is_empty():
+		active_style_box = BackgroundUtils.create_stylebox_from_styles(active_styles)
+		if not active_styles.has("padding") and not active_styles.has("padding-left"):
+			active_style_box.content_margin_left = 5.0
+		if not active_styles.has("padding") and not active_styles.has("padding-right"):
+			active_style_box.content_margin_right = 5.0
+		if not active_styles.has("padding") and not active_styles.has("padding-top"):
+			active_style_box.content_margin_top = 2.0
+		if not active_styles.has("padding") and not active_styles.has("padding-bottom"):
+			active_style_box.content_margin_bottom = 2.0
+	
 	if control is LineEdit:
 		control.add_theme_stylebox_override("normal", style_box)
 		control.add_theme_stylebox_override("focus", style_box)
+		if hover_style_box:
+			control.add_theme_stylebox_override("hover", hover_style_box)
+		if active_style_box:
+			control.add_theme_stylebox_override("pressed", active_style_box)
 	elif control is SpinBox:
 		# NOTE: currently broken, it goes over the buttons, dont have time to fix
 		#style_box.expand_margin_right += 32.0 # More space for stepper buttons
@@ -614,6 +645,14 @@ func apply_stylebox_to_input(control: Control, styles: Dictionary) -> void:
 		if line_edit:
 			line_edit.add_theme_stylebox_override("normal", style_box)
 			line_edit.add_theme_stylebox_override("focus", style_box)
+			if hover_style_box:
+				line_edit.add_theme_stylebox_override("hover", hover_style_box)
+			if active_style_box:
+				line_edit.add_theme_stylebox_override("pressed", active_style_box)
 		
 	elif control is Button:
 		control.add_theme_stylebox_override("normal", style_box)
+		if hover_style_box:
+			control.add_theme_stylebox_override("hover", hover_style_box)
+		if active_style_box:
+			control.add_theme_stylebox_override("pressed", active_style_box)

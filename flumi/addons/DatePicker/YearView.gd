@@ -28,7 +28,7 @@ func init():
 
 func scroll_to_current_year():
 	var year_container: VBoxContainer = %YearContainer
-	var scroll_container: ScrollContainer = $SmoothScrollContainer
+	var scroll_container: ScrollContainer = $ScrollContainer
 
 	var current_year = calendar.date_time.year
 	var target_button: Button = year_container.get_node_or_null("Year" + str(current_year))

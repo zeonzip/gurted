@@ -293,17 +293,18 @@ func _setup_threaded_gurt_api():
 	lua_vm.lua_pushcallable(_gurt_create_handler, "gurt.create")
 	lua_vm.lua_setfield(-2, "create")
 	
-	lua_vm.lua_pushcallable(_set_timeout_handler, "gurt.setTimeout")
-	lua_vm.lua_setfield(-2, "setTimeout")
+	# Add timer functions as global functions
+	lua_vm.lua_pushcallable(_set_timeout_handler, "setTimeout")
+	lua_vm.lua_setglobal("setTimeout")
 	
-	lua_vm.lua_pushcallable(lua_api._gurt_clear_timeout_handler, "gurt.clearTimeout")
-	lua_vm.lua_setfield(-2, "clearTimeout")
+	lua_vm.lua_pushcallable(lua_api._gurt_clear_timeout_handler, "clearTimeout")
+	lua_vm.lua_setglobal("clearTimeout")
 	
-	lua_vm.lua_pushcallable(_set_interval_handler, "gurt.setInterval")
-	lua_vm.lua_setfield(-2, "setInterval")
+	lua_vm.lua_pushcallable(_set_interval_handler, "setInterval")
+	lua_vm.lua_setglobal("setInterval")
 	
-	lua_vm.lua_pushcallable(lua_api._gurt_clear_interval_handler, "gurt.clearInterval")
-	lua_vm.lua_setfield(-2, "clearInterval")
+	lua_vm.lua_pushcallable(lua_api._gurt_clear_interval_handler, "clearInterval")
+	lua_vm.lua_setglobal("clearInterval")
 	
 	lua_vm.lua_newtable()
 	lua_vm.lua_pushcallable(lua_api._gurt_location_reload_handler, "gurt.location.reload")

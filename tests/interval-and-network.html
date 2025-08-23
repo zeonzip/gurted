@@ -56,7 +56,7 @@
 			counter = 0
 			updateCounter()
 			
-			intervalId = gurt.setInterval(function()
+			intervalId = setInterval(function()
 				counter = counter + 1
 				updateCounter()
 				addLog('⏱️ Counter updated to: ' .. counter)
@@ -72,7 +72,7 @@
 				return
 			end
 			
-			gurt.clearInterval(intervalId)
+			clearInterval(intervalId)
 			addLog('🛑 Interval stopped (ID: ' .. intervalId .. ')')
 			intervalId = nil
 		end)
@@ -127,7 +127,7 @@
 	<div style="container mt-6">
 		<div style="info-box mb-6">
 			<h3 style="text-[#6d28d9] font-semibold mb-2">Testing Features:</h3>
-			<p><strong>Intervals:</strong> <code>gurt.setInterval(callback, delay)</code> and <code>gurt.clearInterval(id)</code></p>
+			<p><strong>Intervals:</strong> <code>setInterval(callback, delay)</code> and <code>clearInterval(id)</code></p>
 			<p><strong>Network Images:</strong> <code>fetch()</code> with binary data and dynamic <code>&lt;img&gt;</code> creation</p>
 		</div>
 		

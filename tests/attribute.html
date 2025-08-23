@@ -123,7 +123,7 @@
 			if not disabled then
 				targetButton:setAttribute('style', 'target-button ' .. randomColor .. ' text-white px-6 py-3 rounded-lg font-semibold hover:opacity-75')
 				
-				gurt.setTimeout(function()
+				setTimeout(function()
 					targetButton:setAttribute('style', 'target-button bg-[#3b82f6] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#2563eb]')
 				end, 1000)
 			end
@@ -137,7 +137,7 @@
 		targetButton:setAttribute('data-value', 'initial')
 		
 		-- Update status after setting initial attributes
-		gurt.setTimeout(function()
+		setTimeout(function()
 			updateStatus()
 		end, 100)
 	</script>

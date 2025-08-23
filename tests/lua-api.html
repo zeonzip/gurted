@@ -98,12 +98,12 @@
 		})
 		gurt.body:append(temp_element)
 		
-		local test = gurt.setTimeout(function()
+		local test = setTimeout(function()
 			print('removed')
 			temp_element:remove()
 		end, 3000)
 		
-		-- gurt.clearTimeout(test)
+		-- clearTimeout(test)
 		
 		local addBtn = gurt.select('#add-class')
 		local removeBtn = gurt.select('#remove-class')

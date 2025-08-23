@@ -119,7 +119,7 @@ visible = false
 layout_mode = 2
 
 [node name="FileButton" type="Button" parent="FileContainer"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(100, 32)
 layout_mode = 2
 theme = ExtResource("2_theme")
 text = "Choose File"

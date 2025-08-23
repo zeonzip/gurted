@@ -1,18 +1,23 @@
 <head>
 	<title>My cool web</title>
-	<icon src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png\">
+	<icon
+		src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png">
 
-	<meta name=\"theme-color\" content=\"#000000\">
-	<meta name=\"description\" content=\"My cool web\">
+		<meta name="theme-color" content="#000000">
+		<meta name="description" content="My cool web">
 
-	<font name="roboto" src="https://fonts.gstatic.com/s/roboto/v48/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3KUBGEe.woff2" />
+		<font name="roboto"
+			src="https://fonts.gstatic.com/s/roboto/v48/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3KUBGEe.woff2" />
 
-	<style>
-		h1 { text-[#ff0000] font-italic hover:text-[#00ff00] }
-		button { hover:bg-[#FF6B35] hover:text-[#FFFFFF] active:bg-[#CC5429] active:text-[#F0F0F0] }
-	</style>
-	<style src=\"styles.css\">
-	<script src=\"script.lua\" />
+		<style>
+			h1 {
+				text-[#ff0000] font-italic hover:text-[#00ff00]
+			}
+
+			button {
+				hover:bg-[#FF6B35] hover:text-[#FFFFFF] active:bg-[#CC5429] active:text-[#F0F0F0]
+			}
+		</style>
 </head>
 
 <body>
@@ -22,24 +27,24 @@
 	<h4>Header 4</h4>
 	<h5>Header 5</h5>
 	<h6>Header 6</h6>
-	
+
 	<separator />
-	
+
 	<p>Normal font</p>
 	<p style="font-mono">Mono font</p>
 	<p style="font-sans">Sans font</p>
 	<p style="font-roboto">Custom font - Roboto</p>
-	
-	<p>Hey there!       this is a        test</p>
+
+	<p>Hey there! this is a test</p>
 	<b>This is bold</b>
 	<i>This is italic <mark>actually, and it's pretty <u>cool</u></mark></i>
 	<u>This is underline</u>
 	<small>this is small</small>
 	<mark>this is marked</mark>
 	<code>this is code<span> THIS IS A SPAN AND SHOULDNT BE ANY DIFFERENT</span></code>
-	
+
 	<p>
-	<a href="https://youtube.com">Hello gang</a>
+		<a href="https://youtube.com">Hello gang</a>
 	</p>
 
 	<pre>
@@ -49,9 +54,9 @@ font, and it preserves
 both      spaces and
 line breaks
 	</pre>
-	
+
 	<p style="text-center w-32 h-32">
-	So
+		So
 	</p>
 
 	<div>
@@ -66,7 +71,7 @@ line breaks
 
 	<!-- Test CSS Properties -->
 	<h2 style="text-center mt-6">🧪 CSS Properties Test</h2>
-	<div style="flex flex-col gap-2 justify-center items-center mt-2">
+	<div style="flex flex-col gap-2 justify-center items-center mt-2 mx-auto">
 		<div style="bg-[#ef4444] text-white p-4 rounded-lg opacity-75 z-10 cursor-pointer">
 			<p>Opacity 75% with cursor pointer and z-index 10 - Text should show pointer cursor, not I-beam</p>
 		</div>
@@ -89,9 +94,9 @@ line breaks
 			<p>Cursor not-allowed - Text should show forbidden cursor</p>
 		</div>
 	</div>
-	
+
 	<separator direction="horizontal" />
-	
+
 	<!-- Test cursor inheritance -->
 	<h2 style="text-center mt-6">🖱️ Cursor Inheritance Test</h2>
 	<div style="cursor-pointer bg-[#1e293b] p-4 rounded-lg">
@@ -129,125 +134,126 @@ line breaks
 	<div style="border border-blue-400 p-2 mb-2">border-blue-400</div>
 	<div style="border border-yellow-300 p-2 mb-2">border-yellow-300</div>
 
-<select style=\"text-center max-w-5 max-h-32\">
-<option value=\"test1\">Test 1</option>
-<option value=\"test2\" selected=\"true\">Test 2</option>
-<option value=\"test3\">Test 3</option>
-<option value=\"test4\" disabled=\"true\">Test 4</option>
-<option value=\"test5\">Test 5</option>
-</select>
+	<select style="text-center max-w-5 max-h-32">
+		<option value="test1">Test 1</option>
+		<option value="test2" selected="true">Test 2</option>
+		<option value="test3">Test 3</option>
+		<option value="test4" disabled="true">Test 4</option>
+		<option value="test5">Test 5</option>
+	</select>
 
-<textarea />
-<textarea cols=\"30\" />
-<textarea rows=\"2\" />
-<textarea maxlength=\"20\" />
-<textarea readonly=\"true\">le skibidi le toilet</textarea>
-<textarea disabled=\"true\" value=\"DISABLED\" />
-<textarea placeholder=\"this is a placeholder...\" />
+	<textarea />
+	<textarea cols="30" />
+	<textarea rows="2" />
+	<textarea maxlength="20" />
+	<textarea readonly="true">le skibidi le toilet</textarea>
+	<textarea disabled="true" value="DISABLED" />
+	<textarea placeholder="this is a placeholder..." />
 
-<!-- action, method, and type=submit are for when we implement Lua -->
-<form action=\"/submit\" method=\"POST\">
-  <span>Name:</span>
-  <input type=\"text\" placeholder=\"First name\" value=\"John\" maxlength=\"20\" minlength=\"3\" />
-  <span>Email regex:</span>
-  <input type=\"text\" placeholder=\"Last name\" value=\"Doe\" pattern=\"^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$\" />
-  <span>Smart:</span>
-  <input type=\"checkbox\" />
-  <input type=\"checkbox\" value=\"true\" />
+	<!-- action, method, and type=submit are for when we implement Lua -->
+	<form action="/submit" method="POST">
+		<span>Name:</span>
+		<input type="text" placeholder="First name" value="John" maxlength="20" minlength="3" />
+		<span>Email regex:</span>
+		<input type="text" placeholder="Last name" value="Doe" pattern="^[^@\s]+@[^@\s]+\.[^@\s]+$" />
+		<span>Smart:</span>
+		<input type="checkbox" />
+		<input type="checkbox" value="true" />
 
-  <p>favorite food</p>
-  <input type=\"radio\" group=\"food\" />
-  <span>Pizza</span>
-  <input type=\"radio\" group=\"food\" />
-  <span>Berry</span>
-  <input type=\"radio\" group=\"food\" />
-  <span>Gary</span>
+		<p>favorite food</p>
+		<input type="radio" group="food" />
+		<span>Pizza</span>
+		<input type="radio" group="food" />
+		<span>Berry</span>
+		<input type="radio" group="food" />
+		<span>Gary</span>
 
-  <h2>Color</h2>
-  <input type=\"color\" value=\"#ff0000\" />
-  <h2>Date</h2>
-  <input type=\"date\" value=\"2018-07-22\" />
+		<h2>Color</h2>
+		<input type="color" value="#ff0000" />
+		<h2>Date</h2>
+		<input type="date" value="2018-07-22" />
 
-  <h2>Range Slider</h2>
-  <input style=\"max-w-2 max-h-2\" type=\"range\" min=\"0\" max=\"100\" step=\"5\" value=\"50\" />
-  
-  <h2>Number Input</h2>
-  <input type=\"number\" min=\"1\" max=\"10\" step=\"0.5\" value=\"5\" placeholder=\"Enter number\" />
-  
-  <h2>File Upload</h2>
-  <input type=\"file\" accept=\".txt,.pdf,image/*\" />
-</form>
-	<separator direction=\"horizontal\" />
-# Ordered list
-<ol>
-<li>hello gang</li>
-<li>this</li>
-<li>is</li>
-</ol>
+		<h2>Range Slider</h2>
+		<input style="max-w-2 max-h-2" type="range" min="0" max="100" step="5" value="50" />
 
-<ol type=\"zero-lead\">
-<li>hello gang</li>
-<li>this</li>
-<li>is</li>
-<li>a test</li>
-</ol>
+		<h2>Number Input</h2>
+		<input type="number" min="1" max="10" step="0.5" value="5" placeholder="Enter number" />
 
-<ol type=\"lower-alpha\">
-<li>hello gang</li>
-<li>this</li>
-<li>is</li>
-<li>a test</li>
-</ol>
+		<h2>File Upload</h2>
+		<input type="file" accept=".txt,.pdf,image/*" />
+	</form>
+	<separator direction="horizontal" />
 
-<ol type=\"upper-alpha\">
-<li>hello gang</li>
-<li>this</li>
-<li>is</li>
-<li>a test</li>
-</ol>
+	<ol>
+		<li>hello gang</li>
+		<li>this</li>
+		<li>is</li>
+	</ol>
+
+	<ol type="zero-lead">
+		<li>hello gang</li>
+		<li>this</li>
+		<li>is</li>
+		<li>a test</li>
+	</ol>
+
+	<ol type="lower-alpha">
+		<li>hello gang</li>
+		<li>this</li>
+		<li>is</li>
+		<li>a test</li>
+	</ol>
+
+	<ol type="upper-alpha">
+		<li>hello gang</li>
+		<li>this</li>
+		<li>is</li>
+		<li>a test</li>
+	</ol>
 
 
-<ol type=\"lower-roman\">
-<li>hello gang</li>
-<li>this</li>
-<li>is</li>
-<li>a test</li>
-</ol>
+	<ol type="lower-roman">
+		<li>hello gang</li>
+		<li>this</li>
+		<li>is</li>
+		<li>a test</li>
+	</ol>
 
-<ol type=\"upper-roman\">
-<li>hello gang</li>
-<li>this</li>
-<li>is</li>
-<li>a test</li>
-</ol>
+	<ol type="upper-roman">
+		<li>hello gang</li>
+		<li>this</li>
+		<li>is</li>
+		<li>a test</li>
+	</ol>
 
-<ul>
-<li>hello gang</li>
-<li>this</li>
-<li>is</li>
-<li>a test</li>
-</ul>
+	<ul>
+		<li>hello gang</li>
+		<li>this</li>
+		<li>is</li>
+		<li>a test</li>
+	</ul>
 
-<ul type=\"circle\">
-<li>hello gang</li>
-<li>this</li>
-<li>is</li>
-<li>a test</li>
-</ul>
-<ul type=\"none\">
-<li>hello gang</li>
-<li>this</li>
-<li>is</li>
-<li>a test</li>
-</ul>
-<ul type=\"square\">
-<li>hello gang</li>
-<li>this</li>
-<li>is</li>
-<li>a test</li>
-</ul>
-	<img style=\"text-center max-w-24 max-h-24\" src=\"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMNUPIKabszX0Js_c0kfa4cz_JQYKfGTuBUA&s\" />
-	<separator direction=\"vertical\" />
+	<ul type="circle">
+		<li>hello gang</li>
+		<li>this</li>
+		<li>is</li>
+		<li>a test</li>
+	</ul>
+	<ul type="none">
+		<li>hello gang</li>
+		<li>this</li>
+		<li>is</li>
+		<li>a test</li>
+	</ul>
+	<ul type="square">
+		<li>hello gang</li>
+		<li>this</li>
+		<li>is</li>
+		<li>a test</li>
+	</ul>
+	<img style="text-center max-w-24 max-h-24"
+		src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMNUPIKabszX0Js_c0kfa4cz_JQYKfGTuBUA&s" />
+	<separator direction="vertical" />
 
 	<!-- FLEXBOX EXAMPLES -->
 	<h2>Flex Row (gap, justify-between, items-center)</h2>

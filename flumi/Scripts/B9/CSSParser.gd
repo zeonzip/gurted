@@ -362,11 +362,24 @@ func parse_rule(rule_data: Dictionary) -> CSSRule:
 	var properties_text = rule_data.properties
 	
 	var utility_classes = properties_text.split(" ")
+	
+	var base_utilities = []
+	var pseudo_utilities = []
+	
 	for utility_name in utility_classes:
 		utility_name = utility_name.strip_edges()
 		if utility_name.is_empty():
 			continue
 		
+		if utility_name.begins_with("hover:") or utility_name.begins_with("active:"):
+			pseudo_utilities.append(utility_name)
+		else:
+			base_utilities.append(utility_name)
+	
+	for utility_name in base_utilities:
+		parse_utility_class_internal(rule, utility_name)
+	
+	for utility_name in pseudo_utilities:
 		parse_utility_class(rule, utility_name)
 	
 	return rule
@@ -382,10 +395,13 @@ func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
 			
 			pseudo_rule.selector = rule.selector
 			pseudo_rule.event_prefix = pseudo
-			pseudo_rule.selector_type = "simple"
-			pseudo_rule.selector_parts = [rule.selector]
+			pseudo_rule.selector_type = rule.selector_type
+			pseudo_rule.selector_parts = rule.selector_parts.duplicate()
 			pseudo_rule.calculate_specificity()
 			pseudo_rule.specificity += 100
+			
+			for property in rule.properties:
+				pseudo_rule.properties[property] = rule.properties[property]
 			
 			parse_utility_class_internal(pseudo_rule, actual_utility)
 			stylesheet.add_rule(pseudo_rule)
