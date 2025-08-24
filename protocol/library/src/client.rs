@@ -24,6 +24,8 @@ pub struct GurtClientConfig {
     pub enable_connection_pooling: bool,
     pub max_connections_per_host: usize,
     pub custom_ca_certificates: Vec<String>,
+    pub dns_server_ip: String,
+    pub dns_server_port: u16,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -48,6 +50,8 @@ impl Default for GurtClientConfig {
             enable_connection_pooling: true,
             max_connections_per_host: 4,
             custom_ca_certificates: Vec::new(),
+            dns_server_ip: "127.0.0.1".to_string(),
+            dns_server_port: 8877,
         }
     }
 }
@@ -85,6 +89,7 @@ impl PooledConnection {
 pub struct GurtClient {
     config: GurtClientConfig,
     connection_pool: Arc<Mutex<HashMap<ConnectionKey, Vec<PooledTlsConnection>>>>,
+    dns_cache: Arc<Mutex<HashMap<String, String>>>,
 }
 
 impl GurtClient {
@@ -92,6 +97,7 @@ impl GurtClient {
         Self {
             config: GurtClientConfig::default(),
             connection_pool: Arc::new(Mutex::new(HashMap::new())),
+            dns_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }
     
@@ -99,6 +105,7 @@ impl GurtClient {
         Self {
             config,
             connection_pool: Arc::new(Mutex::new(HashMap::new())),
+            dns_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }
     
@@ -384,139 +391,219 @@ impl GurtClient {
     }
     
     pub async fn get(&self, url: &str) -> Result<GurtResponse> {
-        let (host, port, path) = self.parse_url(url)?;
-        let request = GurtRequest::new(GurtMethod::GET, path)
-            .with_header("Host", &host)
+        let (host, port, path) = self.parse_gurt_url(url)?;
+        
+        let request = GurtRequest::new(GurtMethod::GET, path.to_string())
             .with_header("User-Agent", &self.config.user_agent)
             .with_header("Accept", "*/*");
         
-        self.send_request_internal(&host, port, request).await
+        self.send_request(&host, port, request).await
     }
     
     pub async fn post(&self, url: &str, body: &str) -> Result<GurtResponse> {
-        let (host, port, path) = self.parse_url(url)?;
-        let request = GurtRequest::new(GurtMethod::POST, path)
-            .with_header("Host", &host)
+        let (host, port, path) = self.parse_gurt_url(url)?;
+        
+        let request = GurtRequest::new(GurtMethod::POST, path.to_string())
             .with_header("User-Agent", &self.config.user_agent)
             .with_header("Content-Type", "text/plain")
             .with_string_body(body);
         
-        self.send_request_internal(&host, port, request).await
+        self.send_request(&host, port, request).await
     }
     
     pub async fn post_json<T: serde::Serialize>(&self, url: &str, data: &T) -> Result<GurtResponse> {
-        let (host, port, path) = self.parse_url(url)?;
+        let (host, port, path) = self.parse_gurt_url(url)?;
         let json_body = serde_json::to_string(data)?;
         
-        let request = GurtRequest::new(GurtMethod::POST, path)
-            .with_header("Host", &host)
+        let request = GurtRequest::new(GurtMethod::POST, path.to_string())
             .with_header("User-Agent", &self.config.user_agent)
             .with_header("Content-Type", "application/json")
             .with_string_body(json_body);
         
-        self.send_request_internal(&host, port, request).await
+        self.send_request(&host, port, request).await
     }
 
     pub async fn put(&self, url: &str, body: &str) -> Result<GurtResponse> {
-        let (host, port, path) = self.parse_url(url)?;
-        let request = GurtRequest::new(GurtMethod::PUT, path)
-            .with_header("Host", &host)
+        let (host, port, path) = self.parse_gurt_url(url)?;
+        
+        let request = GurtRequest::new(GurtMethod::PUT, path.to_string())
             .with_header("User-Agent", &self.config.user_agent)
             .with_header("Content-Type", "text/plain")
             .with_string_body(body);
         
-        self.send_request_internal(&host, port, request).await
+        self.send_request(&host, port, request).await
     }
 
     pub async fn put_json<T: serde::Serialize>(&self, url: &str, data: &T) -> Result<GurtResponse> {
-        let (host, port, path) = self.parse_url(url)?;
+        let (host, port, path) = self.parse_gurt_url(url)?;
         let json_body = serde_json::to_string(data)?;
         
-        let request = GurtRequest::new(GurtMethod::PUT, path)
-            .with_header("Host", &host)
+        let request = GurtRequest::new(GurtMethod::PUT, path.to_string())
             .with_header("User-Agent", &self.config.user_agent)
             .with_header("Content-Type", "application/json")
             .with_string_body(json_body);
         
-        self.send_request_internal(&host, port, request).await
+        self.send_request(&host, port, request).await
     }
 
     pub async fn delete(&self, url: &str) -> Result<GurtResponse> {
-        let (host, port, path) = self.parse_url(url)?;
-        let request = GurtRequest::new(GurtMethod::DELETE, path)
-            .with_header("Host", &host)
+        let (host, port, path) = self.parse_gurt_url(url)?;
+        
+        let request = GurtRequest::new(GurtMethod::DELETE, path.to_string())
             .with_header("User-Agent", &self.config.user_agent);
         
-        self.send_request_internal(&host, port, request).await
+        self.send_request(&host, port, request).await
     }
 
     pub async fn head(&self, url: &str) -> Result<GurtResponse> {
-        let (host, port, path) = self.parse_url(url)?;
-        let request = GurtRequest::new(GurtMethod::HEAD, path)
-            .with_header("Host", &host)
+        let (host, port, path) = self.parse_gurt_url(url)?;
+        
+        let request = GurtRequest::new(GurtMethod::HEAD, path.to_string())
             .with_header("User-Agent", &self.config.user_agent);
         
-        self.send_request_internal(&host, port, request).await
+        self.send_request(&host, port, request).await
     }
 
     pub async fn options(&self, url: &str) -> Result<GurtResponse> {
-        let (host, port, path) = self.parse_url(url)?;
-        let request = GurtRequest::new(GurtMethod::OPTIONS, path)
-            .with_header("Host", &host)
+        let (host, port, path) = self.parse_gurt_url(url)?;
+        
+        let request = GurtRequest::new(GurtMethod::OPTIONS, path.to_string())
             .with_header("User-Agent", &self.config.user_agent);
         
-        self.send_request_internal(&host, port, request).await
+        self.send_request(&host, port, request).await
     }
 
     pub async fn patch(&self, url: &str, body: &str) -> Result<GurtResponse> {
-        let (host, port, path) = self.parse_url(url)?;
-        let request = GurtRequest::new(GurtMethod::PATCH, path)
-            .with_header("Host", &host)
+        let (host, port, path) = self.parse_gurt_url(url)?;
+        
+        let request = GurtRequest::new(GurtMethod::PATCH, path.to_string())
             .with_header("User-Agent", &self.config.user_agent)
             .with_header("Content-Type", "text/plain")
             .with_string_body(body);
         
-        self.send_request_internal(&host, port, request).await
+        self.send_request(&host, port, request).await
     }
 
     pub async fn patch_json<T: serde::Serialize>(&self, url: &str, data: &T) -> Result<GurtResponse> {
-        let (host, port, path) = self.parse_url(url)?;
+        let (host, port, path) = self.parse_gurt_url(url)?;
         let json_body = serde_json::to_string(data)?;
         
-        let request = GurtRequest::new(GurtMethod::PATCH, path)
-            .with_header("Host", &host)
+        let request = GurtRequest::new(GurtMethod::PATCH, path.to_string())
             .with_header("User-Agent", &self.config.user_agent)
             .with_header("Content-Type", "application/json")
             .with_string_body(json_body);
         
-        self.send_request_internal(&host, port, request).await
+        self.send_request(&host, port, request).await
     }
     
-    pub async fn send_request(&self, host: &str, port: u16, request: GurtRequest) -> Result<GurtResponse> {
-        self.send_request_internal(host, port, request).await
+    pub async fn send_request(&self, host: &str, port: u16, mut request: GurtRequest) -> Result<GurtResponse> {
+        let resolved_host = self.resolve_domain(host).await?;
+        
+        request = request.with_header("Host", host);
+        
+        self.send_request_internal(&resolved_host, port, request).await
     }
     
-    fn parse_url(&self, url: &str) -> Result<(String, u16, String)> {
+    fn parse_gurt_url(&self, url: &str) -> Result<(String, u16, String)> {
         let parsed_url = Url::parse(url).map_err(|e| GurtError::invalid_message(format!("Invalid URL: {}", e)))?;
         
         if parsed_url.scheme() != "gurt" {
             return Err(GurtError::invalid_message("URL must use gurt:// scheme"));
         }
         
-        let host = parsed_url.host_str()
-            .ok_or_else(|| GurtError::invalid_message("URL must have a host"))?
-            .to_string();
-        
+        let host = parsed_url.host_str().ok_or_else(|| GurtError::invalid_message("URL must have a host"))?.to_string();
         let port = parsed_url.port().unwrap_or(DEFAULT_PORT);
+        let mut path = if parsed_url.path().is_empty() { "/" } else { parsed_url.path() }.to_string();
         
-        let path = if parsed_url.path().is_empty() {
-            "/".to_string()
-        } else {
-            parsed_url.path().to_string()
-        };
+        if let Some(query) = parsed_url.query() {
+            path = format!("{}?{}", path, query);
+        }
         
         Ok((host, port, path))
     }
+    
+    async fn resolve_domain(&self, domain: &str) -> Result<String> {
+        match self.dns_cache.lock() {
+            Ok(cache) => {
+                if let Some(cached_ip) = cache.get(domain) {
+                    debug!("Using cached DNS resolution for {}: {}", domain, cached_ip);
+                    return Ok(cached_ip.clone());
+                }
+            },
+            Err(e) => {
+                debug!("DNS cache lock poisoned: {}", e);
+                // Continue without cache
+            }
+        }
+        
+        if self.is_ip_address(domain) {
+            return Ok(domain.to_string());
+        }
+        
+        if domain == "localhost" {
+            return Ok("127.0.0.1".to_string());
+        }
+        
+        debug!("Resolving domain {} via DNS API", domain);
+        
+        if !self.is_ip_address(&self.config.dns_server_ip) && self.config.dns_server_ip != "localhost" {
+            return Err(GurtError::invalid_message("DNS server must be an IP address or 'localhost'"));
+        }
+        
+        let dns_server_ip = if self.config.dns_server_ip == "localhost" {
+            "127.0.0.1".to_string()
+        } else {
+            self.config.dns_server_ip.clone()
+        };
+        
+        let dns_request_body = serde_json::json!({
+            "domain": domain
+        }).to_string();
+        let dns_request = GurtRequest::new(GurtMethod::POST, "/resolve-full".to_string())
+            .with_header("Host", &self.config.dns_server_ip)
+            .with_header("Content-Type", "application/json")
+            .with_string_body(dns_request_body);
+        
+        let dns_response = self.send_request_internal(&dns_server_ip, self.config.dns_server_port, dns_request).await?;
+        
+        if dns_response.status_code != 200 {
+            return Err(GurtError::invalid_message(format!(
+                "DNS resolution failed for {}: {} {}", 
+                domain, dns_response.status_code, dns_response.status_message
+            )));
+        }
+        
+        let response_text = String::from_utf8_lossy(&dns_response.body);
+        let dns_data: serde_json::Value = serde_json::from_str(&response_text)
+            .map_err(|e| GurtError::invalid_message(format!("Invalid DNS response JSON: {}", e)))?;
+        
+        if let Some(records) = dns_data.get("records").and_then(|r| r.as_array()) {
+            for record in records {
+                if let (Some(record_type), Some(value)) = (
+                    record.get("type").and_then(|t| t.as_str()),
+                    record.get("value").and_then(|v| v.as_str())
+                ) {
+                    if record_type == "A" {
+                        debug!("Resolved {} to {}", domain, value);
+                        
+                        if let Ok(mut cache) = self.dns_cache.lock() {
+                            cache.insert(domain.to_string(), value.to_string());
+                        }
+                        
+                        return Ok(value.to_string());
+                    }
+                }
+            }
+        }
+        
+        Err(GurtError::invalid_message(format!("No A record found for domain {}", domain)))
+    }
+    
+    fn is_ip_address(&self, addr: &str) -> bool {
+        use std::net::IpAddr;
+        addr.parse::<IpAddr>().is_ok()
+    }
+
     
 }
 
@@ -531,6 +618,7 @@ impl Clone for GurtClient {
         Self {
             config: self.config.clone(),
             connection_pool: self.connection_pool.clone(),
+            dns_cache: self.dns_cache.clone(),
         }
     }
 }
