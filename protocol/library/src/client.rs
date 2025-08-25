@@ -50,7 +50,7 @@ impl Default for GurtClientConfig {
             enable_connection_pooling: true,
             max_connections_per_host: 4,
             custom_ca_certificates: Vec::new(),
-            dns_server_ip: "127.0.0.1".to_string(),
+            dns_server_ip: "135.125.163.131".to_string(),
             dns_server_port: 8877,
         }
     }

@@ -1,0 +1,56 @@
+FROM rust:1.75-alpine AS builder
+
+RUN apk add --no-cache \
+    musl-dev \
+    openssl-dev \
+    openssl-libs-static \
+    pkgconfig \
+    postgresql-dev
+
+ENV OPENSSL_STATIC=1
+ENV OPENSSL_DIR=/usr
+ENV PKG_CONFIG_ALLOW_CROSS=1
+
+WORKDIR /app
+
+COPY ../protocol/library ./protocol/library
+
+COPY Cargo.toml Cargo.lock ./
+
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build --release && \
+    rm src/main.rs
+
+COPY src ./src
+COPY migrations ./migrations
+
+RUN cargo build --release
+
+FROM alpine:3.19
+
+RUN apk add --no-cache \
+    ca-certificates \
+    postgresql-client
+
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
+WORKDIR /app
+
+COPY --from=builder /app/target/release/webx_dns /app/webx_dns
+
+COPY --from=builder /app/migrations ./migrations
+
+RUN mkdir -p /app/config /app/data && \
+    chown -R appuser:appgroup /app
+
+USER appuser
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+
+# Default command
+CMD ["./webx_dns", "--config", "/app/config/config.toml", "start"]
