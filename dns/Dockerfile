@@ -24,7 +24,8 @@ FROM alpine:3.19
 
 RUN apk add --no-cache \
     ca-certificates \
-    postgresql-client
+    postgresql-client \
+    wget
 
 RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
@@ -32,11 +33,13 @@ RUN addgroup -g 1001 -S appgroup && \
 WORKDIR /app
 
 COPY --from=builder /app/target/release/webx_dns /app/webx_dns
-
 COPY --from=builder /app/migrations ./migrations
 
-RUN mkdir -p /app/config /app/data && \
-    chown -R appuser:appgroup /app
+RUN mkdir -p /app/config /app/data /home/matt/gurted/dns/certs && \
+    chown -R appuser:appgroup /app && \
+    chown -R appuser:appgroup /home/matt && \
+    ls -la /home/matt/gurted/dns/ && \
+    echo "Directory structure created successfully"
 
 USER appuser
 
@@ -46,4 +49,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
 # Default command
-CMD ["./webx_dns", "--config", "/app/config/config.toml", "start"]
+CMD ["sh", "-c", "ls -la /home/matt/gurted/dns/certs/ && ./webx_dns --config /app/config/config.toml start"]

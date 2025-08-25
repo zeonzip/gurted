@@ -10,7 +10,5 @@ services:
     volumes:
       - ./config.toml:/app/config/config.toml:ro
       - ./data:/app/data
-      - ./certs:/app/certs:ro
-      - ./localhost+2.pem:/app/config/tls.pem:ro
-      - ./localhost+2-key.pem:/app/config/tls-key.pem:ro
+      - ./certs:/home/matt/gurted/dns/certs:ro
     restart: unless-stopped
