@@ -189,4 +189,8 @@ impl GurtCAClient {
             anyhow::bail!("HTTP bootstrap failed: {}", response.status())
         }
     }
+    
+    pub async fn post_json<T: serde::Serialize>(&self, url: &str, data: &T) -> Result<GurtResponse> {
+        self.gurt_client.post_json(url, data).await.map_err(Into::into)
+    }
 }

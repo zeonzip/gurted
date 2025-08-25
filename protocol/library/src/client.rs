@@ -631,12 +631,12 @@ mod tests {
     async fn test_url_parsing() {
         let client = GurtClient::new();
         
-        let (host, port, path) = client.parse_url("gurt://example.com/test").unwrap();
+        let (host, port, path) = client.parse_gurt_url("gurt://example.com/test").unwrap();
         assert_eq!(host, "example.com");
         assert_eq!(port, DEFAULT_PORT);
         assert_eq!(path, "/test");
         
-        let (host, port, path) = client.parse_url("gurt://example.com:8080/api/v1").unwrap();
+        let (host, port, path) = client.parse_gurt_url("gurt://example.com:8080/api/v1").unwrap();
         assert_eq!(host, "example.com");
         assert_eq!(port, 8080);
         assert_eq!(path, "/api/v1");
