@@ -13,17 +13,17 @@ ENV PKG_CONFIG_ALLOW_CROSS=1
 
 WORKDIR /app
 
-COPY ../protocol/library ./protocol/library
+COPY protocol/library ./protocol/library
 
-COPY Cargo.toml Cargo.lock ./
+COPY dns/Cargo.toml dns/Cargo.lock ./
 
 RUN mkdir src && \
     echo "fn main() {}" > src/main.rs && \
     cargo build --release && \
     rm src/main.rs
 
-COPY src ./src
-COPY migrations ./migrations
+COPY dns/src ./src
+COPY dns/migrations ./migrations
 
 RUN cargo build --release
 

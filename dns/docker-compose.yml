@@ -1,8 +1,8 @@
 services:
   dns-server:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: dns/Dockerfile
     container_name: gurted-dns-server
     environment:
       RUST_LOG: info
