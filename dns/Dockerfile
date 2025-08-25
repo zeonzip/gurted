@@ -1,4 +1,4 @@
-FROM rust:1.75-alpine AS builder
+FROM rust:1.82-alpine AS builder
 
 RUN apk add --no-cache \
     musl-dev \
@@ -14,14 +14,7 @@ ENV PKG_CONFIG_ALLOW_CROSS=1
 WORKDIR /app
 
 COPY protocol/library ./protocol/library
-
 COPY dns/Cargo.toml dns/Cargo.lock ./
-
-RUN mkdir src && \
-    echo "fn main() {}" > src/main.rs && \
-    cargo build --release && \
-    rm src/main.rs
-
 COPY dns/src ./src
 COPY dns/migrations ./migrations
 
