@@ -67,23 +67,6 @@ impl GurtCAClient {
         Ok(())
     }
     
-    pub async fn fetch_ca_certificate(&self) -> Result<String> {
-        let response = self.gurt_client
-            .get(&format!("{}/ca/root", self.ca_url))
-            .await?;
-            
-        if response.is_success() {
-            let ca_cert = response.text()?;
-            // Basic validation that this looks like a PEM certificate
-            if ca_cert.contains("BEGIN CERTIFICATE") && ca_cert.contains("END CERTIFICATE") {
-                Ok(ca_cert)
-            } else {
-                anyhow::bail!("Invalid CA certificate format received")
-            }
-        } else {
-            anyhow::bail!("Failed to fetch CA certificate: HTTP {}", response.status_code)
-        }
-    }
     
     pub async fn verify_domain_exists(&self, domain: &str) -> Result<bool> {
         let response = self.gurt_client
