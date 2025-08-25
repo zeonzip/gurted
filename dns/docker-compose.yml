@@ -4,6 +4,7 @@ services:
       context: ..
       dockerfile: dns/Dockerfile
     container_name: gurted-dns-server
+    network_mode: host
     environment:
       RUST_LOG: info
     volumes:
@@ -12,6 +13,4 @@ services:
       - ./certs:/app/certs:ro
       - ./localhost+2.pem:/app/config/tls.pem:ro
       - ./localhost+2-key.pem:/app/config/tls-key.pem:ro
-    ports:
-      - "8080:8080"
     restart: unless-stopped
