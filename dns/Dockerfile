@@ -13,7 +13,7 @@ ENV PKG_CONFIG_ALLOW_CROSS=1
 
 WORKDIR /app
 
-COPY protocol/library ./protocol/library
+COPY protocol/library ../protocol/library
 COPY dns/Cargo.toml dns/Cargo.lock ./
 COPY dns/src ./src
 COPY dns/migrations ./migrations
