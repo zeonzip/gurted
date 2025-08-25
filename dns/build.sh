@@ -2,7 +2,7 @@
 
 echo "Building Gurted DNS Server..."
 
-echo "⏹Stopping existing container..."
+echo "Stopping existing container..."
 docker compose down
 
 echo "Building Docker image..."
