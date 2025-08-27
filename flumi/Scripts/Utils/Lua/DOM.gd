@@ -640,6 +640,12 @@ static func add_element_methods(vm: LuauVM, lua_api: LuaAPI) -> void:
 	vm.lua_pushcallable(LuaDOMUtils._element_hide_wrapper, "element.hide")
 	vm.lua_setfield(-2, "hide")
 	
+	vm.lua_pushcallable(LuaDOMUtils._element_focus_wrapper, "element.focus")
+	vm.lua_setfield(-2, "focus")
+	
+	vm.lua_pushcallable(LuaDOMUtils._element_unfocus_wrapper, "element.unfocus")
+	vm.lua_setfield(-2, "unfocus")
+	
 	_add_classlist_support(vm, lua_api)
 	
 	vm.lua_newtable()
@@ -1419,6 +1425,48 @@ static func _element_hide_wrapper(vm: LuauVM) -> int:
 			emit_dom_operation(lua_api, operation)
 	
 	return 0
+
+static func _element_focus_wrapper(vm: LuauVM) -> int:
+	var lua_api = vm.get_meta("lua_api") as LuaAPI
+	if not lua_api:
+		vm.lua_pushboolean(false)
+		return 1
+	
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	
+	vm.lua_getfield(1, "_element_id")
+	var element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	var operation = {
+		"type": "focus_element",
+		"element_id": element_id
+	}
+	
+	emit_dom_operation(lua_api, operation)
+	vm.lua_pushboolean(true)
+	return 1
+
+static func _element_unfocus_wrapper(vm: LuauVM) -> int:
+	var lua_api = vm.get_meta("lua_api") as LuaAPI
+	if not lua_api:
+		vm.lua_pushboolean(false)
+		return 1
+	
+	vm.luaL_checktype(1, vm.LUA_TTABLE)
+	
+	vm.lua_getfield(1, "_element_id")
+	var element_id: String = vm.lua_tostring(-1)
+	vm.lua_pop(1)
+	
+	var operation = {
+		"type": "unfocus_element",
+		"element_id": element_id
+	}
+	
+	emit_dom_operation(lua_api, operation)
+	vm.lua_pushboolean(true)
+	return 1
 
 static func _element_create_tween_wrapper(vm: LuauVM) -> int:
 	var lua_api = vm.get_meta("lua_api") as LuaAPI

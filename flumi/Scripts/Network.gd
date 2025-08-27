@@ -112,13 +112,40 @@ func fetch_gurt_resource(url: String) -> String:
 	if not GurtProtocol.is_gurt_domain(url):
 		return ""
 	
-	var result = await GurtProtocol.handle_gurt_domain(url)
+	var gurt_url = url
+	if not gurt_url.begins_with("gurt://"):
+		gurt_url = "gurt://" + gurt_url
 	
-	if result.has("error"):
-		print("GURT resource error: ", result.error)
+	if gurt_url.contains("localhost"):
+		gurt_url = gurt_url.replace("localhost", "127.0.0.1")
+	
+	var client = GurtProtocolClient.new()
+	
+	for ca_cert in CertificateManager.trusted_ca_certificates:
+		client.add_ca_certificate(ca_cert)
+	
+	if not client.create_client(30):
+		print("GURT resource error: Failed to create client")
 		return ""
 	
-	if result.has("html"):
-		return result.html.get_string_from_utf8()
+	var host_domain = gurt_url
+	if host_domain.begins_with("gurt://"):
+		host_domain = host_domain.substr(7)
+	var slash_pos = host_domain.find("/")
+	if slash_pos != -1:
+		host_domain = host_domain.substr(0, slash_pos)
 	
-	return ""
+	var response = client.request(gurt_url, {
+		"method": "GET",
+		"headers": {"Host": host_domain}
+	})
+	client.disconnect()
+	
+	if not response or not response.is_success:
+		var error_msg = "Failed to load GURT resource"
+		if response:
+			error_msg += ": " + str(response.status_code) + " " + response.status_message
+		print("GURT resource error: ", error_msg)
+		return ""
+	
+	return response.body.get_string_from_utf8()

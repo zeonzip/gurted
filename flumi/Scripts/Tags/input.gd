@@ -444,6 +444,16 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 					var placeholder_color = Color(text_color.r, text_color.g, text_color.b, text_color.a * 0.6)
 					line_edit.add_theme_color_override("font_placeholder_color", placeholder_color)
 		
+		if styles.has("font-size"):
+			var font_size = int(styles["font-size"])
+			if active_child is LineEdit:
+				active_child.add_theme_font_size_override("font_size", font_size)
+			elif active_child is SpinBox:
+				active_child.add_theme_font_size_override("font_size", font_size)
+				var line_edit = active_child.get_line_edit()
+				if line_edit:
+					line_edit.add_theme_font_size_override("font_size", font_size)
+		
 		# Apply stylebox for borders, background, padding, etc.
 		if BackgroundUtils.needs_background_wrapper(styles) or active_child is SpinBox:
 			apply_stylebox_to_input(active_child, styles)
@@ -464,7 +474,7 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 			var new_height = max(active_child.custom_minimum_size.y, active_child.size.y)
 			
 			if width:
-				if typeof(width) == TYPE_STRING and width == "100%":
+				if typeof(width) == TYPE_STRING and (width == "100%" or width == "full"):
 					active_child.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 					size_flags_horizontal = Control.SIZE_EXPAND_FILL
 					new_width = 0
@@ -483,7 +493,7 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 			
 			active_child.custom_minimum_size = new_child_size
 			
-			if width and not (typeof(width) == TYPE_STRING and width == "100%"):
+			if width and not (typeof(width) == TYPE_STRING and (width == "100%" or width == "full")):
 				active_child.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			if height:
 				active_child.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -494,7 +504,7 @@ func apply_input_styles(element: HTMLParser.HTMLElement, parser: HTMLParser) -> 
 			custom_minimum_size = new_child_size
 			
 			# Root Control adjusts size flags to match child
-			if width and not (typeof(width) == TYPE_STRING and width == "100%"):
+			if width and not (typeof(width) == TYPE_STRING and (width == "100%" or width == "full")):
 				size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			else:
 				size_flags_horizontal = Control.SIZE_EXPAND_FILL

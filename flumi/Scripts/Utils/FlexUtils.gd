@@ -64,6 +64,7 @@ static func apply_flex_container_properties(node, styles: Dictionary) -> void:
 		if width_val == "full" or width_val == "100%":
 			# For flex containers, w-full should expand to fill parent
 			node.set_meta("should_fill_horizontal", true)
+			node.set_meta("size_flags_set_by_style_manager", true)
 		elif typeof(width_val) == TYPE_STRING and width_val.ends_with("%"):
 			node.set_meta("custom_css_width_percentage", width_val)
 		else:
@@ -73,6 +74,7 @@ static func apply_flex_container_properties(node, styles: Dictionary) -> void:
 		if height_val == "full":
 			# For flex containers, h-full should expand to fill parent
 			node.set_meta("should_fill_vertical", true)
+			node.set_meta("size_flags_set_by_style_manager", true)
 		elif typeof(height_val) == TYPE_STRING and height_val.ends_with("%"):
 			node.set_meta("custom_css_height_percentage", height_val)
 		else:

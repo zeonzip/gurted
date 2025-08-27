@@ -118,6 +118,12 @@ static func string_replace_all_handler(vm: LuauVM) -> int:
 	
 	return 1
 
+static func string_trim_handler(vm: LuauVM) -> int:
+	var subject: String = vm.luaL_checkstring(1)
+	var trimmed = subject.strip_edges()
+	vm.lua_pushstring(trimmed)
+	return 1
+
 static func setup_regex_api(vm: LuauVM) -> void:
 	vm.lua_newtable()
 	
@@ -138,5 +144,8 @@ static func setup_regex_api(vm: LuauVM) -> void:
 	
 	vm.lua_pushcallable(string_replace_all_handler, "string.replaceAll")
 	vm.lua_setfield(-2, "replaceAll")
+	
+	vm.lua_pushcallable(string_trim_handler, "string.trim")
+	vm.lua_setfield(-2, "trim")
 	
 	vm.lua_pop(1)

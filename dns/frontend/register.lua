@@ -39,9 +39,9 @@ local function renderTLDSelector()
     local total = #tlds
     local intervalId
 
-    intervalId = gurt.setInterval(function()
+    intervalId = setInterval(function()
         if i > total then
-            gurt.clearInterval(intervalId)
+            clearInterval(intervalId)
             return
         end
 

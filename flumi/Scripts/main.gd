@@ -83,32 +83,77 @@ func _on_search_submitted(url: String) -> void:
 		var tab = tab_container.tabs[tab_container.active_tab]
 		tab.start_loading()
 		
-		var result = await GurtProtocol.handle_gurt_domain(url)
+		var gurt_url = url
+		if not gurt_url.begins_with("gurt://"):
+			gurt_url = "gurt://" + gurt_url
 		
-		if result.has("error"):
-			print("GURT domain error: ", result.error)
-			const GLOBE_ICON = preload("res://Assets/Icons/globe.svg")
-			tab.stop_loading()
-			tab.set_icon(GLOBE_ICON)
-			return
-		
-		var html_bytes = result.html
-		
-		if result.has("display_url"):
-			current_domain = result.display_url
-			if not current_domain.begins_with("gurt://"):
-				current_domain = "gurt://" + current_domain
-			if not search_bar.has_focus():
-				search_bar.text = result.display_url  # Show clean version in search bar
-		else:
-			current_domain = url
-		
-		render_content(html_bytes)
-		
-		# Stop loading spinner after successful render
-		tab.stop_loading()
+		await fetch_gurt_content_async(gurt_url, tab, url)
 	else:
 		print("Non-GURT URL entered: ", url)
+
+func fetch_gurt_content_async(gurt_url: String, tab: Tab, original_url: String) -> void:
+	var thread = Thread.new()
+	var request_data = {"gurt_url": gurt_url}
+	
+	thread.start(_perform_gurt_request_threaded.bind(request_data))
+	
+	while thread.is_alive():
+		await get_tree().process_frame
+	
+	var result = thread.wait_to_finish()
+	
+	_handle_gurt_result(result, tab, original_url, gurt_url)
+
+func _perform_gurt_request_threaded(request_data: Dictionary) -> Dictionary:
+	var gurt_url: String = request_data.gurt_url
+	var client = GurtProtocolClient.new()
+	
+	for ca_cert in CertificateManager.trusted_ca_certificates:
+		client.add_ca_certificate(ca_cert)
+	
+	if not client.create_client_with_dns(30, GurtProtocol.DNS_SERVER_IP, GurtProtocol.DNS_SERVER_PORT):
+		client.disconnect()
+		return {"success": false, "error": "Failed to connect to GURT DNS server"}
+	
+	var response = client.request(gurt_url, {
+		"method": "GET"
+	})
+	client.disconnect()
+	
+	if not response or not response.is_success:
+		var error_msg = "Connection failed"
+		if response:
+			error_msg = "GURT %d: %s" % [response.status_code, response.status_message]
+		elif not response:
+			error_msg = "Request timed out or connection failed"
+		return {"success": false, "error": error_msg}
+	
+	return {"success": true, "html_bytes": response.body}
+
+func _handle_gurt_result(result: Dictionary, tab: Tab, original_url: String, gurt_url: String) -> void:
+	if not result.success:
+		print("GURT request failed: ", result.error)
+		handle_gurt_error(result.error, tab)
+		return
+	
+	var html_bytes = result.html_bytes
+	
+	current_domain = gurt_url
+	if not search_bar.has_focus():
+		search_bar.text = original_url  # Show the original input in search bar
+	
+	render_content(html_bytes)
+	
+	tab.stop_loading()
+
+func handle_gurt_error(error_message: String, tab: Tab) -> void:
+	var error_html = GurtProtocol.create_error_page(error_message)
+	
+	render_content(error_html)
+	
+	const GLOBE_ICON = preload("res://Assets/Icons/globe.svg")
+	tab.stop_loading()
+	tab.set_icon(GLOBE_ICON)
 
 func _on_search_focus_entered() -> void:
 	if not current_domain.is_empty():
@@ -298,7 +343,7 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 
 	if is_grid_container:
 		if element.tag_name == "div":
-			if BackgroundUtils.needs_background_wrapper(styles) or hover_styles.size() > 0:
+			if BackgroundUtils.needs_background_wrapper(styles) or BackgroundUtils.needs_background_wrapper(hover_styles):
 				final_node = BackgroundUtils.create_panel_container_with_background(styles, hover_styles)
 				var grid_container = GridContainer.new()
 				grid_container.name = "Grid_" + element.tag_name
@@ -316,21 +361,24 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 	elif is_flex_container:
 		# The element's primary identity IS a flex container.
 		if element.tag_name == "div":
-			if BackgroundUtils.needs_background_wrapper(styles) or hover_styles.size() > 0:
+			if BackgroundUtils.needs_background_wrapper(styles) or BackgroundUtils.needs_background_wrapper(hover_styles):
 				final_node = BackgroundUtils.create_panel_container_with_background(styles, hover_styles)
 				var flex_container = AUTO_SIZING_FLEX_CONTAINER.new()
 				flex_container.name = "Flex_" + element.tag_name
 				var vbox = final_node.get_child(0) as VBoxContainer
 				vbox.add_child(flex_container)
 				container_for_children = flex_container
+				FlexUtils.apply_flex_container_properties(flex_container, styles)
 			else:
 				final_node = AUTO_SIZING_FLEX_CONTAINER.new()
 				final_node.name = "Flex_" + element.tag_name
 				container_for_children = final_node
+				FlexUtils.apply_flex_container_properties(final_node, styles)
 		else:
 			final_node = AUTO_SIZING_FLEX_CONTAINER.new()
 			final_node.name = "Flex_" + element.tag_name
 			container_for_children = final_node
+			FlexUtils.apply_flex_container_properties(final_node, styles)
 		
 		# For FLEX ul/ol elements, we need to create the li children directly in the flex container
 		if element.tag_name == "ul" or element.tag_name == "ol":
@@ -351,7 +399,8 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 		# If the element itself has text (like <span style="flex">TEXT</span>)
 		elif not element.text_content.is_empty():
 			var new_node = await create_element_node_internal(element, parser)
-			container_for_children.add_child(new_node)
+			if new_node:
+				container_for_children.add_child(new_node)
 		# For flex divs, we're done - no additional node creation needed
 		elif element.tag_name == "div":
 			pass
@@ -369,26 +418,6 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 	# Applies background, size, etc. to the FlexContainer (top-level node)
 	final_node = StyleManager.apply_element_styles(final_node, element, parser)
 
-	# Apply flex CONTAINER properties if it's a flex container
-	if is_flex_container:
-		var flex_container_node = final_node
-		
-		if final_node is FlexContainer:
-			# Direct FlexContainer
-			flex_container_node = final_node
-		elif final_node is MarginContainer and final_node.get_child_count() > 0:
-			var first_child = final_node.get_child(0)
-			if first_child is FlexContainer:
-				flex_container_node = first_child
-		elif final_node is PanelContainer and final_node.get_child_count() > 0:
-			var vbox = final_node.get_child(0)
-			if vbox is VBoxContainer and vbox.get_child_count() > 0:
-				var potential_flex = vbox.get_child(0)
-				if potential_flex is FlexContainer:
-					flex_container_node = potential_flex
-		
-		if flex_container_node is FlexContainer:
-			FlexUtils.apply_flex_container_properties(flex_container_node, styles)
 
 	if is_grid_container:
 		var grid_container_node = final_node
@@ -528,7 +557,7 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 				return null
 			
 			# Create div container
-			if BackgroundUtils.needs_background_wrapper(styles) or hover_styles.size() > 0:
+			if BackgroundUtils.needs_background_wrapper(styles) or BackgroundUtils.needs_background_wrapper(hover_styles):
 				node = BackgroundUtils.create_panel_container_with_background(styles, hover_styles)
 			else:
 				node = DIV.instantiate()

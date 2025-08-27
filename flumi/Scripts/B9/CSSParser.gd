@@ -6,8 +6,9 @@ class CSSRule:
 	var event_prefix: String = ""
 	var properties: Dictionary = {}
 	var specificity: int = 0
-	var selector_type: String = "simple"  # simple, descendant, child, adjacent_sibling, general_sibling, attribute
-	var selector_parts: Array = []  # For complex selectors
+	var selector_type: String = "simple" # simple, descendant, child, adjacent_sibling, general_sibling, attribute
+	var selector_parts: Array = [] # For complex selectors
+	var is_user_css: bool = false
 	
 	func init(sel: String = ""):
 		selector = sel
@@ -52,9 +53,9 @@ class CSSRule:
 	func calculate_specificity():
 		specificity = 1
 		if selector.begins_with("."):
-			specificity += 10
+			specificity += 20
 		if selector.contains("["):
-			specificity += 10  # Attribute selectors
+			specificity += 10
 		match selector_type:
 			"child":
 				specificity += 8
@@ -68,6 +69,10 @@ class CSSRule:
 				specificity += 4
 		if event_prefix.length() > 0:
 			specificity += 10
+		
+		if is_user_css:
+			specificity += 100
+		
 
 class CSSStylesheet:
 	var rules: Array[CSSRule] = []
@@ -287,7 +292,7 @@ func init(css_content: String = ""):
 	stylesheet = CSSStylesheet.new()
 	css_text = css_content
 
-func parse() -> void:
+func parse(is_user_css: bool = false) -> void:
 	if css_text.is_empty():
 		return
 	
@@ -295,7 +300,7 @@ func parse() -> void:
 	var rules = extract_rules(cleaned_css)
 	
 	for rule_data in rules:
-		var rule = parse_rule(rule_data)
+		var rule = parse_rule(rule_data, is_user_css)
 		if rule:
 			stylesheet.add_rule(rule)
 
@@ -355,9 +360,10 @@ func find_matching_brace(css: String, start_pos: int) -> int:
 	
 	return -1
 
-func parse_rule(rule_data: Dictionary) -> CSSRule:
+func parse_rule(rule_data: Dictionary, is_user_css: bool = false) -> CSSRule:
 	var rule = CSSRule.new()
 	rule.selector = rule_data.selector
+	rule.is_user_css = is_user_css
 	rule.init(rule.selector)
 	var properties_text = rule_data.properties
 	
@@ -397,6 +403,7 @@ func parse_utility_class(rule: CSSRule, utility_name: String) -> void:
 			pseudo_rule.event_prefix = pseudo
 			pseudo_rule.selector_type = rule.selector_type
 			pseudo_rule.selector_parts = rule.selector_parts.duplicate()
+			pseudo_rule.is_user_css = rule.is_user_css
 			pseudo_rule.calculate_specificity()
 			pseudo_rule.specificity += 100
 			

@@ -25,20 +25,20 @@ class HTMLElement:
 		return get_attribute("id")
 	
 	func get_collapsed_text() -> String:
-		var collapsed = text_content.strip_edges()
+		var collapsed = HTMLParser.unescape_html_entities(text_content).strip_edges()
 		# Replace multiple whitespace characters with single space
 		var regex = RegEx.new()
 		regex.compile("\\s+")
 		return regex.sub(collapsed, " ", true)
 	
 	func get_preserved_text() -> String:
-		return text_content
+		return HTMLParser.unescape_html_entities(text_content)
 	
 	func get_bbcode_formatted_text(parser: HTMLParser) -> String:
 		var styles = {}
 		if parser != null:
 			styles = parser.get_element_styles_with_inheritance(self, "", [])
-		return HTMLParser.get_bbcode_with_styles(self, styles, parser)
+		return HTMLParser.get_bbcode_with_styles(self, styles, parser, [])
 	
 	func is_inline_element() -> bool:
 		return tag_name in ["b", "i", "u", "small", "mark", "code", "span", "a", "input"]
@@ -68,9 +68,68 @@ var bitcode: PackedByteArray
 var parse_result: ParseResult
 
 func _init(data: PackedByteArray):
-	bitcode = data
+	var html_string = data.get_string_from_utf8()
+	html_string = preprocess_html_entities(html_string)
+	bitcode = html_string.to_utf8_buffer()
 	xml_parser = XMLParser.new()
 	parse_result = ParseResult.new()
+
+static func unescape_html_entities(text: String) -> String:
+	return text.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'").replace("&amp;", "&")
+
+static func preprocess_html_entities(html: String) -> String:
+	var result = ""
+	var i = 0
+	var in_tag = false
+	
+	while i < html.length():
+		var char = html[i]
+		
+		if char == "<":
+			# Check if this starts a valid HTML tag
+			var tag_end = html.find(">", i)
+			if tag_end != -1:
+				var potential_tag = html.substr(i, tag_end - i + 1)
+				# Simple check for valid tag pattern
+				if is_valid_tag_pattern(potential_tag):
+					result += potential_tag
+					i = tag_end + 1
+					continue
+			# If not a valid tag, escape it
+			result += "&lt;"
+		elif char == ">":
+			# Escape standalone > that's not part of a tag
+			result += "&gt;"
+		else:
+			result += char
+		
+		i += 1
+	
+	return result
+
+static func is_valid_tag_pattern(tag: String) -> bool:
+	if tag.length() < 3:  # Minimum: <x>
+		return false
+	
+	if not tag.begins_with("<") or not tag.ends_with(">"):
+		return false
+	
+	var inner = tag.substr(1, tag.length() - 2).strip_edges()
+	
+	if inner.begins_with("/"):
+		inner = inner.substr(1).strip_edges()
+	
+	# Handle self-closing tags
+	if inner.ends_with("/"):
+		inner = inner.substr(0, inner.length() - 1).strip_edges()
+	
+	# Extract tag name (first part before space or attributes)
+	var tag_name = inner.split(" ")[0].split("\t")[0]
+	
+	# Valid tag names contain only letters, numbers, and hyphens
+	var regex = RegEx.new()
+	regex.compile("^[a-zA-Z][a-zA-Z0-9-]*$")
+	return regex.search(tag_name) != null
 
 # Main parsing function
 func parse() -> ParseResult:
@@ -408,7 +467,7 @@ func apply_element_styles(node: Control, element: HTMLElement, parser: HTMLParse
 	var styles = parser.get_element_styles_with_inheritance(element, "", [])
 	if node.get("rich_text_label"):
 		var label = node.rich_text_label
-		var text = HTMLParser.get_bbcode_with_styles(element, styles, parser)
+		var text = HTMLParser.get_bbcode_with_styles(element, styles, parser, [])
 		label.text = text
 
 static func apply_element_bbcode_formatting(element: HTMLElement, styles: Dictionary, content: String, parser: HTMLParser = null) -> String:
@@ -478,7 +537,13 @@ static func apply_element_bbcode_formatting(element: HTMLElement, styles: Dictio
 	
 	return formatted_content
 
-static func get_bbcode_with_styles(element: HTMLElement, styles: Dictionary, parser: HTMLParser) -> String:
+static func get_bbcode_with_styles(element: HTMLElement, styles: Dictionary, parser: HTMLParser, visited_elements: Array = []) -> String:
+	if element in visited_elements:
+		return ""
+	
+	var new_visited = visited_elements.duplicate()
+	new_visited.append(element)
+	
 	var text = ""
 	if element.text_content.length() > 0:
 		text += element.get_collapsed_text()
@@ -486,8 +551,8 @@ static func get_bbcode_with_styles(element: HTMLElement, styles: Dictionary, par
 	for child in element.children:
 		var child_styles = styles
 		if parser != null:
-			child_styles = parser.get_element_styles_with_inheritance(child, "", [])
-		var child_content = HTMLParser.get_bbcode_with_styles(child, child_styles, parser)
+			child_styles = parser.get_element_styles_with_inheritance(child, "", new_visited)
+		var child_content = HTMLParser.get_bbcode_with_styles(child, child_styles, parser, new_visited)
 		child_content = apply_element_bbcode_formatting(child, child_styles, child_content, parser)
 		text += child_content
 	

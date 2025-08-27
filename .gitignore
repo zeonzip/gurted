@@ -1,4 +1,6 @@
-*target*
+target/
 *.pem
 gurty.toml
 certs
+search_indexes
+config.toml

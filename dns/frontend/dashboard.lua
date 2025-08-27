@@ -74,7 +74,7 @@ end
 
 local function loadDomains()
     print('Loading domains...')
-    local response = fetch('gurt://localhost:8877/auth/domains?page=1&size=100', {
+    local response = fetch('gurt://localhost:8877/auth/domains?page=1&limit=100', {
         headers = {
             Authorization = 'Bearer ' .. authToken
         }

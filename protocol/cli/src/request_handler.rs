@@ -320,7 +320,13 @@ impl RequestHandler {
     }
 
     pub async fn handle_file_request(&self, request_path: &str) -> std::result::Result<GurtResponse, GurtError> {
-        let mut relative_path = request_path.strip_prefix('/').unwrap_or(request_path).to_string();
+        let path_without_query = if let Some(query_start) = request_path.find('?') {
+            &request_path[..query_start]
+        } else {
+            request_path
+        };
+        
+        let mut relative_path = path_without_query.strip_prefix('/').unwrap_or(path_without_query).to_string();
         
         while relative_path.starts_with('/') || relative_path.starts_with('\\') {
             relative_path = relative_path[1..].to_string();

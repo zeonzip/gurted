@@ -67,6 +67,7 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 			if width is String and width == "100%":
 				node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 				node.custom_minimum_size.x = 0
+				node.set_meta("size_flags_set_by_style_manager", true)
 			else:
 				node.custom_minimum_size.x = width
 				node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -75,6 +76,7 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 			if height is String and height == "100%":
 				node.size_flags_vertical = Control.SIZE_EXPAND_FILL
 				node.custom_minimum_size.y = 0
+				node.set_meta("size_flags_set_by_style_manager", true)
 			else:
 				node.custom_minimum_size.y = height
 				node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN

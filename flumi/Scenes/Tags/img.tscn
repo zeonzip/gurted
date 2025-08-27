@@ -5,6 +5,6 @@
 [node name="TextureRect" type="TextureRect"]
 size_flags_horizontal = 0
 size_flags_vertical = 0
-expand_mode = 1
+expand_mode = 2
 stretch_mode = 2
 script = ExtResource("1_clm6l")

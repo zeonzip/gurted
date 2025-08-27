@@ -278,7 +278,7 @@ static func update_div_hover_styles(dom_node: Control, element: HTMLParser.HTMLE
 
 			if dom_node.mouse_entered.is_connected(BackgroundUtils._on_panel_mouse_entered):
 				dom_node.mouse_entered.disconnect(BackgroundUtils._on_panel_mouse_entered)
-			if dom_node.mouse_exited.is_connected(BackgroundUtils._on_panel_mouse_exited):
-				dom_node.mouse_exited.disconnect(BackgroundUtils._on_panel_mouse_exited)
+			if dom_node.mouse_exited.is_connected(BackgroundUtils._on_panel_mouse_exited_with_delay):
+				dom_node.mouse_exited.disconnect(BackgroundUtils._on_panel_mouse_exited_with_delay)
 	
 	update_element_text_content(dom_node, element, dom_parser)

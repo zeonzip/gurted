@@ -31,6 +31,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'dns-system',
         'flumi-browser',
+        'search-engine'
       ],
     },
     {

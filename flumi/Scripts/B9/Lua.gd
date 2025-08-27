@@ -642,8 +642,6 @@ func execute_lua_script(code: String, vm: LuauVM):
 	script_start_time = Time.get_ticks_msec() / 1000.0
 	threaded_vm.execute_script_async(code)
 
-
-
 func _on_threaded_script_completed(result: Dictionary):
 	var execution_time = (Time.get_ticks_msec() / 1000.0) - script_start_time
 
@@ -689,6 +687,10 @@ func _handle_dom_operation(operation: Dictionary):
 			LuaDOMUtils.handle_insert_after(operation, dom_parser, self)
 		"replace_child":
 			LuaDOMUtils.handle_replace_child(operation, dom_parser, self)
+		"focus_element":
+			_handle_element_focus(operation)
+		"unfocus_element":
+			_handle_element_unfocus(operation)
 		_:
 			pass # Unknown operation type, ignore
 
@@ -785,6 +787,53 @@ func _handle_text_getting(operation: Dictionary):
 	if element:
 		return element.text_content
 	return ""
+
+func _handle_element_focus(operation: Dictionary):
+	var element_id: String = operation.element_id
+	
+	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+	if not dom_node:
+		return
+	
+	var focusable_control = _find_focusable_control(dom_node)
+	if focusable_control and focusable_control.has_method("grab_focus"):
+		focusable_control.call_deferred("grab_focus")
+
+func _handle_element_unfocus(operation: Dictionary):
+	var element_id: String = operation.element_id
+	
+	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+	if not dom_node:
+		return
+	
+	var focusable_control = _find_focusable_control(dom_node)
+	if focusable_control and focusable_control.has_method("release_focus"):
+		focusable_control.call_deferred("release_focus")
+
+func _find_focusable_control(node: Node) -> Control:
+	if not node:
+		return null
+	
+	if node is Control and node.focus_mode != Control.FOCUS_NONE and node.has_method("grab_focus"):
+		return node
+	
+	if node.has_method("get_children"):
+		for child in node.get_children():
+			if child.visible and child is Control:
+				if child is LineEdit or child is TextEdit or child is SpinBox or child is OptionButton:
+					if child.focus_mode != Control.FOCUS_NONE:
+						return child
+				
+				if child is SpinBox:
+					var line_edit = child.get_line_edit()
+					if line_edit and line_edit.focus_mode != Control.FOCUS_NONE:
+						return line_edit
+				
+				var focusable_child = _find_focusable_control(child)
+				if focusable_child:
+					return focusable_child
+	
+	return null
 
 func _handle_body_event_registration(operation: Dictionary):
 	var event_name: String = operation.event_name

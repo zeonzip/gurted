@@ -53,6 +53,7 @@ func stop_lua_thread():
 	while lua_thread.is_alive() and (Time.get_ticks_msec() - timeout_start) < 500:
 		OS.delay_msec(10)
 	
+	lua_thread.wait_to_finish()
 	lua_thread = null
 
 func execute_script_async(script_code: String):
@@ -356,6 +357,7 @@ func _setup_additional_lua_apis():
 	LuaAudioUtils.setup_audio_api(lua_vm)
 	LuaCrumbsUtils.setup_crumbs_api(lua_vm)
 	LuaRegexUtils.setup_regex_api(lua_vm)
+	LuaURLUtils.setup_url_api(lua_vm)
 
 func _table_tostring_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)

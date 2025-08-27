@@ -33,6 +33,3 @@ func load_image_async(src: String, element: HTMLParser.HTMLElement, parser: HTML
 			size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			size_flags_vertical = Control.SIZE_EXPAND_FILL
 			custom_minimum_size = Vector2.ZERO
-		else:
-			custom_minimum_size = Vector2(1, 1)
-			size = Vector2(100, 100) # StyleManager will handle this

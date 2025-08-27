@@ -195,12 +195,42 @@ static func setup_panel_hover_support(panel: PanelContainer, normal_styles: Dict
 	panel.set_meta("hover_stylebox", hover_stylebox)
 	panel.set_meta("normal_styles", normal_styles.duplicate(true))
 	panel.set_meta("hover_styles", merged_hover_styles.duplicate(true))
+	panel.set_meta("is_hovering", false)
 	
 	# Connect mouse events
 	panel.mouse_entered.connect(_on_panel_mouse_entered.bind(panel))
-	panel.mouse_exited.connect(_on_panel_mouse_exited.bind(panel))
+	panel.mouse_exited.connect(_on_panel_mouse_exited_with_delay.bind(panel))
+	
+	_setup_child_hover_listeners(panel)
+
+static func _setup_child_hover_listeners(panel: PanelContainer):
+	for child in panel.get_children():
+		_connect_child_hover_events(child, panel)
+	
+	panel.child_entered_tree.connect(_on_child_added.bind(panel))
+
+static func _connect_child_hover_events(child: Node, panel: PanelContainer):
+	if child is Control:
+		# Only connect if not already connected
+		if not child.mouse_entered.is_connected(_on_child_mouse_entered.bind(panel)):
+			child.mouse_entered.connect(_on_child_mouse_entered.bind(panel))
+		if not child.mouse_exited.is_connected(_on_child_mouse_exited.bind(panel)):
+			child.mouse_exited.connect(_on_child_mouse_exited.bind(panel))
+	
+	for grandchild in child.get_children():
+		_connect_child_hover_events(grandchild, panel)
+
+static func _on_child_added(child: Node, panel: PanelContainer):
+	_connect_child_hover_events(child, panel)
+
+static func _on_child_mouse_entered(panel: PanelContainer):
+	_on_panel_mouse_entered(panel)
+
+static func _on_child_mouse_exited(panel: PanelContainer):
+	panel.get_tree().create_timer(0.01).timeout.connect(func(): _check_panel_hover(panel))
 
 static func _on_panel_mouse_entered(panel: PanelContainer):
+	panel.set_meta("is_hovering", true)
 	if panel.has_meta("hover_stylebox"):
 		var hover_stylebox = panel.get_meta("hover_stylebox")
 		panel.add_theme_stylebox_override("panel", hover_stylebox)
@@ -210,15 +240,27 @@ static func _on_panel_mouse_entered(panel: PanelContainer):
 		var transform_target = find_transform_target_for_panel(panel)
 		StyleManager.apply_transform_properties_direct(transform_target, hover_styles)
 
-static func _on_panel_mouse_exited(panel: PanelContainer):
-	if panel.has_meta("normal_stylebox"):
-		var normal_stylebox = panel.get_meta("normal_stylebox")
-		panel.add_theme_stylebox_override("panel", normal_stylebox)
+static func _on_panel_mouse_exited_with_delay(panel: PanelContainer):
+	panel.get_tree().create_timer(0.01).timeout.connect(func(): _check_panel_hover(panel))
+
+static func _check_panel_hover(panel: PanelContainer):
+	if not panel or not is_instance_valid(panel):
+		return
 	
-	if panel.has_meta("normal_styles"):
-		var normal_styles = panel.get_meta("normal_styles")
-		var transform_target = find_transform_target_for_panel(panel)
-		StyleManager.apply_transform_properties_direct(transform_target, normal_styles)
+	var mouse_pos = panel.get_global_mouse_position()
+	var panel_rect = panel.get_global_rect()
+	var is_mouse_over = panel_rect.has_point(mouse_pos)
+	
+	if not is_mouse_over and panel.get_meta("is_hovering", false):
+		panel.set_meta("is_hovering", false)
+		if panel.has_meta("normal_stylebox"):
+			var normal_stylebox = panel.get_meta("normal_stylebox")
+			panel.add_theme_stylebox_override("panel", normal_stylebox)
+		
+		if panel.has_meta("normal_styles"):
+			var normal_styles = panel.get_meta("normal_styles")
+			var transform_target = find_transform_target_for_panel(panel)
+			StyleManager.apply_transform_properties_direct(transform_target, normal_styles)
 
 static func find_transform_target_for_panel(panel: PanelContainer) -> Control:
 	var parent = panel.get_parent()

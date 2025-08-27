@@ -132,6 +132,31 @@ impl GurtProtocolClient {
     }
     
     #[func]
+    fn create_client_with_dns(&mut self, timeout_seconds: i32, dns_ip: GString, dns_port: i32) -> bool {
+        let runtime = match Runtime::new() {
+            Ok(rt) => rt,
+            Err(e) => {
+                godot_print!("Failed to create runtime: {}", e);
+                return false;
+            }
+        };
+        
+        let mut config = GurtClientConfig::default();
+        config.request_timeout = tokio::time::Duration::from_secs(timeout_seconds as u64);
+        config.dns_server_ip = dns_ip.to_string();
+        config.dns_server_port = dns_port as u16;
+        
+        config.custom_ca_certificates = self.ca_certificates.borrow().clone();
+        
+        let client = GurtClient::with_config(config);
+        
+        *self.runtime.borrow_mut() = Some(runtime);
+        *self.client.borrow_mut() = Some(client);
+
+        true
+    }
+    
+    #[func]
     fn request(&self, url: GString, options: Dictionary) -> Option<Gd<GurtGDResponse>> {
         let runtime_binding = self.runtime.borrow();
         let runtime = match runtime_binding.as_ref() {
@@ -162,7 +187,16 @@ impl GurtProtocolClient {
         };
 
         let port = parsed_url.port().unwrap_or(4878);
-        let path = if parsed_url.path().is_empty() { "/" } else { parsed_url.path() };
+        let path_with_query = if parsed_url.path().is_empty() { 
+            "/" 
+        } else { 
+            parsed_url.path() 
+        };
+        
+        let path = match parsed_url.query() {
+            Some(query) => format!("{}?{}", path_with_query, query),
+            None => path_with_query.to_string(),
+        };
         
         let method_str = options.get("method").unwrap_or("GET".to_variant()).to::<String>();
         let method = match method_str.to_uppercase().as_str() {
@@ -192,7 +226,6 @@ impl GurtProtocolClient {
         let headers_dict = options.get("headers").unwrap_or(Dictionary::new().to_variant()).to::<Dictionary>();
         
         let mut request = GurtRequest::new(method, path.to_string())
-            .with_header("Host", host)
             .with_header("User-Agent", "GURT-Client/1.0.0");
         
         for key_variant in headers_dict.keys_array().iter_shared() {

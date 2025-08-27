@@ -325,7 +325,7 @@ gurt.select('#add-record-btn'):on('click', function()
     local recordType = gurt.select('#record-type').value
     local recordName = gurt.select('#record-name').value
     local recordValue = gurt.select('#record-value').value
-    local recordTTL = tonumber(gurt.select('#record-ttl').value) or ''
+    local recordTTL = tonumber(gurt.select('#record-ttl').value) or 'none'
 
     if not recordValue or recordValue == '' then
         showError('record-error', 'Record value is required')
