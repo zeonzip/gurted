@@ -185,7 +185,7 @@ impl DomainCrawler {
                 } else if let Some(path_value) = line.to_lowercase().strip_prefix("allow:") {
                     let path = path_value.trim();
                     if !path.is_empty() {
-                        let full_url = format!("{}{}", base_url, path);
+                        let full_url = Self::normalize_url(format!("{}{}", base_url, path));
                         debug!("Added allowed URL from clanker.txt: {}", full_url);
                         allowed_urls.push(full_url);
                     }
@@ -222,19 +222,21 @@ impl DomainCrawler {
         }
 
         // Start with the root URL
+        let normalized_base_url = Self::normalize_url(base_url.clone());
         queue.push_back(CrawlItem {
-            url: base_url.clone(),
+            url: normalized_base_url,
             depth: 0,
         });
         
         // Add all URLs from clanker.txt to the queue
         for url in clanker_urls {
-            if !visited_urls.contains(&url) {
+            let normalized_url = Self::normalize_url(url);
+            if !visited_urls.contains(&normalized_url) {
                 queue.push_back(CrawlItem {
-                    url: url.clone(),
+                    url: normalized_url.clone(),
                     depth: 0, // Treat clanker.txt URLs as root level
                 });
-                debug!("Added clanker.txt URL to queue: {}", url);
+                debug!("Added clanker.txt URL to queue: {}", normalized_url);
             }
         }
 
@@ -268,10 +270,11 @@ impl DomainCrawler {
                         if let Ok(links) = self.extract_links(&page_with_html.original_html, &base_url).await {
                             debug!("Found {} links on {}", links.len(), item.url);
                             for link in links {
-                                if self.should_crawl_url(&link, domain) {
-                                    debug!("Adding link to crawl queue: {}", link);
+                                let normalized_link = Self::normalize_url(link);
+                                if self.should_crawl_url(&normalized_link, domain) && !visited_urls.contains(&normalized_link) {
+                                    debug!("Adding link to crawl queue: {}", normalized_link);
                                     queue.push_back(CrawlItem {
-                                        url: link,
+                                        url: normalized_link,
                                         depth: item.depth + 1,
                                     });
                                 }
@@ -358,7 +361,7 @@ impl DomainCrawler {
 
         let page = CrawledPageWithHtml {
             crawled_page: CrawledPage {
-                url: url.to_string(),
+                url: Self::normalize_url(url.to_string()),
                 domain: domain.full_domain(),
                 title,
                 content: cleaned_content.clone(),
@@ -398,7 +401,7 @@ impl DomainCrawler {
                 // Resolve relative URLs
                 match base.join(href) {
                     Ok(absolute_url) => {
-                        let url_str = absolute_url.to_string();
+                        let url_str = Self::normalize_url(absolute_url.to_string());
                         
                         // Only include GURT protocol URLs for the same domain
                         if url_str.starts_with("gurt://") {
@@ -599,6 +602,19 @@ impl DomainCrawler {
         }
 
         false
+    }
+
+    fn normalize_url(url: String) -> String {
+        if url.ends_with("/index.html") {
+            let without_index = &url[..url.len() - 11]; // Remove "/index.html" (11 chars)
+            if without_index.ends_with('/') {
+                without_index.to_string()
+            } else {
+                format!("{}/", without_index)
+            }
+        } else {
+            url
+        }
     }
 
     fn calculate_content_hash(content: &str) -> String {

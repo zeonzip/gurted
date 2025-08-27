@@ -118,7 +118,7 @@ func load_audio_async(src: String) -> void:
 		http_request.queue_free()
 		return
 
-func _on_audio_download_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray):
+func _on_audio_download_completed(_result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray):
 	var http_request = get_children().filter(func(child): return child is HTTPRequest)[0]
 	http_request.queue_free()
 	

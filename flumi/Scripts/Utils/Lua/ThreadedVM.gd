@@ -253,7 +253,6 @@ func _print_handler(vm: LuauVM) -> int:
 		message_parts.append(arg_str)
 	
 	var final_message = "\t".join(message_parts)
-	var current_time = Time.get_ticks_msec() / 1000.0
 	
 	call_deferred("_emit_print_output", final_message)
 	

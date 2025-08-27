@@ -7,13 +7,22 @@ local stats = gurt.select('#stats')
 
 local function showLoading()
     loading.classList:remove('hidden')
-    results.text = ''
+    
+    local children = results.children
+    for i = #children, 1, -1 do
+        children[i]:remove()
+    end
+    
     stats.text = ''
 end
 
 local function displayResults(data)
     loading.classList:add('hidden')
-    results.text = ''
+    
+    local children = results.children
+    for i = #children, 1, -1 do
+        children[i]:remove()
+    end
     
     if not data.results or #data.results == 0 then
         local noResultsItem = gurt.create('div', {
@@ -94,7 +103,13 @@ local function performSearch(query)
         displayResults(data)
     else
         loading.classList:add('hidden')
-        results.text = ''
+        
+        -- Clear all existing children from results
+        local children = results.children
+        for i = #children, 1, -1 do
+            children[i]:remove()
+        end
+        
         stats.text = 'Search failed: ' .. response.status .. ' ' .. response.statusText
     end
 end
@@ -117,12 +132,22 @@ local function performLuckySearch()
             gurt.location.goto(randomResult.url)
         else
             loading.classList:add('hidden')
-            results.text = ''
+            
+            local children = results.children
+            for i = #children, 1, -1 do
+                children[i]:remove()
+            end
+            
             stats.text = 'No sites available for lucky search'
         end
     else
         loading.classList:add('hidden')
-        results.text = ''
+        
+        local children = results.children
+        for i = #children, 1, -1 do
+            children[i]:remove()
+        end
+        
         stats.text = 'Lucky search failed'
     end
 end

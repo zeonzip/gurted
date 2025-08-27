@@ -62,6 +62,8 @@ func create_styled_label(text: String, element, parser: HTMLParser) -> RichTextL
 	
 	add_child(label)
 	
+	parser.register_dom_node(element, label)
+	
 	var styles = parser.get_element_styles_with_inheritance(element, "", [])
 	StyleManager.apply_styles_to_label(label, styles, element, parser, text)
 	
@@ -169,5 +171,9 @@ func create_label(text: String) -> RichTextLabel:
 	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	
 	add_child(label)
+	
+	if _element and _parser:
+		_parser.register_dom_node(_element, label)
+	
 	call_deferred("_apply_auto_resize_to_label", label)
 	return label

@@ -11,7 +11,7 @@ class WebSocketWrapper:
 	var vm: LuauVM
 	var url: String
 	var websocket: WebSocketPeer
-	var is_connected: bool = false
+	var connection_status: bool = false
 	var event_handlers: Dictionary = {}
 	var timer: Timer
 	var last_state: int = -1
@@ -20,7 +20,7 @@ class WebSocketWrapper:
 		websocket = WebSocketPeer.new()
 	
 	func connect_to_url():
-		if is_connected:
+		if connection_status:
 			return
 		
 		var error = websocket.connect_to_url(url)
@@ -54,8 +54,8 @@ class WebSocketWrapper:
 		
 		match state:
 			WebSocketPeer.STATE_OPEN:
-				if not is_connected:
-					is_connected = true
+				if not connection_status:
+					connection_status = true
 					trigger_event("open", {})
 				
 				# Check for messages
@@ -65,8 +65,8 @@ class WebSocketWrapper:
 					trigger_event("message", {"data": message})
 			
 			WebSocketPeer.STATE_CLOSED:
-				if is_connected:
-					is_connected = false
+				if connection_status:
+					connection_status = false
 					trigger_event("close", {})
 				
 				# Clean up timer
@@ -80,26 +80,26 @@ class WebSocketWrapper:
 			
 			WebSocketPeer.STATE_CLOSING:
 				# Connection is closing
-				if is_connected:
-					is_connected = false
+				if connection_status:
+					connection_status = false
 			
 			_:
 				# Unknown state or connection failed
-				if is_connected:
-					is_connected = false
+				if connection_status:
+					connection_status = false
 					trigger_event("close", {})
-				elif not is_connected:
+				elif not connection_status:
 					# This might be a connection failure
 					trigger_event("error", {"message": "Connection failed or was rejected by server"})
 	
 	func send_message(message: String):
-		if is_connected and websocket:
+		if connection_status and websocket:
 			websocket.send_text(message)
 	
 	func close_connection():
 		if websocket:
 			websocket.close()
-		is_connected = false
+		connection_status = false
 		
 		if timer:
 			timer.queue_free()
@@ -222,7 +222,7 @@ static func _websocket_send(vm: LuauVM) -> int:
 	
 	# Get wrapper instance
 	var wrapper: WebSocketWrapper = websocket_instances.get(instance_id)
-	if wrapper and wrapper.is_connected:
+	if wrapper and wrapper.connection_status:
 		wrapper.send_message(message)
 	else:
 		vm.luaL_error("WebSocket is not connected")

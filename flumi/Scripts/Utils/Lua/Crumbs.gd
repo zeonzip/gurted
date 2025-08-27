@@ -205,7 +205,6 @@ static func load_all_crumbs(domain: String) -> Dictionary:
 		return {}
 	
 	var crumbs = {}
-	var current_time = Time.get_ticks_msec() / 1000.0
 	var changed = false
 	
 	for crumb_name in crumbs_data:

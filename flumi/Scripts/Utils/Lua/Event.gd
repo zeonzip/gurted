@@ -220,13 +220,13 @@ static func disconnect_subscription(subscription, lua_api) -> void:
 		match subscription.connected_signal:
 			"pressed":
 				if target_node.has_signal("pressed"):
-					if subscription.has("wrapper_func") and subscription.wrapper_func:
+					if subscription.wrapper_func:
 						target_node.pressed.disconnect(subscription.wrapper_func)
 					else:
 						target_node.pressed.disconnect(lua_api._on_event_triggered.bind(subscription))
 			"gui_input":
 				if target_node.has_signal("gui_input"):
-					if subscription.has("wrapper_func") and subscription.wrapper_func:
+					if subscription.wrapper_func:
 						target_node.gui_input.disconnect(subscription.wrapper_func)
 					else:
 						target_node.gui_input.disconnect(lua_api._on_gui_input_click.bind(subscription))

@@ -87,7 +87,6 @@ func fetch_text(url: String) -> String:
 	
 	var result = response[0]  # HTTPClient.Result
 	var response_code = response[1]  # int
-	var headers = response[2]  # PackedStringArray
 	var body = response[3]  # PackedByteArray
 	
 	http_request.queue_free()
@@ -104,7 +103,7 @@ func fetch_external_resource(url: String, base_url: String = "") -> String:
 	if resolved_url.begins_with("http://") or resolved_url.begins_with("https://"):
 		return await fetch_text(resolved_url)
 	elif resolved_url.begins_with("gurt://"):
-		return await fetch_gurt_resource(resolved_url)
+		return fetch_gurt_resource(resolved_url)
 	else:
 		return ""
 

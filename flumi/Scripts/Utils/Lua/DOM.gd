@@ -127,7 +127,7 @@ static func handle_element_append(operation: Dictionary, dom_parser: HTMLParser,
 	
 	if parent_dom_node:
 		# Render the appended element
-		render_new_element.call_deferred(child_element, parent_dom_node, dom_parser, lua_api)
+		render_new_element.call_deferred(child_element, parent_dom_node, dom_parser)
 
 static func handle_element_remove(operation: Dictionary, dom_parser: HTMLParser) -> void:
 	var element_id: String = operation.element_id
@@ -190,9 +190,9 @@ static func handle_insert_before(operation: Dictionary, dom_parser: HTMLParser, 
 			parent_dom_node = dom_parser.parse_result.dom_nodes.get(parent_id, null)
 		
 		if parent_dom_node:
-			handle_visual_insertion_by_reference(parent_id, new_child_element, reference_child_id, true, dom_parser, lua_api)
+			handle_visual_insertion_by_reference(parent_id, new_child_element, reference_child_id, true, dom_parser)
 
-static func handle_insert_after(operation: Dictionary, dom_parser: HTMLParser, lua_api) -> void:
+static func handle_insert_after(operation: Dictionary, dom_parser: HTMLParser) -> void:
 	var parent_id: String = operation.parent_id
 	var new_child_id: String = operation.new_child_id
 	var reference_child_id: String = operation.reference_child_id
@@ -229,7 +229,7 @@ static func handle_insert_after(operation: Dictionary, dom_parser: HTMLParser, l
 			parent_dom_node = dom_parser.parse_result.dom_nodes.get(parent_id, null)
 		
 		if parent_dom_node:
-			handle_visual_insertion_by_reference(parent_id, new_child_element, reference_child_id, false, dom_parser, lua_api)
+			handle_visual_insertion_by_reference(parent_id, new_child_element, reference_child_id, false, dom_parser)
 
 static func handle_replace_child(operation: Dictionary, dom_parser: HTMLParser, lua_api) -> void:
 	var parent_id: String = operation.parent_id
@@ -262,13 +262,12 @@ static func handle_replace_child(operation: Dictionary, dom_parser: HTMLParser, 
 		# Handle visual rendering
 		handle_visual_replacement(old_child_id, new_child_element, parent_id, dom_parser, lua_api)
 
-static func render_new_element(element: HTMLParser.HTMLElement, parent_node: Node, dom_parser: HTMLParser, lua_api) -> void:
+static func render_new_element(element: HTMLParser.HTMLElement, parent_node: Node, dom_parser: HTMLParser) -> void:
 	# Get reference to main scene for rendering
 	var main_scene = Engine.get_main_loop().current_scene
 	if not main_scene:
 		return
 	
-	var element_id = element.get_attribute("id")
 	
 	# Create the visual node for the element
 	var element_node = await main_scene.create_element_node(element, dom_parser)
@@ -341,7 +340,7 @@ static func _find_input_control_with_file_info(node: Node) -> Node:
 	
 	return null
 
-static func _get_select_value(element: HTMLParser.HTMLElement, dom_node: Node) -> String:
+static func _get_select_value(_element: HTMLParser.HTMLElement, dom_node: Node) -> String:
 	if dom_node is OptionButton:
 		var option_button = dom_node as OptionButton
 		var selected_index = option_button.selected
@@ -353,7 +352,7 @@ static func _get_select_value(element: HTMLParser.HTMLElement, dom_node: Node) -
 				return option_button.get_item_text(selected_index)
 	return ""
 
-static func _set_select_value(element: HTMLParser.HTMLElement, dom_node: Node, value: Variant) -> void:
+static func _set_select_value(_element: HTMLParser.HTMLElement, dom_node: Node, value: Variant) -> void:
 	if dom_node is OptionButton:
 		var option_button = dom_node as OptionButton
 		var target_value = str(value)
@@ -433,7 +432,7 @@ static func clone_element(element: HTMLParser.HTMLElement, deep: bool) -> HTMLPa
 	return cloned
 
 
-static func handle_visual_insertion_by_reference(parent_element_id: String, new_child_element: HTMLParser.HTMLElement, reference_element_id: String, insert_before: bool, dom_parser: HTMLParser, lua_api) -> void:
+static func handle_visual_insertion_by_reference(parent_element_id: String, new_child_element: HTMLParser.HTMLElement, reference_element_id: String, insert_before: bool, dom_parser: HTMLParser) -> void:
 	var parent_dom_node: Node = null
 	if parent_element_id == "body":
 		var main_scene = Engine.get_main_loop().current_scene
@@ -646,7 +645,7 @@ static func add_element_methods(vm: LuauVM, lua_api: LuaAPI) -> void:
 	vm.lua_pushcallable(LuaDOMUtils._element_unfocus_wrapper, "element.unfocus")
 	vm.lua_setfield(-2, "unfocus")
 	
-	_add_classlist_support(vm, lua_api)
+	add_classlist_support(vm)
 	
 	vm.lua_newtable()
 	vm.lua_pushcallable(LuaDOMUtils._element_index_wrapper, "element.__index")
@@ -876,7 +875,7 @@ static func _element_clone_wrapper(vm: LuauVM) -> int:
 		var cloned_element = clone_element(element, deep)
 		
 		# Assign new ID to cloned element
-		var new_id = lua_api.get_or_assign_element_id(cloned_element)
+		lua_api.get_or_assign_element_id(cloned_element)
 		
 		# Add to parser's element collection
 		lua_api.dom_parser.parse_result.all_elements.append(cloned_element)
@@ -1074,7 +1073,7 @@ static func _element_index_wrapper(vm: LuauVM) -> int:
 			vm.lua_remove(-2)
 			return 1
 
-static func _add_classlist_support(vm: LuauVM, lua_api: LuaAPI) -> void:
+static func add_classlist_support(vm: LuauVM) -> void:
 	vm.lua_newtable()
 	
 	vm.lua_getfield(-2, "_element_id")
@@ -1173,7 +1172,6 @@ static func _classlist_toggle_wrapper(vm: LuauVM) -> int:
 	return 0
 
 static func _classlist_contains_wrapper(vm: LuauVM) -> int:
-	var start_time = Time.get_ticks_msec()
 
 	var lua_api = vm.get_meta("lua_api") as LuaAPI
 	if not lua_api:

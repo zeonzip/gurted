@@ -30,8 +30,7 @@ static func _lua_json_parse_handler(vm: LuauVM) -> int:
 static func _lua_json_stringify_handler(vm: LuauVM) -> int:
 	var value = vm.lua_tovariant(1)
 	
-	var json = JSON.new()
-	var json_string = json.stringify(value)
+	var json_string = JSON.stringify(value)
 	
 	vm.lua_pushstring(json_string)
 	return 1

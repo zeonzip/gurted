@@ -80,12 +80,11 @@ static func unescape_html_entities(text: String) -> String:
 static func preprocess_html_entities(html: String) -> String:
 	var result = ""
 	var i = 0
-	var in_tag = false
 	
 	while i < html.length():
-		var char = html[i]
+		var character = html[i]
 		
-		if char == "<":
+		if character == "<":
 			# Check if this starts a valid HTML tag
 			var tag_end = html.find(">", i)
 			if tag_end != -1:
@@ -97,11 +96,11 @@ static func preprocess_html_entities(html: String) -> String:
 					continue
 			# If not a valid tag, escape it
 			result += "&lt;"
-		elif char == ">":
+		elif character == ">":
 			# Escape standalone > that's not part of a tag
 			result += "&gt;"
 		else:
-			result += char
+			result += character
 		
 		i += 1
 	
@@ -431,7 +430,7 @@ func get_all_images() -> Array[String]:
 func get_all_scripts() -> Array[String]:
 	return get_attribute_values("script", "src")
 
-func process_scripts(lua_api: LuaAPI, lua_vm) -> void:
+func process_scripts(lua_api: LuaAPI, _lua_vm) -> void:
 	if not lua_api:
 		print("Warning: Lua API not available for script processing")
 		return
@@ -447,9 +446,9 @@ func process_scripts(lua_api: LuaAPI, lua_vm) -> void:
 				parse_result.external_scripts = []
 			parse_result.external_scripts.append(src)
 		elif not inline_code.is_empty():
-			lua_api.execute_lua_script(inline_code, lua_vm)
+			lua_api.execute_lua_script(inline_code)
 
-func process_external_scripts(lua_api: LuaAPI, lua_vm, base_url: String = "") -> void:
+func process_external_scripts(lua_api: LuaAPI, _lua_vm, base_url: String = "") -> void:
 	if not lua_api or not parse_result.external_scripts or parse_result.external_scripts.is_empty():
 		return
 	
@@ -458,7 +457,7 @@ func process_external_scripts(lua_api: LuaAPI, lua_vm, base_url: String = "") ->
 	for script_url in parse_result.external_scripts:
 		var script_content = await Network.fetch_external_resource(script_url, base_url)
 		if not script_content.is_empty():
-			lua_api.execute_lua_script(script_content, lua_vm)
+			lua_api.execute_lua_script(script_content)
 
 func get_all_stylesheets() -> Array[String]:
 	return get_attribute_values("style", "src")
@@ -470,7 +469,7 @@ func apply_element_styles(node: Control, element: HTMLElement, parser: HTMLParse
 		var text = HTMLParser.get_bbcode_with_styles(element, styles, parser, [])
 		label.text = text
 
-static func apply_element_bbcode_formatting(element: HTMLElement, styles: Dictionary, content: String, parser: HTMLParser = null) -> String:
+static func apply_element_bbcode_formatting(element: HTMLElement, styles: Dictionary, content: String) -> String:
 	# Apply general styling first (color, font-weight) for all elements
 	var formatted_content = content
 	
@@ -553,10 +552,10 @@ static func get_bbcode_with_styles(element: HTMLElement, styles: Dictionary, par
 		if parser != null:
 			child_styles = parser.get_element_styles_with_inheritance(child, "", new_visited)
 		var child_content = HTMLParser.get_bbcode_with_styles(child, child_styles, parser, new_visited)
-		child_content = apply_element_bbcode_formatting(child, child_styles, child_content, parser)
+		child_content = apply_element_bbcode_formatting(child, child_styles, child_content)
 		text += child_content
 	
 	# Apply formatting to the current element itself
-	text = apply_element_bbcode_formatting(element, styles, text, parser)
+	text = apply_element_bbcode_formatting(element, styles, text)
 	
 	return text

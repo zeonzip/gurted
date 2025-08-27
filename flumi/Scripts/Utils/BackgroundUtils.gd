@@ -227,7 +227,7 @@ static func _on_child_mouse_entered(panel: PanelContainer):
 	_on_panel_mouse_entered(panel)
 
 static func _on_child_mouse_exited(panel: PanelContainer):
-	panel.get_tree().create_timer(0.01).timeout.connect(func(): _check_panel_hover(panel))
+	_create_panel_check_timer(panel)
 
 static func _on_panel_mouse_entered(panel: PanelContainer):
 	panel.set_meta("is_hovering", true)
@@ -241,7 +241,19 @@ static func _on_panel_mouse_entered(panel: PanelContainer):
 		StyleManager.apply_transform_properties_direct(transform_target, hover_styles)
 
 static func _on_panel_mouse_exited_with_delay(panel: PanelContainer):
-	panel.get_tree().create_timer(0.01).timeout.connect(func(): _check_panel_hover(panel))
+	_create_panel_check_timer(panel)
+
+static func _create_panel_check_timer(panel: PanelContainer):
+	if not is_instance_valid(panel):
+		return
+	var timer = panel.get_tree().create_timer(0.01)
+	var panel_ref = weakref(panel)
+	timer.timeout.connect(func(): _check_panel_hover_safe(panel_ref))
+
+static func _check_panel_hover_safe(panel_ref: WeakRef):
+	var panel = panel_ref.get_ref()
+	if panel:
+		_check_panel_hover(panel)
 
 static func _check_panel_hover(panel: PanelContainer):
 	if not panel or not is_instance_valid(panel):

@@ -155,7 +155,7 @@ func _gurt_clear_interval_handler(vm: LuauVM) -> int:
 	return timeout_manager.clear_interval_handler(vm)
 
 # Location API handlers
-func _gurt_location_reload_handler(vm: LuauVM) -> int:
+func _gurt_location_reload_handler(_vm: LuauVM) -> int:
 	call_deferred("_reload_current_page")
 	return 0
 
@@ -634,7 +634,7 @@ func get_dom_node(node: Node, purpose: String = "general") -> Node:
 	return node
 
 # Main execution function
-func execute_lua_script(code: String, vm: LuauVM):
+func execute_lua_script(code: String):
 	if not threaded_vm.lua_thread or not threaded_vm.lua_thread.is_alive():
 		# Start the thread if it's not running
 		threaded_vm.start_lua_thread(dom_parser, self)
@@ -642,8 +642,8 @@ func execute_lua_script(code: String, vm: LuauVM):
 	script_start_time = Time.get_ticks_msec() / 1000.0
 	threaded_vm.execute_script_async(code)
 
-func _on_threaded_script_completed(result: Dictionary):
-	var execution_time = (Time.get_ticks_msec() / 1000.0) - script_start_time
+func _on_threaded_script_completed(_result: Dictionary):
+	pass
 
 func _on_print_output(message: String):
 	LuaPrintUtils.lua_print_direct(message)
@@ -684,7 +684,7 @@ func _handle_dom_operation(operation: Dictionary):
 		"insert_before":
 			LuaDOMUtils.handle_insert_before(operation, dom_parser, self)
 		"insert_after":
-			LuaDOMUtils.handle_insert_after(operation, dom_parser, self)
+			LuaDOMUtils.handle_insert_after(operation, dom_parser)
 		"replace_child":
 			LuaDOMUtils.handle_replace_child(operation, dom_parser, self)
 		"focus_element":
