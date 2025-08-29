@@ -1,4 +1,4 @@
-[gd_scene load_steps=36 format=3 uid="uid://bytm7bt2s4ak8"]
+[gd_scene load_steps=35 format=3 uid="uid://bytm7bt2s4ak8"]
 
 [ext_resource type="Script" uid="uid://bg5iqnwic1rio" path="res://Scripts/main.gd" id="1_8q3xr"]
 [ext_resource type="Texture2D" uid="uid://df1m4j7uxi63v" path="res://Assets/Icons/chevron-down.svg" id="2_6bp64"]
@@ -85,9 +85,6 @@ expand_margin_left = 40.0
 LineEdit/styles/focus = SubResource("StyleBoxFlat_ee4r6")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_cbgmd")
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_white"]
-bg_color = Color(1, 1, 1, 1)
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6iyac"]
 bg_color = Color(0.105882, 0.105882, 0.105882, 1)
 
@@ -114,7 +111,7 @@ grow_vertical = 2
 [node name="Spacer" type="Control" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="TabContainer" type="HFlowContainer" parent="VBoxContainer"]
+[node name="TabContainer" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 script = ExtResource("2_hptm8")
 
@@ -146,6 +143,10 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_6bp64")
 theme_override_styles/normal = SubResource("StyleBoxFlat_6bp64")
 icon = ExtResource("5_ynf5e")
 icon_alignment = 1
+
+[node name="Spacer3" type="Control" parent="VBoxContainer/TabContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="Spacer2" type="Control" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 5)
@@ -283,19 +284,6 @@ visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-
-[node name="WebsiteBackground" type="Panel" parent="."]
-unique_name_in_owner = true
-z_index = -1
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = 122.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_white")
 
 [node name="Panel" type="Panel" parent="."]
 z_index = -5

@@ -2,7 +2,6 @@ class_name Main
 extends Control
 
 @onready var website_container: Control = %WebsiteContainer
-@onready var website_background: Control = %WebsiteBackground
 @onready var tab_container: TabManager = $VBoxContainer/TabContainer
 @onready var search_bar: LineEdit = $VBoxContainer/HBoxContainer/LineEdit
 
@@ -54,6 +53,10 @@ func _ready():
 	DisplayServer.window_set_min_size(MIN_SIZE)
 	
 	CertificateManager.initialize()
+	
+	var original_scroll = website_container.get_parent()
+	if original_scroll:
+		original_scroll.visible = false
 	
 	call_deferred("render")
 
@@ -170,33 +173,48 @@ func render() -> void:
 	render_content(Constants.HTML_CONTENT)
 
 func render_content(html_bytes: PackedByteArray) -> void:
+	var active_tab = get_active_tab()
+	var target_container: Control
 	
-	var existing_lua_apis = []
-	for child in get_children():
-		if child is LuaAPI:
-			existing_lua_apis.append(child)
+	if active_tab and active_tab.website_container:
+		target_container = active_tab.website_container
+	else:
+		target_container = website_container
+		
+	if not target_container:
+		print("Error: No container available for rendering")
+		return
 	
-	for lua_api in existing_lua_apis:
-		lua_api.kill_script_execution()
-		remove_child(lua_api)
-		lua_api.queue_free()
+	if active_tab:
+		var existing_tab_lua_apis = active_tab.lua_apis
+		for lua_api in existing_tab_lua_apis:
+			if is_instance_valid(lua_api):
+				lua_api.kill_script_execution()
+				remove_child(lua_api)
+				lua_api.queue_free()
+		active_tab.lua_apis.clear()
+	else:
+		var existing_lua_apis = []
+		for child in get_children():
+			if child is LuaAPI:
+				existing_lua_apis.append(child)
+		
+		for lua_api in existing_lua_apis:
+			lua_api.kill_script_execution()
+			remove_child(lua_api)
+			lua_api.queue_free()
 	
-	# Clear existing content
-	for child in website_container.get_children():
+	if target_container.get_parent() and target_container.get_parent().name == "BodyMarginContainer":
+		var body_margin_container = target_container.get_parent()
+		var scroll_container = body_margin_container.get_parent()
+		if scroll_container:
+			body_margin_container.remove_child(target_container)
+			scroll_container.remove_child(body_margin_container)
+			body_margin_container.queue_free()
+			scroll_container.add_child(target_container)
+	
+	for child in target_container.get_children():
 		child.queue_free()
-	
-	var current_parent = website_container.get_parent()
-	if current_parent and current_parent.name == "BodyMarginContainer":
-		var original_parent = current_parent.get_parent()
-		var container_index = current_parent.get_index()
-		
-		current_parent.remove_child(website_container)
-		
-		original_parent.remove_child(current_parent)
-		current_parent.queue_free()
-		
-		original_parent.add_child(website_container)
-		original_parent.move_child(website_container, container_index)
 	
 	font_dependent_elements.clear()
 	FontManager.clear_fonts()
@@ -217,7 +235,7 @@ func render_content(html_bytes: PackedByteArray) -> void:
 	if parse_result.errors.size() > 0:
 		print("Parse errors: " + str(parse_result.errors))
 	
-	var tab = tab_container.tabs[tab_container.active_tab]
+	var tab = active_tab
 	
 	var title = parser.get_title()
 	tab.set_title(title)
@@ -228,15 +246,19 @@ func render_content(html_bytes: PackedByteArray) -> void:
 	var body = parser.find_first("body")
 	
 	if body:
-		StyleManager.apply_body_styles(body, parser, website_container, website_background)
+		var background_panel = active_tab.background_panel
 		
-		parser.register_dom_node(body, website_container)
+		StyleManager.apply_body_styles(body, parser, target_container, background_panel)
+		
+		parser.register_dom_node(body, target_container)
 	
 	var scripts = parser.find_all("script")
 	var lua_api = null
 	if scripts.size() > 0:
 		lua_api = LuaAPI.new()
 		add_child(lua_api)
+		if active_tab:
+			active_tab.lua_apis.append(lua_api)
 
 	var i = 0
 	if body:
@@ -255,7 +277,7 @@ func render_content(html_bytes: PackedByteArray) -> void:
 				hbox.add_theme_constant_override("separation", 4)
 
 				for inline_element in inline_elements:
-					var inline_node = await create_element_node(inline_element, parser)
+					var inline_node = await create_element_node(inline_element, parser, target_container)
 					if inline_node:
 						
 						# Input elements register their own DOM nodes in their init() function
@@ -269,10 +291,10 @@ func render_content(html_bytes: PackedByteArray) -> void:
 					else:
 						print("Failed to create inline element node: ", inline_element.tag_name)
 
-				safe_add_child(website_container, hbox)
+				safe_add_child(target_container, hbox)
 				continue
 			
-			var element_node = await create_element_node(element, parser)
+			var element_node = await create_element_node(element, parser, target_container)
 			if element_node:
 				
 				# Input elements register their own DOM nodes in their init() function
@@ -281,7 +303,7 @@ func render_content(html_bytes: PackedByteArray) -> void:
 				
 				# ul/ol handle their own adding
 				if element.tag_name != "ul" and element.tag_name != "ol":
-					safe_add_child(website_container, element_node)
+					safe_add_child(target_container, element_node)
 
 				if contains_hyperlink(element):
 					if element_node is RichTextLabel:
@@ -297,6 +319,9 @@ func render_content(html_bytes: PackedByteArray) -> void:
 		parser.process_scripts(lua_api, null)
 		if parse_result.external_scripts and not parse_result.external_scripts.is_empty():
 			await parser.process_external_scripts(lua_api, null, current_domain)
+	
+	active_tab.current_url = current_domain
+	active_tab.has_content = true
 
 static func safe_add_child(parent: Node, child: Node) -> void:
 	if child.get_parent():
@@ -321,7 +346,7 @@ func is_text_only_element(element: HTMLParser.HTMLElement) -> bool:
 	
 	return false
 
-func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) -> Control:
+func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser, container: Control = null) -> Control:
 	var styles = parser.get_element_styles_with_inheritance(element, "", [])
 	var hover_styles = parser.get_element_styles_with_inheritance(element, "hover", [])
 	var is_flex_container = styles.has("display") and ("flex" in styles["display"])
@@ -333,7 +358,7 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 	# If this is an inline element AND not a flex or grid container, do NOT recursively add child nodes for its children.
 	# Only create a node for the outermost inline group; nested inline tags are handled by BBCode.
 	if element.is_inline_element() and not is_flex_container and not is_grid_container:
-		final_node = await create_element_node_internal(element, parser)
+		final_node = await create_element_node_internal(element, parser, container if container else get_active_website_container())
 		if not final_node:
 			return null
 		final_node = StyleManager.apply_element_styles(final_node, element, parser)
@@ -384,28 +409,29 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 		if element.tag_name == "ul" or element.tag_name == "ol":
 			final_node.flex_direction = FlexContainer.FlexDirection.Column
 
-			website_container.add_child(final_node)
+			var active_container = container if container else get_active_website_container()
+			active_container.add_child(final_node)
 			
 			var temp_list = UL.instantiate() if element.tag_name == "ul" else OL.instantiate()
-			website_container.add_child(temp_list)
+			active_container.add_child(temp_list)
 			await temp_list.init(element, parser)
 			
 			for child in temp_list.get_children():
 				temp_list.remove_child(child)
 				container_for_children.add_child(child)
 			
-			website_container.remove_child(temp_list)
+			active_container.remove_child(temp_list)
 			temp_list.queue_free()
 		# If the element itself has text (like <span style="flex">TEXT</span>)
 		elif not element.text_content.is_empty():
-			var new_node = await create_element_node_internal(element, parser)
+			var new_node = await create_element_node_internal(element, parser, container if container else get_active_website_container())
 			if new_node:
 				container_for_children.add_child(new_node)
 		# For flex divs, we're done - no additional node creation needed
 		elif element.tag_name == "div":
 			pass
 	else:
-		final_node = await create_element_node_internal(element, parser)
+		final_node = await create_element_node_internal(element, parser, container if container else get_active_website_container())
 		if not final_node:
 			return null # Unsupported tag
 
@@ -456,7 +482,7 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 			# Only add child nodes if the child is NOT an inline element
 			# UNLESS the parent is a flex or grid container (inline elements become flex/grid items)
 			if not child_element.is_inline_element() or is_flex_container or is_grid_container:
-				var child_node = await create_element_node(child_element, parser)
+				var child_node = await create_element_node(child_element, parser, container)
 				if child_node and is_instance_valid(container_for_children):
 					# Input elements register their own DOM nodes in their init() function
 					if child_element.tag_name not in ["input", "textarea", "select", "button", "audio"]:
@@ -471,7 +497,7 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser) ->
 
 	return final_node
 
-func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLParser) -> Control:
+func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLParser, container: Control = null) -> Control:
 	var node: Control = null
 	
 	match element.tag_name:
@@ -512,7 +538,7 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 				
 				# Manually process children for non-flex forms
 				for child_element in element.children:
-					var child_node = await create_element_node(child_element, parser)
+					var child_node = await create_element_node(child_element, parser, container)
 					if child_node:
 						safe_add_child(node, child_node)
 		"input":
@@ -526,12 +552,14 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			node.init(element, parser)
 		"ul":
 			node = UL.instantiate()
-			website_container.add_child(node)
+			var ul_container = container if container else website_container
+			ul_container.add_child(node)
 			await node.init(element, parser)
 			return node
 		"ol":
 			node = OL.instantiate()
-			website_container.add_child(node)
+			var ol_container = container if container else website_container
+			ol_container.add_child(node)
 			await node.init(element, parser)
 			return node
 		"li":
@@ -612,3 +640,21 @@ func reload_current_page() -> void:
 func navigate_to_url(url: String) -> void:
 	var resolved_url = resolve_url(url)
 	_on_search_submitted(resolved_url)
+
+func update_search_bar_from_current_domain() -> void:
+	if not search_bar.has_focus() and not current_domain.is_empty():
+		var display_text = current_domain
+		if display_text.begins_with("gurt://"):
+			display_text = display_text.substr(7)
+		search_bar.text = display_text
+
+func get_active_tab() -> Tab:
+	if tab_container.active_tab >= 0 and tab_container.active_tab < tab_container.tabs.size():
+		return tab_container.tabs[tab_container.active_tab]
+	return null
+
+func get_active_website_container() -> Control:
+	var active_tab = get_active_tab()
+	if active_tab:
+		return active_tab.website_container
+	return website_container  # fallback to original container
