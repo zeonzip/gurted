@@ -472,7 +472,9 @@ func _set_interval_handler(vm: LuauVM) -> int:
 func get_current_href() -> String:
 	var main_node = Engine.get_main_loop().current_scene
 	
-	return main_node.current_domain
+	if main_node:
+		return main_node.current_domain
+	return ""
 
 func _gurt_select_handler(vm: LuauVM) -> int:
 	var selector: String = vm.luaL_checkstring(1)

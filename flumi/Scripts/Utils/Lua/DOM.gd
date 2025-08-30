@@ -95,7 +95,7 @@ static func get_element_last_child_handler(vm: LuauVM, dom_parser: HTMLParser, l
 
 # DOM Manipulation Methods
 
-static func handle_element_append(operation: Dictionary, dom_parser: HTMLParser, lua_api) -> void:
+static func handle_element_append(operation: Dictionary, dom_parser: HTMLParser) -> void:
 	var parent_id: String = operation.parent_id
 	var child_id: String = operation.child_id
 	
@@ -153,7 +153,7 @@ static func handle_element_remove(operation: Dictionary, dom_parser: HTMLParser)
 	if all_elements_index >= 0:
 		dom_parser.parse_result.all_elements.remove_at(all_elements_index)
 
-static func handle_insert_before(operation: Dictionary, dom_parser: HTMLParser, lua_api) -> void:
+static func handle_insert_before(operation: Dictionary, dom_parser: HTMLParser) -> void:
 	var parent_id: String = operation.parent_id
 	var new_child_id: String = operation.new_child_id
 	var reference_child_id: String = operation.reference_child_id

@@ -9,7 +9,9 @@ static func is_gurt_domain(url: String) -> bool:
 		return true
 	
 	if not url.contains("://"):
-		var parts = url.split(".")
+		# Extract just the domain part (before any path)
+		var domain = url.split("/")[0]
+		var parts = domain.split(".")
 		return parts.size() == 2
 	
 	return false

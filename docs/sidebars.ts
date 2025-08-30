@@ -31,7 +31,6 @@ const sidebars: SidebarsConfig = {
       items: [
         'dns-system',
         'flumi-browser',
-        'search-engine'
       ],
     },
     {
@@ -40,6 +39,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'html',
         'css',
+        'postprocess',
       ],
     },
   ],

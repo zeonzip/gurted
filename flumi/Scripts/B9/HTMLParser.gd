@@ -430,6 +430,9 @@ func get_all_images() -> Array[String]:
 func get_all_scripts() -> Array[String]:
 	return get_attribute_values("script", "src")
 
+func get_all_postprocess() -> Array[String]:
+	return get_attribute_values("postprocess", "src")
+
 func process_scripts(lua_api: LuaAPI, _lua_vm) -> void:
 	if not lua_api:
 		print("Warning: Lua API not available for script processing")
@@ -458,6 +461,14 @@ func process_external_scripts(lua_api: LuaAPI, _lua_vm, base_url: String = "") -
 		var script_content = await Network.fetch_external_resource(script_url, base_url)
 		if not script_content.is_empty():
 			lua_api.execute_lua_script(script_content)
+
+func process_postprocess() -> HTMLParser.HTMLElement:
+	var postprocess_elements = find_all("postprocess")
+	if postprocess_elements.is_empty():
+		return null
+	
+	# Return the last postprocess element (last defined wins)
+	return postprocess_elements[-1]
 
 func get_all_stylesheets() -> Array[String]:
 	return get_attribute_values("style", "src")

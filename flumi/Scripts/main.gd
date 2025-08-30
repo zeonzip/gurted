@@ -29,15 +29,15 @@ const SELECT = preload("res://Scenes/Tags/select.tscn")
 const TEXTAREA = preload("res://Scenes/Tags/textarea.tscn")
 const DIV = preload("res://Scenes/Tags/div.tscn")
 const AUDIO = preload("res://Scenes/Tags/audio.tscn")
+const POSTPROCESS = preload("res://Scenes/Tags/postprocess.tscn")
 
 const MIN_SIZE = Vector2i(750, 200)
 
 var font_dependent_elements: Array = []
+var current_domain = ""
 
 func should_group_as_inline(element: HTMLParser.HTMLElement) -> bool:
-	# Don't group inputs unless they're inside a form
 	if element.tag_name == "input":
-		# Check if this element has a form ancestor
 		var parent = element.parent
 		while parent:
 			if parent.tag_name == "form":
@@ -59,8 +59,6 @@ func _ready():
 		original_scroll.visible = false
 	
 	call_deferred("render")
-
-var current_domain = ""  # Store current domain for display
 
 func resolve_url(href: String) -> String:
 	return URLUtils.resolve_url(current_domain, href)
@@ -193,6 +191,20 @@ func render_content(html_bytes: PackedByteArray) -> void:
 				remove_child(lua_api)
 				lua_api.queue_free()
 		active_tab.lua_apis.clear()
+		
+		var existing_postprocess = []
+		for child in get_children():
+			if child is HTMLPostprocess:
+				existing_postprocess.append(child)
+		
+		for postprocess in existing_postprocess:
+			remove_child(postprocess)
+			postprocess.queue_free()
+		
+		if active_tab.background_panel:
+			var existing_overlay = active_tab.background_panel.get_node_or_null("PostprocessOverlay")
+			if existing_overlay:
+				existing_overlay.queue_free()
 	else:
 		var existing_lua_apis = []
 		for child in get_children():
@@ -203,6 +215,20 @@ func render_content(html_bytes: PackedByteArray) -> void:
 			lua_api.kill_script_execution()
 			remove_child(lua_api)
 			lua_api.queue_free()
+	
+	var postprocess_nodes: Array[Node] = []
+	for child in get_children():
+		if child is HTMLPostprocess:
+			postprocess_nodes.append(child)
+	for node in postprocess_nodes:
+		remove_child(node)
+		node.queue_free()
+	
+	var default_panel = website_container.get_parent()
+	if default_panel and default_panel.has_method("get_node_or_null"):
+		var existing_overlay = default_panel.get_node_or_null("PostprocessOverlay")
+		if existing_overlay:
+			existing_overlay.queue_free()
 	
 	if target_container.get_parent() and target_container.get_parent().name == "BodyMarginContainer":
 		var body_margin_container = target_container.get_parent()
@@ -319,6 +345,12 @@ func render_content(html_bytes: PackedByteArray) -> void:
 		parser.process_scripts(lua_api, null)
 		if parse_result.external_scripts and not parse_result.external_scripts.is_empty():
 			await parser.process_external_scripts(lua_api, null, current_domain)
+	
+	var postprocess_element = parser.process_postprocess()
+	if postprocess_element:
+		var postprocess_node = POSTPROCESS.instantiate()
+		add_child(postprocess_node)
+		await postprocess_node.init(postprocess_element, parser)
 	
 	active_tab.current_url = current_domain
 	active_tab.has_content = true

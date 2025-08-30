@@ -64,19 +64,33 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 	
 	if (width != null or height != null) and not skip_sizing:
 		if width != null:
-			if width is String and width == "100%":
-				node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				node.custom_minimum_size.x = 0
+			if width is String and width.ends_with("%"):
+				if width == "100%":
+					node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					node.custom_minimum_size.x = 0
+				else:
+					# For other percentages, convert to viewport-relative size
+					var percent = float(width.replace("%", "")) / 100.0
+					var viewport_width = node.get_viewport().get_visible_rect().size.x if node.get_viewport() else 800
+					node.custom_minimum_size.x = viewport_width * percent
 				node.set_meta("size_flags_set_by_style_manager", true)
+				node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			else:
 				node.custom_minimum_size.x = width
 				node.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		
 		if height != null:
-			if height is String and height == "100%":
-				node.size_flags_vertical = Control.SIZE_EXPAND_FILL
-				node.custom_minimum_size.y = 0
+			if height is String and height.ends_with("%"):
+				if height == "100%":
+					node.size_flags_vertical = Control.SIZE_EXPAND_FILL
+					node.custom_minimum_size.y = 0
+				else:
+					# For other percentages, convert to viewport-relative size
+					var percent = float(height.replace("%", "")) / 100.0
+					var viewport_height = node.get_viewport().get_visible_rect().size.y if node.get_viewport() else 600
+					node.custom_minimum_size.y = viewport_height * percent
 				node.set_meta("size_flags_set_by_style_manager", true)
+				node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 			else:
 				node.custom_minimum_size.y = height
 				node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN

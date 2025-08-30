@@ -672,7 +672,7 @@ func _handle_dom_operation(operation: Dictionary):
 		"get_text":
 			_handle_text_getting(operation)
 		"append_element":
-			LuaDOMUtils.handle_element_append(operation, dom_parser, self)
+			LuaDOMUtils.handle_element_append(operation, dom_parser)
 		"add_class":
 			LuaClassListUtils.handle_add_class(operation, dom_parser)
 		"remove_class":
@@ -682,7 +682,7 @@ func _handle_dom_operation(operation: Dictionary):
 		"remove_element":
 			LuaDOMUtils.handle_element_remove(operation, dom_parser)
 		"insert_before":
-			LuaDOMUtils.handle_insert_before(operation, dom_parser, self)
+			LuaDOMUtils.handle_insert_before(operation, dom_parser)
 		"insert_after":
 			LuaDOMUtils.handle_insert_after(operation, dom_parser)
 		"replace_child":

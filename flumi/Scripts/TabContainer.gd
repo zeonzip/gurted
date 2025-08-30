@@ -210,7 +210,9 @@ func create_tab() -> void:
 	var index = tabs.size();
 	var tab = TAB.instantiate()
 	tabs.append(tab)
+	h_box_container.add_child(tab)
 	tab.tab_pressed.connect(_tab_pressed.bind(index))
+	tab.tab_closed.connect(_tab_closed.bind(index))
 	var viewport_width = get_viewport().get_visible_rect().size.x
 	var available_width = viewport_width - POPUP_BUTTON_WIDTH - NEW_TAB_BUTTON_WIDTH - OTHER_UI_PADDING
 	var visible_count = calculate_visible_tab_count(available_width)
