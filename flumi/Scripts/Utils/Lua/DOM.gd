@@ -645,6 +645,9 @@ static func add_element_methods(vm: LuauVM, lua_api: LuaAPI) -> void:
 	vm.lua_pushcallable(LuaDOMUtils._element_unfocus_wrapper, "element.unfocus")
 	vm.lua_setfield(-2, "unfocus")
 	
+	vm.lua_pushcallable(LuaCanvasUtils._element_withContext_wrapper, "element.withContext")
+	vm.lua_setfield(-2, "withContext")
+	
 	add_classlist_support(vm)
 	
 	vm.lua_newtable()

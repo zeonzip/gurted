@@ -691,6 +691,56 @@ func _handle_dom_operation(operation: Dictionary):
 			_handle_element_focus(operation)
 		"unfocus_element":
 			_handle_element_unfocus(operation)
+		"canvas_fillRect":
+			LuaCanvasUtils.handle_canvas_fillRect(operation, dom_parser)
+		"canvas_strokeRect":
+			LuaCanvasUtils.handle_canvas_strokeRect(operation, dom_parser)
+		"canvas_clearRect":
+			LuaCanvasUtils.handle_canvas_clearRect(operation, dom_parser)
+		"canvas_drawCircle":
+			LuaCanvasUtils.handle_canvas_drawCircle(operation, dom_parser)
+		"canvas_drawText":
+			LuaCanvasUtils.handle_canvas_drawText(operation, dom_parser)
+		"canvas_source":
+			LuaCanvasUtils.handle_canvas_source(operation, dom_parser)
+		"canvas_beginPath":
+			LuaCanvasUtils.handle_canvas_beginPath(operation, dom_parser)
+		"canvas_closePath":
+			LuaCanvasUtils.handle_canvas_closePath(operation, dom_parser)
+		"canvas_moveTo":
+			LuaCanvasUtils.handle_canvas_moveTo(operation, dom_parser)
+		"canvas_lineTo":
+			LuaCanvasUtils.handle_canvas_lineTo(operation, dom_parser)
+		"canvas_arc":
+			LuaCanvasUtils.handle_canvas_arc(operation, dom_parser)
+		"canvas_stroke":
+			LuaCanvasUtils.handle_canvas_stroke(operation, dom_parser)
+		"canvas_fill":
+			LuaCanvasUtils.handle_canvas_fill(operation, dom_parser)
+		# Transformation operations
+		"canvas_save":
+			LuaCanvasUtils.handle_canvas_save(operation, dom_parser)
+		"canvas_restore":
+			LuaCanvasUtils.handle_canvas_restore(operation, dom_parser)
+		"canvas_translate":
+			LuaCanvasUtils.handle_canvas_translate(operation, dom_parser)
+		"canvas_rotate":
+			LuaCanvasUtils.handle_canvas_rotate(operation, dom_parser)
+		"canvas_scale":
+			LuaCanvasUtils.handle_canvas_scale(operation, dom_parser)
+		"canvas_quadraticCurveTo":
+			LuaCanvasUtils.handle_canvas_quadraticCurveTo(operation, dom_parser)
+		"canvas_bezierCurveTo":
+			LuaCanvasUtils.handle_canvas_bezierCurveTo(operation, dom_parser)
+		# Style property operations
+		"canvas_setStrokeStyle":
+			LuaCanvasUtils.handle_canvas_setStrokeStyle(operation, dom_parser)
+		"canvas_setFillStyle":
+			LuaCanvasUtils.handle_canvas_setFillStyle(operation, dom_parser)
+		"canvas_setLineWidth":
+			LuaCanvasUtils.handle_canvas_setLineWidth(operation, dom_parser)
+		"canvas_setFont":
+			LuaCanvasUtils.handle_canvas_setFont(operation, dom_parser)
 		_:
 			pass # Unknown operation type, ignore
 

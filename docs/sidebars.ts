@@ -39,6 +39,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'html',
         'css',
+        'lua',
         'postprocess',
       ],
     },

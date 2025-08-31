@@ -30,6 +30,7 @@ const TEXTAREA = preload("res://Scenes/Tags/textarea.tscn")
 const DIV = preload("res://Scenes/Tags/div.tscn")
 const AUDIO = preload("res://Scenes/Tags/audio.tscn")
 const POSTPROCESS = preload("res://Scenes/Tags/postprocess.tscn")
+const CANVAS = preload("res://Scenes/Tags/canvas.tscn")
 
 const MIN_SIZE = Vector2i(750, 200)
 
@@ -324,7 +325,7 @@ func render_content(html_bytes: PackedByteArray) -> void:
 			if element_node:
 				
 				# Input elements register their own DOM nodes in their init() function
-				if element.tag_name not in ["input", "textarea", "select", "button", "audio"]:
+				if element.tag_name not in ["input", "textarea", "select", "button", "audio", "canvas"]:
 					parser.register_dom_node(element, element_node)
 				
 				# ul/ol handle their own adding
@@ -605,6 +606,9 @@ func create_element_node_internal(element: HTMLParser.HTMLElement, parser: HTMLP
 			node.init(element, parser)
 		"audio":
 			node = AUDIO.instantiate()
+			node.init(element, parser)
+		"canvas":
+			node = CANVAS.instantiate()
 			node.init(element, parser)
 		"div":
 			var styles = parser.get_element_styles_with_inheritance(element, "", [])
