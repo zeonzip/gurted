@@ -29,7 +29,7 @@ func _init():
 	timeout_manager = LuaTimeoutManager.new()
 	threaded_vm = ThreadedLuaVM.new()
 	threaded_vm.script_completed.connect(_on_threaded_script_completed)
-	threaded_vm.script_error.connect(func(e): print(e))
+	threaded_vm.script_error.connect(_on_threaded_script_error)
 	threaded_vm.dom_operation_request.connect(_handle_dom_operation)
 	threaded_vm.print_output.connect(_on_print_output)
 
@@ -645,8 +645,11 @@ func execute_lua_script(code: String):
 func _on_threaded_script_completed(_result: Dictionary):
 	pass
 
-func _on_print_output(message: String):
-	LuaPrintUtils.lua_print_direct(message)
+func _on_threaded_script_error(error_message: String):
+	Trace.trace_error("RuntimeError: " + error_message)
+
+func _on_print_output(message: Dictionary):
+	Trace.get_instance().log_message.emit(message, "lua", Time.get_ticks_msec() / 1000.0)
 
 func kill_script_execution():
 	threaded_vm.stop_lua_thread()

@@ -32,7 +32,7 @@
 		local infoBox = gurt.select('#info-box')
 		local clickCounter = gurt.select('#click-counter')
 
-		gurt.log('Button attribute demo script started.')
+		trace.log('Button attribute demo script started.')
 
 		local clickCount = 0
 
@@ -64,7 +64,7 @@
 		targetButton:on('click', function()
 			clickCount = clickCount + 1
 			clickCounter.text = 'Button clicked ' .. clickCount .. ' times!'
-			gurt.log('Target button clicked! Count:', clickCount)
+			trace.log('Target button clicked! Count:', clickCount)
 			updateStatus()
 		end)
 
@@ -72,7 +72,7 @@
 		enableBtn:on('click', function()
 			targetButton:setAttribute('disabled', '') -- Remove disabled attribute
 			targetButton:setAttribute('data-value', 'enabled')
-			gurt.log('Target button enabled via setAttribute')
+			trace.log('Target button enabled via setAttribute')
 			updateStatus()
 		end)
 
@@ -80,7 +80,7 @@
 		disableBtn:on('click', function()
 			targetButton:setAttribute('disabled', 'true')
 			targetButton:setAttribute('data-value', 'disabled')
-			gurt.log('Target button disabled via setAttribute')
+			trace.log('Target button disabled via setAttribute')
 			updateStatus()
 		end)
 
@@ -92,12 +92,12 @@
 				-- Currently disabled, so enable it
 				targetButton:setAttribute('disabled', '')
 				targetButton:setAttribute('data-value', 'toggled-enabled')
-				gurt.log('Target button toggled to enabled state')
+				trace.log('Target button toggled to enabled state')
 			else
 				-- Currently enabled, so disable it
 				targetButton:setAttribute('disabled', 'true')
 				targetButton:setAttribute('data-value', 'toggled-disabled')
-				gurt.log('Target button toggled to disabled state')
+				trace.log('Target button toggled to disabled state')
 			end
 			
 			updateStatus()
@@ -109,12 +109,12 @@
 			local type = targetButton:getAttribute('type')
 			local dataValue = targetButton:getAttribute('data-value')
 			
-			gurt.log('=== BUTTON STATUS CHECK ===')
-			gurt.log('Disabled attribute:', disabled or 'not set')
-			gurt.log('Type attribute:', type or 'not set')
-			gurt.log('Data-value attribute:', dataValue or 'not set')
-			gurt.log('Click count:', clickCount)
-			gurt.log('===========================')
+			trace.log('=== BUTTON STATUS CHECK ===')
+			trace.log('Disabled attribute:', disabled or 'not set')
+			trace.log('Type attribute:', type or 'not set')
+			trace.log('Data-value attribute:', dataValue or 'not set')
+			trace.log('Click count:', clickCount)
+			trace.log('===========================')
 			
 			-- Demonstrate style setAttribute
 			local randomColors = {'bg-red-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500'}

@@ -272,7 +272,7 @@ static func render_new_element(element: HTMLParser.HTMLElement, parent_node: Nod
 	# Create the visual node for the element
 	var element_node = await main_scene.create_element_node(element, dom_parser)
 	if not element_node:
-		LuaPrintUtils.lua_print_direct("Failed to create visual node for element: " + str(element))
+		Trace.trace_log("Failed to create visual node for element: " + str(element))
 		return
 
 	# Set metadata so ul/ol can detect dynamically added li elements

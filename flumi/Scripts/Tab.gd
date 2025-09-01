@@ -35,6 +35,9 @@ var loading_tween: Tween
 var scroll_container: ScrollContainer = null
 var website_container: VBoxContainer = null
 var background_panel: PanelContainer = null
+var main_hbox: HBoxContainer = null
+var dev_tools: Control = null
+var dev_tools_visible: bool = false
 var lua_apis: Array[LuaAPI] = []
 var current_url: String = ""
 var has_content: bool = false
@@ -131,6 +134,9 @@ func _exit_tree():
 			background_panel.get_parent().remove_child(background_panel)
 		background_panel.queue_free()
 	
+	if dev_tools and is_instance_valid(dev_tools):
+		dev_tools.queue_free()
+	
 	remove_from_group("tabs")
 
 func init_scene(parent_container: Control) -> void:
@@ -144,9 +150,15 @@ func init_scene(parent_container: Control) -> void:
 		style_box.bg_color = Color(1, 1, 1, 1)  # White background
 		background_panel.add_theme_stylebox_override("panel", style_box)
 		
+		main_hbox = HBoxContainer.new()
+		main_hbox.name = "Tab_MainHBox_" + str(get_instance_id())
+		main_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		main_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		
 		scroll_container = ScrollContainer.new()
 		scroll_container.name = "Tab_ScrollContainer_" + str(get_instance_id())
 		scroll_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		scroll_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL # Take 2/3 of space
 		
 		website_container = VBoxContainer.new()
 		website_container.name = "Tab_WebsiteContainer_" + str(get_instance_id())
@@ -154,8 +166,15 @@ func init_scene(parent_container: Control) -> void:
 		website_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		website_container.add_theme_constant_override("separation", 22)
 		
+		var dev_tools_scene = preload("res://Scenes/DevTools.tscn")
+		dev_tools = dev_tools_scene.instantiate()
+		dev_tools.name = "Tab_DevTools_" + str(get_instance_id())
+		dev_tools.visible = false
+		
 		parent_container.call_deferred("add_child", background_panel)
-		background_panel.call_deferred("add_child", scroll_container)
+		background_panel.call_deferred("add_child", main_hbox)
+		main_hbox.call_deferred("add_child", scroll_container)
+		main_hbox.call_deferred("add_child", dev_tools)
 		scroll_container.call_deferred("add_child", website_container)
 		
 		background_panel.visible = is_active
@@ -215,3 +234,21 @@ func _on_close_button_pressed() -> void:
 	await close_tween.finished
 	tab_closed.emit()
 	queue_free()
+
+func toggle_dev_tools() -> void:
+	if not dev_tools:
+		return
+		
+	dev_tools_visible = not dev_tools_visible
+	dev_tools.visible = dev_tools_visible
+	
+	if dev_tools_visible:
+		scroll_container.size_flags_stretch_ratio = 2.0
+		dev_tools.size_flags_stretch_ratio = 1.0
+	else:
+		scroll_container.size_flags_stretch_ratio = 1.0
+
+func get_dev_tools_console() -> DevToolsConsole:
+	if dev_tools and dev_tools.has_method("get_console"):
+		return dev_tools.get_console()
+	return null

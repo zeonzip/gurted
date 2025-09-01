@@ -3,7 +3,7 @@ extends RefCounted
 
 signal script_completed(result: Dictionary)
 signal script_error(error: String)
-signal print_output(message: String)
+signal print_output(print_data: Dictionary)
 signal dom_operation_request(operation: Dictionary)
 
 var lua_thread: Thread
@@ -238,23 +238,26 @@ func _print_handler(vm: LuauVM) -> int:
 	var num_args = vm.lua_gettop()
 	
 	for i in range(1, num_args + 1):
-		var arg_str = ""
-		if vm.lua_isstring(i):
-			arg_str = vm.lua_tostring(i)
-		elif vm.lua_isnumber(i):
-			arg_str = str(vm.lua_tonumber(i))
-		elif vm.lua_isboolean(i):
-			arg_str = "true" if vm.lua_toboolean(i) else "false"
-		elif vm.lua_isnil(i):
-			arg_str = "nil"
+		var lua_type = vm.lua_type(i)
+		if lua_type == vm.LUA_TTABLE:
+			var table_data = vm.lua_todictionary(i)
+			message_parts.append({
+				"type": "table",
+				"data": table_data
+			})
 		else:
-			arg_str = vm.lua_typename(vm.lua_type(i))
-		
-		message_parts.append(arg_str)
+			var value_str = LuaPrintUtils.lua_value_to_string(vm, i)
+			message_parts.append({
+				"type": "primitive",
+				"data": value_str
+			})
 	
-	var final_message = "\t".join(message_parts)
+	var print_data = {
+		"parts": message_parts,
+		"count": message_parts.size()
+	}
 	
-	call_deferred("_emit_print_output", final_message)
+	call_deferred("_emit_print_output", print_data)
 	
 	return 0
 
@@ -267,9 +270,34 @@ func _time_sleep_handler(vm: LuauVM) -> int:
 	
 	return 0
 
+func _trace_log_handler(vm: LuauVM) -> int:
+	var message = vm.luaL_checkstring(1)
+	call_deferred("_emit_trace_message", message, "lua")
+	return 0
+
+func _trace_warning_handler(vm: LuauVM) -> int:
+	var message = vm.luaL_checkstring(1)
+	call_deferred("_emit_trace_message", message, "warning")
+	return 0
+
+func _trace_error_handler(vm: LuauVM) -> int:
+	var message = vm.luaL_checkstring(1)
+	call_deferred("_emit_trace_message", message, "error")
+	return 0
+
 func _setup_threaded_gurt_api():
 	lua_vm.lua_pushcallable(_print_handler, "print")
 	lua_vm.lua_setglobal("print")
+	
+	# Setup trace functions
+	lua_vm.lua_pushcallable(_trace_log_handler, "_trace_log")
+	lua_vm.lua_setglobal("_trace_log")
+	
+	lua_vm.lua_pushcallable(_trace_warning_handler, "_trace_warning") 
+	lua_vm.lua_setglobal("_trace_warning")
+	
+	lua_vm.lua_pushcallable(_trace_error_handler, "_trace_error")
+	lua_vm.lua_setglobal("_trace_error")
 	
 	LuaTimeUtils.setup_time_api(lua_vm)
 	
@@ -280,9 +308,6 @@ func _setup_threaded_gurt_api():
 	lua_vm.lua_pop(1)
 	
 	lua_vm.lua_newtable()
-	
-	lua_vm.lua_pushcallable(_print_handler, "gurt.log")
-	lua_vm.lua_setfield(-2, "log")
 	
 	lua_vm.lua_pushcallable(_gurt_select_handler, "gurt.select")
 	lua_vm.lua_setfield(-2, "select")
@@ -357,6 +382,7 @@ func _setup_additional_lua_apis():
 	LuaCrumbsUtils.setup_crumbs_api(lua_vm)
 	LuaRegexUtils.setup_regex_api(lua_vm)
 	LuaURLUtils.setup_url_api(lua_vm)
+	Trace.setup_trace_api(lua_vm)
 
 func _table_tostring_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)
@@ -370,8 +396,8 @@ func _emit_script_completed(result: Dictionary):
 func _emit_script_error(error: String):
 	script_error.emit(error)
 
-func _emit_print_output(message: String):
-	print_output.emit(message)
+func _emit_print_output(print_data: Dictionary):
+	print_output.emit(print_data)
 
 func _gurt_select_all_handler(vm: LuauVM) -> int:
 	var selector: String = vm.luaL_checkstring(1)
@@ -567,3 +593,12 @@ func _create_threaded_interval(interval_id: int, delay_ms: int):
 	timeout_info.timer = timer
 	lua_api.add_child(timer)
 	timer.start()
+
+func _emit_trace_message(message: String, level: String):
+	match level:
+		"lua", "log":
+			Trace.trace_log(message)
+		"warning":
+			Trace.trace_warning(message)
+		"error":
+			Trace.trace_error(message)

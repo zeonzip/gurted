@@ -61,6 +61,16 @@ func _ready():
 	
 	call_deferred("render")
 
+func _input(event: InputEvent) -> void:
+	if Input.is_action_just_pressed("DevTools"):
+		_toggle_dev_tools()
+		get_viewport().set_input_as_handled()
+
+func _toggle_dev_tools() -> void:
+	var active_tab = get_active_tab()
+	if active_tab:
+		active_tab.toggle_dev_tools()
+
 func resolve_url(href: String) -> String:
 	return URLUtils.resolve_url(current_domain, href)
 
@@ -280,12 +290,16 @@ func render_content(html_bytes: PackedByteArray) -> void:
 		parser.register_dom_node(body, target_container)
 	
 	var scripts = parser.find_all("script")
-	var lua_api = null
-	if scripts.size() > 0:
-		lua_api = LuaAPI.new()
-		add_child(lua_api)
-		if active_tab:
-			active_tab.lua_apis.append(lua_api)
+	
+	var lua_api = LuaAPI.new()
+	add_child(lua_api)
+	if active_tab:
+		active_tab.lua_apis.append(lua_api)
+	
+	lua_api.dom_parser = parser
+	
+	if lua_api.threaded_vm:
+		lua_api.threaded_vm.dom_parser = parser
 
 	var i = 0
 	if body:
@@ -694,3 +708,9 @@ func get_active_website_container() -> Control:
 	if active_tab:
 		return active_tab.website_container
 	return website_container  # fallback to original container
+
+func get_dev_tools_console() -> DevToolsConsole:
+	var active_tab = get_active_tab()
+	if active_tab:
+		return active_tab.get_dev_tools_console()
+	return null

@@ -8,7 +8,7 @@ local password_input = gurt.select('#password')
 local log_output = gurt.select('#log-output')
 
 function addLog(message)
-	gurt.log(message)
+	trace.log(message)
 	log_output.text = log_output.text .. message .. '\\n'
 end
 

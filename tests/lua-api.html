@@ -17,7 +17,7 @@
 		local mouse = gurt.select('#mouse')
 		local btnmouse = gurt.select('#btnmouse')
 		
-		gurt.log('Starting Lua script execution...')
+		trace.log('Starting Lua script execution...')
 		
 		gurt.body:on('keypress', function(el)
 			typing.text = table.tostring(el)
@@ -68,13 +68,13 @@
 				subscription:unsubscribe()
 			end)
 			
-			gurt.log('Event listener attached to button with subscription ID')
+			trace.log('Event listener attached to button with subscription ID')
 		else
-			gurt.log('Could not find button or event log element')
+			trace.log('Could not find button or event log element')
 		end
 		
 		-- DOM Manipulation Demo
-		gurt.log('Testing DOM manipulation...')
+		trace.log('Testing DOM manipulation...')
 		
 		-- Create a new div with styling
 		local new_div = gurt.create('div', { style = 'bg-red-500 p-4 rounded-lg mb-4' })

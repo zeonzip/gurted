@@ -17,12 +17,12 @@
 	<postprocess preset="chrome" />
 	
 	<script>
-		gurt.log('Script started!')
+		trace.log('Script started!')
 		
 		local copyBtn = gurt.select('#copy-text-btn')
 
 		copyBtn:on('click', function()
-			gurt.log('Copy button clicked!')
+			trace.log('Copy button clicked!')
 			Clipboard.write('Hello from GURT!')
 		end)
 	</script>

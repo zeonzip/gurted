@@ -1,0 +1,243 @@
+[gd_scene load_steps=19 format=3 uid="uid://cgav3xl2xgupb"]
+
+[ext_resource type="Script" uid="uid://vrobqac6makc" path="res://Scripts/DevToolsConsole.gd" id="2_3m6n9"]
+[ext_resource type="Texture2D" uid="uid://custohlvwclqs" path="res://Assets/Icons/eraser.svg" id="3_6hj4c"]
+[ext_resource type="Texture2D" uid="uid://cqg4eny0nyojd" path="res://Assets/Icons/funnel.svg" id="4_ynqb1"]
+[ext_resource type="SyntaxHighlighter" uid="uid://d0aeuvwp0545i" path="res://Resources/LuaSyntaxHighlighter.tres" id="5_xkykt"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6hj4c"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6hj4c"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.105882, 0.105882, 0.105882, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qb7hm"]
+content_margin_left = 15.0
+content_margin_top = 15.0
+content_margin_right = 15.0
+content_margin_bottom = 15.0
+bg_color = Color(0.137255, 0.137255, 0.137255, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ynqb1"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.105882, 0.105882, 0.105882, 1)
+border_width_bottom = 1
+border_color = Color(0.247059, 0.466667, 0.807843, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8muo7"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.137255, 0.137255, 0.137255, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xkykt"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.105882, 0.105882, 0.105882, 1)
+border_color = Color(0.8, 0.8, 1, 0)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ynqb1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pqhy6"]
+bg_color = Color(0.168627, 0.168627, 0.168627, 1)
+corner_radius_top_left = 50
+corner_radius_top_right = 50
+corner_radius_bottom_right = 50
+corner_radius_bottom_left = 50
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_apu5o"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+draw_center = false
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dderp"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+draw_center = false
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ko37l"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.168627, 0.168627, 0.168627, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.247059, 0.466667, 0.807843, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_65n6c"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.168627, 0.168627, 0.168627, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_up43w"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.168627, 0.168627, 0.168627, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+expand_margin_left = 4.0
+expand_margin_right = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qb3ke"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.168627, 0.168627, 0.168627, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.247059, 0.466667, 0.807843, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+expand_margin_left = 4.0
+expand_margin_right = 4.0
+
+[node name="DevTools" type="VBoxContainer"]
+custom_minimum_size = Vector2(450, 400)
+size_flags_vertical = 3
+
+[node name="TabContainer" type="TabContainer" parent="."]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/drop_mark_color = Color(0.247059, 0.466667, 0.807843, 1)
+theme_override_styles/tab_focus = SubResource("StyleBoxEmpty_6hj4c")
+theme_override_styles/tabbar_background = SubResource("StyleBoxFlat_6hj4c")
+theme_override_styles/panel = SubResource("StyleBoxFlat_qb7hm")
+theme_override_styles/tab_selected = SubResource("StyleBoxFlat_ynqb1")
+theme_override_styles/tab_hovered = SubResource("StyleBoxFlat_8muo7")
+theme_override_styles/tab_unselected = SubResource("StyleBoxFlat_xkykt")
+tab_alignment = 1
+current_tab = 0
+drag_to_rearrange_enabled = true
+
+[node name="Console" type="VBoxContainer" parent="TabContainer"]
+layout_mode = 2
+script = ExtResource("2_3m6n9")
+metadata/_tab_index = 0
+
+[node name="Toolbar" type="HBoxContainer" parent="TabContainer/Console"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ClearButton" type="Button" parent="TabContainer/Console/Toolbar"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+theme_override_constants/icon_max_width = 20
+theme_override_styles/focus = SubResource("StyleBoxEmpty_ynqb1")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pqhy6")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_apu5o")
+theme_override_styles/normal = SubResource("StyleBoxFlat_dderp")
+icon = ExtResource("3_6hj4c")
+icon_alignment = 1
+
+[node name="LineEdit" type="LineEdit" parent="TabContainer/Console/Toolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxFlat_ko37l")
+theme_override_styles/normal = SubResource("StyleBoxFlat_65n6c")
+placeholder_text = "Filter"
+right_icon = ExtResource("4_ynqb1")
+
+[node name="Spacer2" type="Control" parent="TabContainer/Console"]
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Console"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LogContainer" type="VBoxContainer" parent="TabContainer/Console/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Spacer" type="Control" parent="TabContainer/Console"]
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+
+[node name="InputContainer" type="HBoxContainer" parent="TabContainer/Console"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="InputLine" type="CodeEdit" parent="TabContainer/Console/InputContainer"]
+clip_contents = false
+custom_minimum_size = Vector2(0, 35)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_up43w")
+theme_override_styles/focus = SubResource("StyleBoxFlat_qb3ke")
+text = "test"
+placeholder_text = "Enter Lua code..."
+scroll_fit_content_height = true
+caret_blink = true
+syntax_highlighter = ExtResource("5_xkykt")
+highlight_all_occurrences = true
+highlight_current_line = true
+symbol_tooltip_on_hover = true
+gutters_draw_line_numbers = true
+auto_brace_completion_enabled = true
+auto_brace_completion_highlight_matching = true
+
+[node name="PositioningTimer" type="Timer" parent="TabContainer/Console/InputContainer"]
+
+[node name="Elements" type="Label" parent="TabContainer"]
+visible = false
+layout_mode = 2
+text = "Elements tab - Coming soon"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_tab_index = 1
+
+[node name="Sources" type="Label" parent="TabContainer"]
+visible = false
+layout_mode = 2
+text = "Sources tab - Coming soon"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_tab_index = 2
+
+[node name="Network" type="Label" parent="TabContainer"]
+visible = false
+layout_mode = 2
+text = "Network tab - Coming soon"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_tab_index = 3
+
+[node name="Application" type="Label" parent="TabContainer"]
+visible = false
+layout_mode = 2
+text = "Application tab - Coming soon"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_tab_index = 4
