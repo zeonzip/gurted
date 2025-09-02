@@ -105,6 +105,7 @@ enum HandlerType {
     RequestCertificate,
     GetCertificate,
     GetCaCertificate,
+    StaticFile,
 }
 
 impl GurtHandler for AppHandler {
@@ -179,6 +180,7 @@ impl GurtHandler for AppHandler {
                 HandlerType::RequestCertificate => routes::request_certificate(&ctx, app_state).await,
                 HandlerType::GetCertificate => routes::get_certificate(&ctx, app_state).await,
                 HandlerType::GetCaCertificate => routes::get_ca_certificate(&ctx, app_state).await,
+                HandlerType::StaticFile => serve_static_file(&ctx).await,
             };
             
             let duration = start_time.elapsed();
@@ -248,7 +250,8 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
         .route(Route::get("/verify-ownership/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::VerifyDomainOwnership })
         .route(Route::post("/ca/request-certificate"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::RequestCertificate })
         .route(Route::get("/ca/certificate/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetCertificate })
-        .route(Route::get("/ca/root"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetCaCertificate });
+        .route(Route::get("/ca/root"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetCaCertificate })
+        .route(Route::get("/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile });
 
     let http_port = 8876;
     let ca_bootstrap_server = start_ca_bootstrap_server(app_state.clone(), http_port, config.server.address.clone());
@@ -318,6 +321,50 @@ async fn get_ca_certificate_content(app_state: &AppState) -> std::result::Result
         Err(e) => {
             log::error!("Failed to retrieve CA certificate from database: {}", e);
             Err(format!("No active CA certificate found in database: {}", e).into())
+        }
+    }
+}
+
+async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
+    let path = ctx.path();
+    
+    let file_path = if path == "/" || path == "" {
+        "index.html"
+    } else {
+        if path.starts_with('/') {
+            &path[1..]
+        } else {
+            path
+        }
+    };
+    
+    if file_path.contains("..") || file_path.contains('/') || file_path.contains('\\') {
+        return Ok(GurtResponse::new(GurtStatusCode::Forbidden)
+            .with_string_body("Invalid file path"));
+    }
+    
+    let frontend_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("frontend");
+    let full_path = frontend_dir.join(file_path);
+    
+    match tokio::fs::read_to_string(&full_path).await {
+        Ok(content) => {
+            let content_type = match full_path.extension().and_then(|ext| ext.to_str()) {
+                Some("html") => "text/html",
+                Some("lua") => "text/plain", 
+                Some("txt") => "text/plain",
+                Some("js") => "application/javascript",
+                Some("css") => "text/css",
+                Some("json") => "application/json",
+                _ => "text/plain",
+            };
+            
+            Ok(GurtResponse::ok()
+                .with_header("Content-Type", content_type)
+                .with_string_body(&content))
+        }
+        Err(_) => {
+            Ok(GurtResponse::new(GurtStatusCode::NotFound)
+                .with_string_body("File not found"))
         }
     }
 }
