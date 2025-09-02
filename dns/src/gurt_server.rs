@@ -346,7 +346,9 @@ async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
             .with_string_body("Invalid file path"));
     }
     
-    let frontend_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("frontend");
+    let current_dir = std::env::current_dir()
+        .map_err(|_| GurtError::invalid_message("Failed to get current directory"))?;
+    let frontend_dir = current_dir.join("frontend");
     let full_path = frontend_dir.join(file_path);
     log::info!("Attempting to read file: '{}'", full_path.display());
     

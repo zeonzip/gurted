@@ -21,12 +21,25 @@ fn parse_query_string(query: &str) -> HashMap<String, String> {
 }
 
 pub(crate) async fn index(_app_state: AppState) -> Result<GurtResponse> {
-    let body = format!(
-        "GurtDNS v{}!\n\nThe available endpoints are:\n\n - [GET] /domains\n - [GET] /domain/{{name}}/{{tld}}\n - [POST] /domain\n - [PUT] /domain/{{key}}\n - [DELETE] /domain/{{key}}\n - [GET] /tlds\n\nRatelimits are as follows: 5 requests per 10 minutes on `[POST] /domain`.\n\nCode link: https://github.com/outpoot/gurted",
-        env!("CARGO_PKG_VERSION")
-    );
-
-    Ok(GurtResponse::ok().with_string_body(body))
+    let current_dir = std::env::current_dir()
+        .map_err(|_| GurtError::invalid_message("Failed to get current directory"))?;
+    let frontend_dir = current_dir.join("frontend");
+    let index_path = frontend_dir.join("index.html");
+    
+    match tokio::fs::read_to_string(&index_path).await {
+        Ok(content) => {
+            Ok(GurtResponse::ok()
+                .with_header("Content-Type", "text/html")
+                .with_string_body(&content))
+        }
+        Err(_) => {
+            let body = format!(
+                "GurtDNS v{}!\n\nThe available endpoints are:\n\n - [GET] /domains\n - [GET] /domain/{{name}}/{{tld}}\n - [POST] /domain\n - [PUT] /domain/{{key}}\n - [DELETE] /domain/{{key}}\n - [GET] /tlds\n\nRatelimits are as follows: 5 requests per 10 minutes on `[POST] /domain`.\n\nCode link: https://github.com/outpoot/gurted",
+                env!("CARGO_PKG_VERSION")
+            );
+            Ok(GurtResponse::ok().with_string_body(&body))
+        }
+    }
 }
 
 pub(crate) async fn create_logic(domain: Domain, user_id: i32, app: &AppState) -> Result<Domain> {
