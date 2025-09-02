@@ -327,6 +327,7 @@ async fn get_ca_certificate_content(app_state: &AppState) -> std::result::Result
 
 async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
     let path = ctx.path();
+    log::info!("Static file request for path: '{}'", path);
     
     let file_path = if path == "/" || path == "" {
         "index.html"
@@ -337,17 +338,21 @@ async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
             path
         }
     };
+    log::info!("Resolved file_path: '{}'", file_path);
     
     if file_path.contains("..") || file_path.contains('/') || file_path.contains('\\') {
+        log::warn!("Invalid file path requested: '{}'", file_path);
         return Ok(GurtResponse::new(GurtStatusCode::Forbidden)
             .with_string_body("Invalid file path"));
     }
     
     let frontend_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("frontend");
     let full_path = frontend_dir.join(file_path);
+    log::info!("Attempting to read file: '{}'", full_path.display());
     
     match tokio::fs::read_to_string(&full_path).await {
         Ok(content) => {
+            log::info!("Successfully read file, content length: {} bytes", content.len());
             let content_type = match full_path.extension().and_then(|ext| ext.to_str()) {
                 Some("html") => "text/html",
                 Some("lua") => "text/plain", 
@@ -362,7 +367,8 @@ async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
                 .with_header("Content-Type", content_type)
                 .with_string_body(&content))
         }
-        Err(_) => {
+        Err(e) => {
+            log::error!("Failed to read file '{}': {}", full_path.display(), e);
             Ok(GurtResponse::new(GurtStatusCode::NotFound)
                 .with_string_body("File not found"))
         }
