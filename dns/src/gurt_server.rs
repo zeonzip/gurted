@@ -80,7 +80,7 @@ macro_rules! handle_authenticated {
     };
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum HandlerType {
     Index,
     GetDomain,
