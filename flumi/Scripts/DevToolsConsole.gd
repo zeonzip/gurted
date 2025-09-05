@@ -26,7 +26,6 @@ func initialize_filter() -> void:
 	current_filter = ""
 
 func connect_signals() -> void:
-	Trace.get_instance().log_message.connect(_on_trace_message)
 	clear_button.pressed.connect(_on_clear_pressed)
 	
 	input_line.gui_input.connect(_on_input_gui_input)
@@ -36,9 +35,6 @@ func load_existing_logs() -> void:
 	var existing_messages = Trace.get_all_messages()
 	for msg in existing_messages:
 		add_log_entry(msg.message, msg.level, msg.timestamp)
-
-func _on_trace_message(message: Variant, level: String, timestamp: float) -> void:
-	call_deferred("add_log_entry", message, level, timestamp)
 
 func _on_lua_print(message: String) -> void:
 	add_log_entry(message, "lua", Time.get_ticks_msec() / 1000.0)
@@ -84,31 +80,14 @@ func add_log_entry(message: Variant, level: String, timestamp: float) -> void:
 
 func create_log_item(entry: Dictionary) -> Control:
 	if entry.level == "input":
-		var message_code_edit = CodeEdit.new()
 		var input_display_text = get_display_text_for_entry(entry)
-		message_code_edit.text = input_display_text
-		message_code_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		message_code_edit.scroll_fit_content_height = true
-		message_code_edit.editable = true
-		message_code_edit.context_menu_enabled = true
-		message_code_edit.shortcut_keys_enabled = true
-		message_code_edit.selecting_enabled = true
-		message_code_edit.deselect_on_focus_loss_enabled = true
-		message_code_edit.drag_and_drop_selection_enabled = false
-		message_code_edit.virtual_keyboard_enabled = false
-		message_code_edit.middle_mouse_paste_enabled = false
-		
-		var code_style_normal = StyleBoxFlat.new()
-		code_style_normal.bg_color = Color.TRANSPARENT
-		code_style_normal.border_width_left = 0
-		code_style_normal.border_width_top = 0
-		code_style_normal.border_width_right = 0
-		code_style_normal.border_width_bottom = 0
-		code_style_normal.content_margin_bottom = 8
-		message_code_edit.add_theme_stylebox_override("normal", code_style_normal)
-		message_code_edit.add_theme_stylebox_override("focus", code_style_normal)
-		
-		message_code_edit.syntax_highlighter = input_line.syntax_highlighter.duplicate()
+		var message_code_edit = CodeEditUtils.create_code_edit({
+			"text": input_display_text,
+			"scroll_fit_content_height": true,
+			"transparent_background": true,
+			"syntax_highlighter": input_line.syntax_highlighter.duplicate(),
+			"block_editing_signals": true
+		})
 		
 		message_code_edit.gui_input.connect(_on_log_code_edit_gui_input)
 		message_code_edit.focus_entered.connect(_on_log_code_edit_focus_entered.bind(message_code_edit))

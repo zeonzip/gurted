@@ -29,14 +29,14 @@ static func resolve_fetch_url(url: String) -> String:
 	return URLUtils.resolve_url(current_domain, url)
 
 static func _lua_fetch_handler(vm: LuauVM) -> int:
-	var url: String = vm.luaL_checkstring(1)
+	var original_url: String = vm.luaL_checkstring(1)
 	var options: Dictionary = {}
 	
 	if vm.lua_gettop() >= 2 and vm.lua_istable(2):
 		options = vm.lua_todictionary(2)
 	
 	# Resolve relative URLs and default to gurt:// protocol
-	url = resolve_fetch_url(url)
+	var url = resolve_fetch_url(original_url)
 	
 	# Default options
 	var method = options.get("method", "GET").to_upper()
@@ -296,7 +296,7 @@ static func get_or_create_gurt_client(domain: String) -> GurtProtocolClient:
 	for ca_cert in CertificateManager.trusted_ca_certificates:
 		gurt_client.add_ca_certificate(ca_cert)
 	
-	if not gurt_client.create_client(10):
+	if not gurt_client.create_client_with_dns(10, GurtProtocol.DNS_SERVER_IP, GurtProtocol.DNS_SERVER_PORT):
 		gurt_client = null
 		current_domain = ""
 		return null
@@ -316,8 +316,6 @@ static func make_gurt_request(url: String, method: String, headers: PackedString
 	var domain_part = url.replace("gurt://", "")
 	if domain_part.contains("/"):
 		domain_part = domain_part.split("/")[0]
-	if domain_part.contains(":"):
-		domain_part = domain_part.split(":")[0]
 	
 	var client = get_or_create_gurt_client(domain_part)
 	if client == null:

@@ -7,12 +7,19 @@ func fetch_image(url: String) -> ImageTexture:
 	if url.is_empty():
 		return null
 	
+	var network_request = NetworkManager.start_request(url, "GET", false)
+	
 	var request_headers = PackedStringArray()
 	request_headers.append("User-Agent: " + UserAgent.get_user_agent())
+	
+	var headers_dict = {}
+	headers_dict["User-Agent"] = UserAgent.get_user_agent()
+	NetworkManager.set_request_headers(network_request.id, headers_dict)
 	
 	var error = http_request.request(url, request_headers)
 	if error != OK:
 		print("Error making HTTP request: ", error)
+		NetworkManager.fail_request(network_request.id, "HTTP request error: " + str(error))
 		http_request.queue_free()
 		return null
 	
@@ -25,9 +32,18 @@ func fetch_image(url: String) -> ImageTexture:
 	
 	http_request.queue_free()
 	
+	var response_headers = {}
+	for header in headers:
+		var parts = header.split(":", 1)
+		if parts.size() == 2:
+			response_headers[parts[0].strip_edges()] = parts[1].strip_edges()
+	
 	if result != HTTPRequest.RESULT_SUCCESS or response_code != 200:
 		print("Failed to fetch image. Result: ", result, " Response code: ", response_code)
+		NetworkManager.complete_request(network_request.id, response_code, "Request failed", response_headers, body.get_string_from_utf8(), body)
 		return null
+	
+	NetworkManager.complete_request(network_request.id, response_code, "OK", response_headers, body.get_string_from_utf8(), body)
 	
 	# Get content type from headers
 	var content_type = ""
@@ -74,12 +90,19 @@ func fetch_text(url: String) -> String:
 		http_request.queue_free()
 		return ""
 	
+	var network_request = NetworkManager.start_request(url, "GET", false)
+	
 	var request_headers = PackedStringArray()
 	request_headers.append("User-Agent: " + UserAgent.get_user_agent())
+	
+	var headers_dict = {}
+	headers_dict["User-Agent"] = UserAgent.get_user_agent()
+	NetworkManager.set_request_headers(network_request.id, headers_dict)
 	
 	var error = http_request.request(url, request_headers)
 	if error != OK:
 		print("Error making HTTP request for text resource: ", url, " Error: ", error)
+		NetworkManager.fail_request(network_request.id, "HTTP request error: " + str(error))
 		http_request.queue_free()
 		return ""
 	
@@ -87,15 +110,27 @@ func fetch_text(url: String) -> String:
 	
 	var result = response[0]  # HTTPClient.Result
 	var response_code = response[1]  # int
+	var headers = response[2]  # PackedStringArray
 	var body = response[3]  # PackedByteArray
 	
 	http_request.queue_free()
 	
+	var response_headers = {}
+	for header in headers:
+		var parts = header.split(":", 1)
+		if parts.size() == 2:
+			response_headers[parts[0].strip_edges()] = parts[1].strip_edges()
+	
+	var response_body = body.get_string_from_utf8()
+	
 	if result != HTTPRequest.RESULT_SUCCESS or response_code != 200:
 		print("Failed to fetch text resource. URL: ", url, " Result: ", result, " Response code: ", response_code)
+		NetworkManager.complete_request(network_request.id, response_code, "Request failed", response_headers, response_body)
 		return ""
 	
-	return body.get_string_from_utf8()
+	NetworkManager.complete_request(network_request.id, response_code, "OK", response_headers, response_body)
+	
+	return response_body
 
 func fetch_external_resource(url: String, base_url: String = "") -> String:
 	var resolved_url = URLUtils.resolve_url(base_url, url)
@@ -118,13 +153,15 @@ func fetch_gurt_resource(url: String) -> String:
 	if gurt_url.contains("localhost"):
 		gurt_url = gurt_url.replace("localhost", "127.0.0.1")
 	
+	var network_request = NetworkManager.start_request(gurt_url, "GET", false)
+	
 	var client = GurtProtocolClient.new()
 	
 	for ca_cert in CertificateManager.trusted_ca_certificates:
 		client.add_ca_certificate(ca_cert)
 	
-	if not client.create_client(30):
-		print("GURT resource error: Failed to create client")
+	if not client.create_client_with_dns(30, GurtProtocol.DNS_SERVER_IP, GurtProtocol.DNS_SERVER_PORT):
+		NetworkManager.fail_request(network_request.id, "Failed to create GURT client")
 		return ""
 	
 	var host_domain = gurt_url
@@ -142,9 +179,16 @@ func fetch_gurt_resource(url: String) -> String:
 	
 	if not response or not response.is_success:
 		var error_msg = "Failed to load GURT resource"
+		var status_code = 0
 		if response:
+			status_code = response.status_code
 			error_msg += ": " + str(response.status_code) + " " + response.status_message
-		print("GURT resource error: ", error_msg)
+		NetworkManager.complete_request(network_request.id, status_code, error_msg, {}, "")
 		return ""
 	
-	return response.body.get_string_from_utf8()
+	var response_headers = response.headers if response.headers else {}
+	var response_body = response.body.get_string_from_utf8()
+	
+	NetworkManager.complete_request(network_request.id, response.status_code, "OK", response_headers, response_body)
+	
+	return response_body

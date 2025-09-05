@@ -3,7 +3,7 @@ class_name LuaSyntaxHighlighter
 extends SyntaxHighlighter
 
 @export_group("Colors")
-@export var font_color: Color = Color("#d4d4d4", Color.WHITE)
+@export var font_color: Color = Color.from_string("#d4d4d4", Color.WHITE)
 @export var keyword_color: Color = Color.from_string("#c586c0", Color.WHITE)
 @export var gurt_globals_color: Color = Color.from_string("#569cd6", Color.WHITE)
 @export var function_color: Color = Color.from_string("#dcdcaa", Color.WHITE)
@@ -48,9 +48,8 @@ func _init() -> void:
 	for m in members:
 		_member_keywords[m] = true
 
-func _is_whitespace(char: String) -> bool:
-	return char == " " or char == "\t"
-
+func _is_whitespace(ch: String) -> bool:
+	return ch == " " or ch == "\t"
 
 func _clear_highlighting_cache():
 	_state_cache.clear()
@@ -142,9 +141,9 @@ func _get_line_syntax_highlighting(p_line: int) -> Dictionary:
 			if current_char == "0" and i + 1 < line_len and line_text[i+1].to_lower() == "x":
 				i += 2; is_hex = true
 			while i < line_len:
-				var char = line_text[i]
-				if (is_hex and char.is_valid_hex_number(false)) or \
-				   (not is_hex and (char.is_valid_int() or char in "Ee.-+")):
+				var ch = line_text[i]
+				if (is_hex and ch.is_valid_hex_number(false)) or \
+				   (not is_hex and (ch.is_valid_int() or ch in "Ee.-+")):
 					i += 1
 				else:
 					break

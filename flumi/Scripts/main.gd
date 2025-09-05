@@ -36,6 +36,9 @@ const MIN_SIZE = Vector2i(750, 200)
 
 var font_dependent_elements: Array = []
 var current_domain = ""
+var main_navigation_request: NetworkRequest = null
+var network_start_time: float = 0.0
+var network_end_time: float = 0.0
 
 func should_group_as_inline(element: HTMLParser.HTMLElement) -> bool:
 	if element.tag_name == "input":
@@ -61,7 +64,7 @@ func _ready():
 	
 	call_deferred("render")
 
-func _input(event: InputEvent) -> void:
+func _input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("DevTools"):
 		_toggle_dev_tools()
 		get_viewport().set_input_as_handled()
@@ -104,6 +107,10 @@ func _on_search_submitted(url: String) -> void:
 		print("Non-GURT URL entered: ", url)
 
 func fetch_gurt_content_async(gurt_url: String, tab: Tab, original_url: String) -> void:
+	main_navigation_request = NetworkManager.start_request(gurt_url, "GET", false)
+	main_navigation_request.type = NetworkRequest.RequestType.DOC
+	network_start_time = Time.get_ticks_msec()
+	
 	var thread = Thread.new()
 	var request_data = {"gurt_url": gurt_url}
 	
@@ -125,7 +132,7 @@ func _perform_gurt_request_threaded(request_data: Dictionary) -> Dictionary:
 	
 	if not client.create_client_with_dns(30, GurtProtocol.DNS_SERVER_IP, GurtProtocol.DNS_SERVER_PORT):
 		client.disconnect()
-		return {"success": false, "error": "Failed to connect to GURT DNS server"}
+		return {"success": false, "error": "Failed to connect to GURT DNS server at " + GurtProtocol.DNS_SERVER_IP + ":" + str(GurtProtocol.DNS_SERVER_PORT)}
 	
 	var response = client.request(gurt_url, {
 		"method": "GET"
@@ -136,7 +143,7 @@ func _perform_gurt_request_threaded(request_data: Dictionary) -> Dictionary:
 		var error_msg = "Connection failed"
 		if response:
 			error_msg = "GURT %d: %s" % [response.status_code, response.status_message]
-		elif not response:
+		else:
 			error_msg = "Request timed out or connection failed"
 		return {"success": false, "error": error_msg}
 	
@@ -149,12 +156,21 @@ func _handle_gurt_result(result: Dictionary, tab: Tab, original_url: String, gur
 		return
 	
 	var html_bytes = result.html_bytes
+	network_end_time = Time.get_ticks_msec()
 	
 	current_domain = gurt_url
 	if not search_bar.has_focus():
 		search_bar.text = original_url  # Show the original input in search bar
 	
 	render_content(html_bytes)
+	
+	if main_navigation_request:
+		main_navigation_request.end_time = network_end_time
+		main_navigation_request.time_ms = network_end_time - network_start_time
+		var headers = {"content-type": "text/html"}
+		var body_text = html_bytes.get_string_from_utf8()
+		NetworkManager.complete_request(main_navigation_request.id, 200, "OK", headers, body_text, html_bytes)
+		main_navigation_request = null
 	
 	tab.stop_loading()
 
@@ -182,6 +198,11 @@ func render() -> void:
 	render_content(Constants.HTML_CONTENT)
 
 func render_content(html_bytes: PackedByteArray) -> void:
+	if main_navigation_request:
+		NetworkManager.clear_all_requests_except(main_navigation_request.id)
+	else:
+		NetworkManager.clear_all_requests()
+	
 	var active_tab = get_active_tab()
 	var target_container: Control
 	

@@ -30,7 +30,7 @@ async fn verify_dns_txt_record(domain: &str, expected_value: &str, client: &Gurt
     });
     
     let response = client
-        .post_json("gurt://localhost:8877/resolve-full", &request)
+        .post_json("gurt://dns.web/resolve-full", &request)
         .await?;
     
     if response.is_success() {

@@ -35,7 +35,7 @@ var loading_tween: Tween
 var scroll_container: ScrollContainer = null
 var website_container: VBoxContainer = null
 var background_panel: PanelContainer = null
-var main_hbox: HBoxContainer = null
+var main_hbox: HSplitContainer = null
 var dev_tools: Control = null
 var dev_tools_visible: bool = false
 var lua_apis: Array[LuaAPI] = []
@@ -150,7 +150,7 @@ func init_scene(parent_container: Control) -> void:
 		style_box.bg_color = Color(1, 1, 1, 1)  # White background
 		background_panel.add_theme_stylebox_override("panel", style_box)
 		
-		main_hbox = HBoxContainer.new()
+		main_hbox = HSplitContainer.new()
 		main_hbox.name = "Tab_MainHBox_" + str(get_instance_id())
 		main_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		main_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL

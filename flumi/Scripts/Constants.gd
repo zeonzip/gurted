@@ -39,5 +39,9 @@ var HTML_CONTENT = """
 <head>
 <title>New tab</title>
 </head>
-<body><p>test</p></body>
+<body>
+<p>Welcome to Flumi Browser!</p>
+<img src="https://httpbin.org/image/png" alt="Test image" />
+<p>This page includes a test image to verify network functionality.</p>
+</body>
 """.to_utf8_buffer()

@@ -127,7 +127,6 @@ impl GurtHandler for AppHandler {
             };
             
             log::info!("Handler started for {} {} from {}", ctx.method(), ctx.path(), ctx.remote_addr);
-            log::info!("Handler type will be: {:?}", handler_type);
             
             let result = match handler_type {
                 HandlerType::Index => routes::index(app_state).await,
@@ -337,7 +336,6 @@ async fn get_ca_certificate_content(app_state: &AppState) -> std::result::Result
 
 async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
     let path = ctx.path();
-    log::info!("Static file request for path: '{}'", path);
     
     // Strip query parameters from the path for static file serving
     let path_without_query = if let Some(query_pos) = path.find('?') {
@@ -355,7 +353,6 @@ async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
             path_without_query
         }
     };
-    log::info!("Resolved file_path: '{}'", file_path);
     
     if file_path.contains("..") || file_path.contains('/') || file_path.contains('\\') {
         log::warn!("Invalid file path requested: '{}'", file_path);
@@ -367,11 +364,9 @@ async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
         .map_err(|_| GurtError::invalid_message("Failed to get current directory"))?;
     let frontend_dir = current_dir.join("frontend");
     let full_path = frontend_dir.join(file_path);
-    log::info!("Attempting to read file: '{}'", full_path.display());
     
     match tokio::fs::read_to_string(&full_path).await {
         Ok(content) => {
-            log::info!("Successfully read file, content length: {} bytes", content.len());
             let content_type = match full_path.extension().and_then(|ext| ext.to_str()) {
                 Some("html") => "text/html",
                 Some("lua") => "text/plain", 

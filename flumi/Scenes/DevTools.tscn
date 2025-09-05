@@ -1,17 +1,15 @@
-[gd_scene load_steps=19 format=3 uid="uid://cgav3xl2xgupb"]
+[gd_scene load_steps=26 format=3 uid="uid://cgav3xl2xgupb"]
 
 [ext_resource type="Script" uid="uid://vrobqac6makc" path="res://Scripts/DevToolsConsole.gd" id="2_3m6n9"]
 [ext_resource type="Texture2D" uid="uid://custohlvwclqs" path="res://Assets/Icons/eraser.svg" id="3_6hj4c"]
 [ext_resource type="Texture2D" uid="uid://cqg4eny0nyojd" path="res://Assets/Icons/funnel.svg" id="4_ynqb1"]
 [ext_resource type="SyntaxHighlighter" uid="uid://d0aeuvwp0545i" path="res://Resources/LuaSyntaxHighlighter.tres" id="5_xkykt"]
+[ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="6_8muo7"]
+[ext_resource type="Script" uid="uid://dh3jdrot4r7m3" path="res://Scripts/NetworkTab.gd" id="7_network"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6hj4c"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6hj4c"]
-content_margin_left = 2.0
-content_margin_top = 2.0
-content_margin_right = 2.0
-content_margin_bottom = 2.0
 bg_color = Color(0.105882, 0.105882, 0.105882, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qb7hm"]
@@ -120,8 +118,62 @@ corner_radius_bottom_left = 8
 expand_margin_left = 4.0
 expand_margin_right = 4.0
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y2h58"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 5.0
+content_margin_bottom = 5.0
+bg_color = Color(0.125911, 0.125911, 0.125911, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.498039, 0.498039, 0.498039, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_couro"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 5.0
+content_margin_bottom = 5.0
+bg_color = Color(0.105882, 0.105882, 0.105882, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.498039, 0.498039, 0.498039, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7sefc"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 5.0
+content_margin_bottom = 5.0
+bg_color = Color(0.105882, 0.105882, 0.105882, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.498039, 0.498039, 0.498039, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xkykt"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_c62ub"]
+content_margin_top = 5.0
+bg_color = Color(0.105882, 0.105882, 0.105882, 1)
+
 [node name="DevTools" type="VBoxContainer"]
-custom_minimum_size = Vector2(450, 400)
+custom_minimum_size = Vector2(495, 400)
 size_flags_vertical = 3
 
 [node name="TabContainer" type="TabContainer" parent="."]
@@ -136,13 +188,21 @@ theme_override_styles/tab_selected = SubResource("StyleBoxFlat_ynqb1")
 theme_override_styles/tab_hovered = SubResource("StyleBoxFlat_8muo7")
 theme_override_styles/tab_unselected = SubResource("StyleBoxFlat_xkykt")
 tab_alignment = 1
-current_tab = 0
+current_tab = 1
 drag_to_rearrange_enabled = true
+
+[node name="Elements" type="Label" parent="TabContainer"]
+visible = false
+layout_mode = 2
+text = "Elements tab - Coming soon"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_tab_index = 0
 
 [node name="Console" type="VBoxContainer" parent="TabContainer"]
 layout_mode = 2
 script = ExtResource("2_3m6n9")
-metadata/_tab_index = 0
+metadata/_tab_index = 1
 
 [node name="Toolbar" type="HBoxContainer" parent="TabContainer/Console"]
 layout_mode = 2
@@ -196,7 +256,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxFlat_up43w")
 theme_override_styles/focus = SubResource("StyleBoxFlat_qb3ke")
-text = "test"
 placeholder_text = "Enter Lua code..."
 scroll_fit_content_height = true
 caret_blink = true
@@ -210,14 +269,6 @@ auto_brace_completion_highlight_matching = true
 
 [node name="PositioningTimer" type="Timer" parent="TabContainer/Console/InputContainer"]
 
-[node name="Elements" type="Label" parent="TabContainer"]
-visible = false
-layout_mode = 2
-text = "Elements tab - Coming soon"
-horizontal_alignment = 1
-vertical_alignment = 1
-metadata/_tab_index = 1
-
 [node name="Sources" type="Label" parent="TabContainer"]
 visible = false
 layout_mode = 2
@@ -226,13 +277,187 @@ horizontal_alignment = 1
 vertical_alignment = 1
 metadata/_tab_index = 2
 
-[node name="Network" type="Label" parent="TabContainer"]
+[node name="Network" type="VBoxContainer" parent="TabContainer"]
 visible = false
 layout_mode = 2
-text = "Network tab - Coming soon"
+script = ExtResource("7_network")
+metadata/_tab_index = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="TabContainer/Network"]
+layout_mode = 2
+
+[node name="StatusBar" type="HBoxContainer" parent="TabContainer/Network/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="RequestCount" type="Label" parent="TabContainer/Network/HBoxContainer/StatusBar"]
+layout_mode = 2
+text = "0 requests"
+
+[node name="Transfer" type="Label" parent="TabContainer/Network/HBoxContainer/StatusBar"]
+layout_mode = 2
+text = "0 B transferred"
+
+[node name="Loaded" type="Label" parent="TabContainer/Network/HBoxContainer/StatusBar"]
+layout_mode = 2
+text = "0 resources loaded"
+
+[node name="Control" type="Control" parent="TabContainer/Network/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FilterDropdown" type="OptionButton" parent="TabContainer/Network/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme = ExtResource("6_8muo7")
+theme_override_colors/font_hover_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_styles/hover = SubResource("StyleBoxFlat_y2h58")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_couro")
+theme_override_styles/normal = SubResource("StyleBoxFlat_7sefc")
+selected = 0
+item_count = 9
+popup/item_0/text = "All"
+popup/item_0/id = 0
+popup/item_1/text = "Fetch"
+popup/item_1/id = 1
+popup/item_2/text = "Doc"
+popup/item_2/id = 2
+popup/item_3/text = "CSS"
+popup/item_3/id = 3
+popup/item_4/text = "Lua"
+popup/item_4/id = 4
+popup/item_5/text = "Font"
+popup/item_5/id = 5
+popup/item_6/text = "Img"
+popup/item_6/id = 6
+popup/item_7/text = "Socket"
+popup/item_7/id = 7
+popup/item_8/text = "Other"
+popup/item_8/id = 8
+
+[node name="HSeparator2" type="HSeparator" parent="TabContainer/Network"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="MainContainer" type="HSplitContainer" parent="TabContainer/Network"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LeftPanel" type="VBoxContainer" parent="TabContainer/Network/MainContainer"]
+layout_mode = 2
+
+[node name="HeaderRow" type="HBoxContainer" parent="TabContainer/Network/MainContainer/LeftPanel"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="IconHeader" type="Control" parent="TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
+custom_minimum_size = Vector2(25, 20)
+layout_mode = 2
+
+[node name="NameHeader" type="Label" parent="TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Name"
+vertical_alignment = 1
+
+[node name="StatusHeader" type="Label" parent="TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "Status"
 horizontal_alignment = 1
 vertical_alignment = 1
-metadata/_tab_index = 3
+
+[node name="TypeHeader" type="Label" parent="TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "Type"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SizeHeader" type="Label" parent="TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "Size"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="TimeHeader" type="Label" parent="TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Time"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Network/MainContainer/LeftPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RequestList" type="VBoxContainer" parent="TabContainer/Network/MainContainer/LeftPanel/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RightPanel" type="VBoxContainer" parent="TabContainer/Network/MainContainer"]
+visible = false
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="TabContainer/Network/MainContainer/RightPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_6hj4c")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="TabContainer/Network/MainContainer/RightPanel/PanelContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="CloseButton" type="Button" parent="TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_styles/focus = SubResource("StyleBoxEmpty_xkykt")
+text = "✕"
+flat = true
+
+[node name="TabContainer" type="TabContainer" parent="TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/side_margin = 0
+theme_override_styles/tab_focus = SubResource("StyleBoxEmpty_6hj4c")
+theme_override_styles/tabbar_background = SubResource("StyleBoxFlat_6hj4c")
+theme_override_styles/panel = SubResource("StyleBoxFlat_c62ub")
+theme_override_styles/tab_selected = SubResource("StyleBoxFlat_ynqb1")
+theme_override_styles/tab_hovered = SubResource("StyleBoxFlat_8muo7")
+theme_override_styles/tab_unselected = SubResource("StyleBoxFlat_xkykt")
+current_tab = 0
+
+[node name="Headers" type="VBoxContainer" parent="TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer/TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="Preview" type="VBoxContainer" parent="TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Response" type="VBoxContainer" parent="TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
 
 [node name="Application" type="Label" parent="TabContainer"]
 visible = false
@@ -241,3 +466,6 @@ text = "Application tab - Coming soon"
 horizontal_alignment = 1
 vertical_alignment = 1
 metadata/_tab_index = 4
+
+[connection signal="item_selected" from="TabContainer/Network/HBoxContainer/FilterDropdown" to="TabContainer/Network" method="_on_filter_selected"]
+[connection signal="pressed" from="TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer/CloseButton" to="TabContainer/Network" method="hide_details_panel"]

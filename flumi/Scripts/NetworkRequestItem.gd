@@ -11,24 +11,16 @@ extends PanelContainer
 var request: NetworkRequest
 var network_tab: NetworkTab
 
+@onready var normal_style: StyleBox = get_meta("normal_style")
+@onready var selected_style: StyleBox = get_meta("selected_style")
+
+@onready var success_color: Color = status_label.get_meta("success_color")
+@onready var error_color: Color = status_label.get_meta("error_color")
+@onready var pending_color: Color = status_label.get_meta("pending_color")
+
 signal item_clicked(request: NetworkRequest)
 
 func _ready():
-	# Set up styles for different states
-	var style_normal = StyleBoxFlat.new()
-	style_normal.bg_color = Color.TRANSPARENT
-	style_normal.content_margin_left = 5
-	style_normal.content_margin_bottom = 5
-	style_normal.content_margin_right = 5
-	style_normal.content_margin_top = 5
-	style_normal.corner_radius_bottom_left = 8
-	style_normal.corner_radius_bottom_right = 8
-	style_normal.corner_radius_top_left = 8
-	style_normal.corner_radius_top_right = 8
-	
-	add_theme_stylebox_override("panel", style_normal)
-	
-	# Set up mouse handling
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	gui_input.connect(_on_gui_input)
 
@@ -48,7 +40,7 @@ func update_display():
 	name_label.text = request.name
 	status_label.text = request.get_status_display()
 	type_label.text = request.get_type_display()
-	size_label.text = request.get_size_display()
+	size_label.text = NetworkRequest.format_bytes(request.size)
 	time_label.text = request.get_time_display()
 	
 	# Color code status
@@ -67,29 +59,9 @@ func _on_gui_input(event: InputEvent):
 
 func set_selected(selected: bool):
 	if selected:
-		var style_selected = StyleBoxFlat.new()
-		style_selected.bg_color = Color(0.2, 0.4, 0.8, 0.3)
-		style_selected.content_margin_left = 5
-		style_selected.content_margin_bottom = 5
-		style_selected.content_margin_right = 5
-		style_selected.content_margin_top = 5
-		style_selected.corner_radius_bottom_left = 8
-		style_selected.corner_radius_bottom_right = 8
-		style_selected.corner_radius_top_left = 8
-		style_selected.corner_radius_top_right = 8
-		add_theme_stylebox_override("panel", style_selected)
+		add_theme_stylebox_override("panel", selected_style)
 	else:
-		var style_normal = StyleBoxFlat.new()
-		style_normal.bg_color = Color.TRANSPARENT
-		style_normal.content_margin_left = 5
-		style_normal.content_margin_bottom = 5
-		style_normal.content_margin_right = 5
-		style_normal.content_margin_top = 5
-		style_normal.corner_radius_bottom_left = 8
-		style_normal.corner_radius_bottom_right = 8
-		style_normal.corner_radius_top_left = 8
-		style_normal.corner_radius_top_right = 8
-		add_theme_stylebox_override("panel", style_normal)
+		add_theme_stylebox_override("panel", normal_style)
 
 func hide_columns(should_hide: bool):
 	status_label.visible = !should_hide

@@ -23,7 +23,6 @@
 	</style>
 
 	<script>
-		-- Get UI elements
 		local logArea = gurt.select('#log-area')
 		local statusDisplay = gurt.select('#status-display')
 		local connectBtn = gurt.select('#connect-btn')
@@ -39,7 +38,6 @@
 		local socket = nil
 		local connected = false
 
-		-- Function to add message to log
 		local function addLog(message)
 			table.insert(logMessages, Time.format(Time.now(), '%H:%M:%S') .. ' - ' .. message)
 			if #logMessages > 50 then
@@ -48,17 +46,14 @@
 			logArea.text = table.concat(logMessages, '\\n')
 		end
 
-		-- Function to update status display
 		local function updateStatus(status, color)
 			statusDisplay.text = 'Status: ' .. status
 			statusDisplay.style = 'status-' .. color
 		end
 
-		-- Initialize with default values
 		urlInput.text = 'wss://echo.websocket.org'
 		messageInput.text = 'Hello from Gurted!'
 
-		-- Connect to WebSocket
 		connectBtn:on('click', function()
 			local url = urlInput.text
 			addLog('Attempting to connect to: ' .. url)
@@ -90,7 +85,6 @@
 			end)
 		end)
 
-		-- Disconnect from WebSocket
 		disconnectBtn:on('click', function()
 			if socket and connected then
 				addLog('Disconnecting from WebSocket...')
@@ -100,7 +94,6 @@
 			end
 		end)
 
-		-- Send message
 		sendBtn:on('click', function()
 			if socket and connected then
 				local message = messageInput.text
@@ -115,14 +108,12 @@
 			end
 		end)
 
-		-- Clear log button
 		clearLogBtn:on('click', function()
 			logMessages = {}
 			logArea.text = 'Log cleared.'
 			addLog('WebSocket API demo ready')
 		end)
 
-		-- Allow Enter key to send messages
 		messageInput:on('keypress', function(e)
 			if e.key == 'Enter' and socket and connected then
 				local message = messageInput.text
@@ -134,7 +125,6 @@
 			end
 		end)
 
-		-- Initialize
 		updateStatus('Disconnected', 'disconnected')
 		addLog('WebSocket API demo ready')
 		addLog('Enter a WebSocket URL and click Connect to start!')
