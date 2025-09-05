@@ -353,6 +353,8 @@ pub(crate) async fn get_user_domains(
     app_state: AppState,
     claims: Claims,
 ) -> Result<GurtResponse> {
+    log::info!("get_user_domains called for user_id: {} path: {}", claims.user_id, ctx.path());
+    
     // Parse pagination from query parameters
     let path = ctx.path();
     let query_params = if let Some(query_start) = path.find('?') {
