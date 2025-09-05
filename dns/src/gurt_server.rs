@@ -127,6 +127,7 @@ impl GurtHandler for AppHandler {
             };
             
             log::info!("Handler started for {} {} from {}", ctx.method(), ctx.path(), ctx.remote_addr);
+            log::info!("Handler type will be: {:?}", handler_type);
             
             let result = match handler_type {
                 HandlerType::Index => routes::index(app_state).await,
@@ -240,7 +241,6 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
         .route(Route::post("/auth/create-domain-invite"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::CreateDomainInvite })
         .route(Route::post("/auth/redeem-domain-invite"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::RedeemDomainInvite })
         .route(Route::get("/auth/domains"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetUserDomains })
-        .route(Route::get("/auth/domains/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetUserDomains })
         .route(Route::post("/domain"), AppHandler { app_state: app_state.clone(), rate_limit_state: Some(rate_limit_state), handler_type: HandlerType::CreateDomain })
         .route(Route::get("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetDomain })
         .route(Route::post("/domain/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::CreateDomainRecord })

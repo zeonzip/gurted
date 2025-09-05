@@ -129,8 +129,15 @@ impl Route {
     }
     
     pub fn matches_path(&self, path: &str) -> bool {
-        self.path_pattern == path || 
-        (self.path_pattern.ends_with('*') && path.starts_with(&self.path_pattern[..self.path_pattern.len()-1]))
+        // Strip query parameters from path for matching
+        let path_without_query = if let Some(query_pos) = path.find('?') {
+            &path[..query_pos]
+        } else {
+            path
+        };
+        
+        self.path_pattern == path_without_query || 
+        (self.path_pattern.ends_with('*') && path_without_query.starts_with(&self.path_pattern[..self.path_pattern.len()-1]))
     }
 }
 
