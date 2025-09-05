@@ -251,7 +251,16 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
         .route(Route::post("/ca/request-certificate"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::RequestCertificate })
         .route(Route::get("/ca/certificate/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetCertificate })
         .route(Route::get("/ca/root"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::GetCaCertificate })
-        .route(Route::get("/*"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile });
+        .route(Route::get("/register.html"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
+        .route(Route::get("/signup.html"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
+        .route(Route::get("/dashboard.html"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
+        .route(Route::get("/domain.html"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
+        .route(Route::get("/script.lua"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
+        .route(Route::get("/register.lua"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
+        .route(Route::get("/signup.lua"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
+        .route(Route::get("/dashboard.lua"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
+        .route(Route::get("/domain.lua"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
+        .route(Route::get("/clanker.txt"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile });
 
     let http_port = 8876;
     let ca_bootstrap_server = start_ca_bootstrap_server(app_state.clone(), http_port, config.server.address.clone());
