@@ -21,22 +21,30 @@ fn parse_query_string(query: &str) -> HashMap<String, String> {
 }
 
 pub(crate) async fn index(_app_state: AppState) -> Result<GurtResponse> {
+    log::info!("Index handler called - attempting to serve index.html");
+    
     let current_dir = std::env::current_dir()
         .map_err(|_| GurtError::invalid_message("Failed to get current directory"))?;
+    log::info!("Current directory: {}", current_dir.display());
+    
     let frontend_dir = current_dir.join("frontend");
     let index_path = frontend_dir.join("index.html");
+    log::info!("Looking for index.html at: {}", index_path.display());
     
     match tokio::fs::read_to_string(&index_path).await {
         Ok(content) => {
+            log::info!("Successfully read index.html, content length: {} bytes", content.len());
             Ok(GurtResponse::ok()
                 .with_header("Content-Type", "text/html")
                 .with_string_body(&content))
         }
-        Err(_) => {
+        Err(e) => {
+            log::error!("Failed to read index.html: {}", e);
             let body = format!(
                 "GurtDNS v{}!\n\nThe available endpoints are:\n\n - [GET] /domains\n - [GET] /domain/{{name}}/{{tld}}\n - [POST] /domain\n - [PUT] /domain/{{key}}\n - [DELETE] /domain/{{key}}\n - [GET] /tlds\n\nRatelimits are as follows: 5 requests per 10 minutes on `[POST] /domain`.\n\nCode link: https://github.com/outpoot/gurted",
                 env!("CARGO_PKG_VERSION")
             );
+            log::info!("Serving fallback API info, length: {} bytes", body.len());
             Ok(GurtResponse::ok().with_string_body(&body))
         }
     }
