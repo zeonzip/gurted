@@ -29,7 +29,7 @@ local renderRecords
 local function deleteRecord(recordId)
     print('Deleting DNS record: ' .. recordId)
     
-    local response = fetch('gurt://localhost:8877/domain/' .. domainName .. '/records/' .. recordId, {
+    local response = fetch('gurt://dns.web/domain/' .. domainName .. '/records/' .. recordId, {
         method = 'DELETE',
         headers = {
             Authorization = 'Bearer ' .. authToken
@@ -57,7 +57,7 @@ end
 -- Actual implementation
 loadRecords = function()
     print('Loading DNS records for: ' .. domainName)
-    local response = fetch('gurt://localhost:8877/domain/' .. domainName .. '/records', {
+    local response = fetch('gurt://dns.web/domain/' .. domainName .. '/records', {
         headers = {
             Authorization = 'Bearer ' .. authToken
         }
@@ -175,7 +175,7 @@ end
 
 local function loadDomain()
     print('Loading domain details for: ' .. domainName)
-    local response = fetch('gurt://localhost:8877/domain/' .. domainName, {
+    local response = fetch('gurt://dns.web/domain/' .. domainName, {
         headers = {
             Authorization = 'Bearer ' .. authToken
         }
@@ -197,7 +197,7 @@ local function checkAuth()
     
     if authToken then
         print('Found auth token, checking validity...')
-        local response = fetch('gurt://localhost:8877/auth/me', {
+        local response = fetch('gurt://dns.web/auth/me', {
             headers = {
                 Authorization = 'Bearer ' .. authToken
             }
@@ -228,7 +228,7 @@ end
 local function addRecord(type, name, value, ttl)
     hideError('record-error')
 
-    local response = fetch('gurt://localhost:8877/domain/' .. domainName .. '/records', {
+    local response = fetch('gurt://dns.web/domain/' .. domainName .. '/records', {
         method = 'POST',
         headers = {
             ['Content-Type'] = 'application/json',

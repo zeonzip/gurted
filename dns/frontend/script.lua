@@ -21,7 +21,7 @@ submitBtn:on('submit', function(event)
 		password = password
 	})
 	print(request_body)
-	local url = 'gurt://localhost:8877/auth/login'
+	local url = 'gurt://dns.web/auth/login'
 	local headers = {
 		['Content-Type'] = 'application/json'
 	}

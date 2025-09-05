@@ -1,0 +1,66 @@
+[gd_scene load_steps=2 format=3 uid="uid://dqvgywj71hfry"]
+
+[ext_resource type="Script" path="res://Scripts/NetworkRequestItem.gd" id="1_8v2qr"]
+
+[node name="NetworkRequestItem" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 28)
+script = ExtResource("1_8v2qr")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="IconContainer" type="Control" parent="HBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(20, 20)
+
+[node name="Icon" type="TextureRect" parent="HBoxContainer/IconContainer"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+custom_minimum_size = Vector2(16, 16)
+
+[node name="NameLabel" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(140, 0)
+text = "Request Name"
+clip_contents = true
+text_overrun_behavior = 3
+vertical_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(60, 0)
+text = "200"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TypeLabel" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(60, 0)
+text = "Fetch"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SizeLabel" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+text = "1.2 KB"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="TimeLabel" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+text = "125ms"
+horizontal_alignment = 2
+vertical_alignment = 1
