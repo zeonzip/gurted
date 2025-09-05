@@ -339,13 +339,20 @@ async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
     let path = ctx.path();
     log::info!("Static file request for path: '{}'", path);
     
-    let file_path = if path == "/" || path == "" {
+    // Strip query parameters from the path for static file serving
+    let path_without_query = if let Some(query_pos) = path.find('?') {
+        &path[..query_pos]
+    } else {
+        path
+    };
+    
+    let file_path = if path_without_query == "/" || path_without_query == "" {
         "index.html"
     } else {
-        if path.starts_with('/') {
-            &path[1..]
+        if path_without_query.starts_with('/') {
+            &path_without_query[1..]
         } else {
-            path
+            path_without_query
         }
     };
     log::info!("Resolved file_path: '{}'", file_path);
