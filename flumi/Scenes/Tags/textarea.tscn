@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bmcx7mr4nye6a" path="res://Scripts/Tags/textarea.gd" id="1_textarea"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="2_theme"]
-[ext_resource type="Script" uid="uid://c5xpoyqcg1p8k" path="res://Scripts/ResizableTextEdit.gd" id="3_kbdk1"]
+[ext_resource type="Script" uid="uid://c5xpoyqcg1p8k" path="res://Scripts/Engine/ResizableTextEdit.gd" id="3_kbdk1"]
 
 [node name="textarea" type="Control"]
 layout_mode = 3

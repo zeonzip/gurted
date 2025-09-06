@@ -9,7 +9,7 @@ extends Control
 @onready var refresh_button: Button = $VBoxContainer/HBoxContainer/RefreshButton
 
 const LOADER_CIRCLE = preload("res://Assets/Icons/loader-circle.svg")
-const AUTO_SIZING_FLEX_CONTAINER = preload("res://Scripts/AutoSizingFlexContainer.gd")
+const AUTO_SIZING_FLEX_CONTAINER = preload("res://Scripts/Engine/AutoSizingFlexContainer.gd")
 
 const P = preload("res://Scenes/Tags/p.tscn")
 const IMG = preload("res://Scenes/Tags/img.tscn")
@@ -811,4 +811,3 @@ func update_navigation_buttons() -> void:
 	else:
 		back_button.disabled = true
 		forward_button.disabled = true
-

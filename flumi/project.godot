@@ -22,8 +22,8 @@ config/icon="uid://ctpe0lbehepen"
 
 Constants="*res://Scripts/Constants.gd"
 Network="*res://Scripts/Network.gd"
-NetworkManager="*res://Scripts/NetworkManager.gd"
-BrowserHistory="*res://Scripts/BrowserHistory.gd"
+NetworkManager="*res://Scripts/Browser/NetworkManager.gd"
+BrowserHistory="*res://Scripts/Browser/BrowserHistory.gd"
 
 [display]
 

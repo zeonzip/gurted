@@ -1,13 +1,14 @@
 [gd_scene load_steps=31 format=3 uid="uid://cgav3xl2xgupb"]
 
-[ext_resource type="Script" uid="uid://vrobqac6makc" path="res://Scripts/DevToolsConsole.gd" id="2_3m6n9"]
+[ext_resource type="Script" uid="uid://vrobqac6makc" path="res://Scripts/Browser/DevToolsConsole.gd" id="2_3m6n9"]
 [ext_resource type="Texture2D" uid="uid://gq8g7t4s3ryg" path="res://Assets/Icons/x.svg" id="2_pqhy6"]
 [ext_resource type="Texture2D" uid="uid://custohlvwclqs" path="res://Assets/Icons/eraser.svg" id="3_6hj4c"]
 [ext_resource type="Texture2D" uid="uid://cqg4eny0nyojd" path="res://Assets/Icons/funnel.svg" id="4_ynqb1"]
 [ext_resource type="SyntaxHighlighter" uid="uid://d0aeuvwp0545i" path="res://Resources/LuaSyntaxHighlighter.tres" id="5_xkykt"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="6_8muo7"]
-[ext_resource type="Script" uid="uid://dh3jdrot4r7m3" path="res://Scripts/NetworkTab.gd" id="7_network"]
-[ext_resource type="Script" uid="uid://21a6ds271vmb" path="res://Scripts/DevTools.gd" id="25_devtools"]
+[ext_resource type="Script" uid="uid://dh3jdrot4r7m3" path="res://Scripts/Browser/NetworkTab.gd" id="7_network"]
+[ext_resource type="Script" uid="uid://21a6ds271vmb" path="res://Scripts/Browser/DevTools.gd" id="25_devtools"]
+
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6hj4c"]
 

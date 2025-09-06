@@ -1,6 +1,7 @@
 [gd_resource type="SyntaxHighlighter" script_class="LuaSyntaxHighlighter" load_steps=2 format=3 uid="uid://d0aeuvwp0545i"]
 
-[ext_resource type="Script" uid="uid://qicpfnrmje1v" path="res://Scripts/LuaSyntaxHighlighter.gd" id="1_5xwa7"]
+[ext_resource type="Script" uid="uid://qicpfnrmje1v" path="res://Scripts/Browser/LuaSyntaxHighlighter.gd" id="1_5xwa7"]
+
 
 [resource]
 script = ExtResource("1_5xwa7")
