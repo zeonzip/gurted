@@ -65,3 +65,21 @@ static func resolve_url(base_url: String, relative_url: String) -> String:
 		result += "/" + "/".join(final_path_parts)
 	
 	return result
+
+static func extract_domain(url: String) -> String:
+	if url.is_empty():
+		return ""
+	
+	var clean_url = url
+	if clean_url.begins_with("gurt://"):
+		clean_url = clean_url.substr(7)
+	elif clean_url.begins_with("https://"):
+		clean_url = clean_url.substr(8)
+	elif clean_url.begins_with("http://"):
+		clean_url = clean_url.substr(7)
+	
+	var slash_pos = clean_url.find("/")
+	if slash_pos != -1:
+		clean_url = clean_url.substr(0, slash_pos)
+	
+	return clean_url

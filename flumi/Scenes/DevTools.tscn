@@ -1,11 +1,13 @@
-[gd_scene load_steps=26 format=3 uid="uid://cgav3xl2xgupb"]
+[gd_scene load_steps=31 format=3 uid="uid://cgav3xl2xgupb"]
 
 [ext_resource type="Script" uid="uid://vrobqac6makc" path="res://Scripts/DevToolsConsole.gd" id="2_3m6n9"]
+[ext_resource type="Texture2D" uid="uid://gq8g7t4s3ryg" path="res://Assets/Icons/x.svg" id="2_pqhy6"]
 [ext_resource type="Texture2D" uid="uid://custohlvwclqs" path="res://Assets/Icons/eraser.svg" id="3_6hj4c"]
 [ext_resource type="Texture2D" uid="uid://cqg4eny0nyojd" path="res://Assets/Icons/funnel.svg" id="4_ynqb1"]
 [ext_resource type="SyntaxHighlighter" uid="uid://d0aeuvwp0545i" path="res://Resources/LuaSyntaxHighlighter.tres" id="5_xkykt"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="6_8muo7"]
 [ext_resource type="Script" uid="uid://dh3jdrot4r7m3" path="res://Scripts/NetworkTab.gd" id="7_network"]
+[ext_resource type="Script" uid="uid://21a6ds271vmb" path="res://Scripts/DevTools.gd" id="25_devtools"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6hj4c"]
 
@@ -172,11 +174,38 @@ corner_radius_bottom_left = 8
 content_margin_top = 5.0
 bg_color = Color(0.105882, 0.105882, 0.105882, 1)
 
-[node name="DevTools" type="VBoxContainer"]
-custom_minimum_size = Vector2(495, 400)
-size_flags_vertical = 3
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_apu5o"]
 
-[node name="TabContainer" type="TabContainer" parent="."]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dbrn0"]
+bg_color = Color(0.168627, 0.168627, 0.168627, 1)
+corner_radius_top_left = 50
+corner_radius_top_right = 50
+corner_radius_bottom_right = 50
+corner_radius_bottom_left = 50
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_heash"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+draw_center = false
+
+[node name="Control" type="Control"]
+custom_minimum_size = Vector2(495, 400)
+layout_mode = 3
+anchors_preset = 0
+size_flags_vertical = 3
+script = ExtResource("25_devtools")
+
+[node name="DevTools" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(495, 400)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="TabContainer" type="TabContainer" parent="DevTools"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_vertical = 3
@@ -191,7 +220,7 @@ tab_alignment = 1
 current_tab = 1
 drag_to_rearrange_enabled = true
 
-[node name="Elements" type="Label" parent="TabContainer"]
+[node name="Elements" type="Label" parent="DevTools/TabContainer"]
 visible = false
 layout_mode = 2
 text = "Elements tab - Coming soon"
@@ -199,16 +228,16 @@ horizontal_alignment = 1
 vertical_alignment = 1
 metadata/_tab_index = 0
 
-[node name="Console" type="VBoxContainer" parent="TabContainer"]
+[node name="Console" type="VBoxContainer" parent="DevTools/TabContainer"]
 layout_mode = 2
 script = ExtResource("2_3m6n9")
 metadata/_tab_index = 1
 
-[node name="Toolbar" type="HBoxContainer" parent="TabContainer/Console"]
+[node name="Toolbar" type="HBoxContainer" parent="DevTools/TabContainer/Console"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="ClearButton" type="Button" parent="TabContainer/Console/Toolbar"]
+[node name="ClearButton" type="Button" parent="DevTools/TabContainer/Console/Toolbar"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 theme_override_constants/icon_max_width = 20
@@ -219,7 +248,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_dderp")
 icon = ExtResource("3_6hj4c")
 icon_alignment = 1
 
-[node name="LineEdit" type="LineEdit" parent="TabContainer/Console/Toolbar"]
+[node name="LineEdit" type="LineEdit" parent="DevTools/TabContainer/Console/Toolbar"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxFlat_ko37l")
@@ -227,29 +256,29 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_65n6c")
 placeholder_text = "Filter"
 right_icon = ExtResource("4_ynqb1")
 
-[node name="Spacer2" type="Control" parent="TabContainer/Console"]
+[node name="Spacer2" type="Control" parent="DevTools/TabContainer/Console"]
 custom_minimum_size = Vector2(0, 15)
 layout_mode = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Console"]
+[node name="ScrollContainer" type="ScrollContainer" parent="DevTools/TabContainer/Console"]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="LogContainer" type="VBoxContainer" parent="TabContainer/Console/ScrollContainer"]
+[node name="LogContainer" type="VBoxContainer" parent="DevTools/TabContainer/Console/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Spacer" type="Control" parent="TabContainer/Console"]
+[node name="Spacer" type="Control" parent="DevTools/TabContainer/Console"]
 custom_minimum_size = Vector2(0, 15)
 layout_mode = 2
 
-[node name="InputContainer" type="HBoxContainer" parent="TabContainer/Console"]
+[node name="InputContainer" type="HBoxContainer" parent="DevTools/TabContainer/Console"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="InputLine" type="CodeEdit" parent="TabContainer/Console/InputContainer"]
+[node name="InputLine" type="CodeEdit" parent="DevTools/TabContainer/Console/InputContainer"]
 clip_contents = false
 custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
@@ -267,9 +296,9 @@ gutters_draw_line_numbers = true
 auto_brace_completion_enabled = true
 auto_brace_completion_highlight_matching = true
 
-[node name="PositioningTimer" type="Timer" parent="TabContainer/Console/InputContainer"]
+[node name="PositioningTimer" type="Timer" parent="DevTools/TabContainer/Console/InputContainer"]
 
-[node name="Sources" type="Label" parent="TabContainer"]
+[node name="Sources" type="Label" parent="DevTools/TabContainer"]
 visible = false
 layout_mode = 2
 text = "Sources tab - Coming soon"
@@ -277,36 +306,36 @@ horizontal_alignment = 1
 vertical_alignment = 1
 metadata/_tab_index = 2
 
-[node name="Network" type="VBoxContainer" parent="TabContainer"]
+[node name="Network" type="VBoxContainer" parent="DevTools/TabContainer"]
 visible = false
 layout_mode = 2
 script = ExtResource("7_network")
 metadata/_tab_index = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="TabContainer/Network"]
+[node name="HBoxContainer" type="HBoxContainer" parent="DevTools/TabContainer/Network"]
 layout_mode = 2
 
-[node name="StatusBar" type="HBoxContainer" parent="TabContainer/Network/HBoxContainer"]
+[node name="StatusBar" type="HBoxContainer" parent="DevTools/TabContainer/Network/HBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="RequestCount" type="Label" parent="TabContainer/Network/HBoxContainer/StatusBar"]
+[node name="RequestCount" type="Label" parent="DevTools/TabContainer/Network/HBoxContainer/StatusBar"]
 layout_mode = 2
 text = "0 requests"
 
-[node name="Transfer" type="Label" parent="TabContainer/Network/HBoxContainer/StatusBar"]
+[node name="Transfer" type="Label" parent="DevTools/TabContainer/Network/HBoxContainer/StatusBar"]
 layout_mode = 2
 text = "0 B transferred"
 
-[node name="Loaded" type="Label" parent="TabContainer/Network/HBoxContainer/StatusBar"]
+[node name="Loaded" type="Label" parent="DevTools/TabContainer/Network/HBoxContainer/StatusBar"]
 layout_mode = 2
 text = "0 resources loaded"
 
-[node name="Control" type="Control" parent="TabContainer/Network/HBoxContainer"]
+[node name="Control" type="Control" parent="DevTools/TabContainer/Network/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="FilterDropdown" type="OptionButton" parent="TabContainer/Network/HBoxContainer"]
+[node name="FilterDropdown" type="OptionButton" parent="DevTools/TabContainer/Network/HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 theme = ExtResource("6_8muo7")
@@ -339,34 +368,34 @@ popup/item_7/id = 7
 popup/item_8/text = "Other"
 popup/item_8/id = 8
 
-[node name="HSeparator2" type="HSeparator" parent="TabContainer/Network"]
+[node name="HSeparator2" type="HSeparator" parent="DevTools/TabContainer/Network"]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="MainContainer" type="HSplitContainer" parent="TabContainer/Network"]
+[node name="MainContainer" type="HSplitContainer" parent="DevTools/TabContainer/Network"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="LeftPanel" type="VBoxContainer" parent="TabContainer/Network/MainContainer"]
+[node name="LeftPanel" type="VBoxContainer" parent="DevTools/TabContainer/Network/MainContainer"]
 layout_mode = 2
 
-[node name="HeaderRow" type="HBoxContainer" parent="TabContainer/Network/MainContainer/LeftPanel"]
+[node name="HeaderRow" type="HBoxContainer" parent="DevTools/TabContainer/Network/MainContainer/LeftPanel"]
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="IconHeader" type="Control" parent="TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
+[node name="IconHeader" type="Control" parent="DevTools/TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
 custom_minimum_size = Vector2(25, 20)
 layout_mode = 2
 
-[node name="NameHeader" type="Label" parent="TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
+[node name="NameHeader" type="Label" parent="DevTools/TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Name"
 vertical_alignment = 1
 
-[node name="StatusHeader" type="Label" parent="TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
+[node name="StatusHeader" type="Label" parent="DevTools/TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
@@ -374,7 +403,7 @@ text = "Status"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="TypeHeader" type="Label" parent="TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
+[node name="TypeHeader" type="Label" parent="DevTools/TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
@@ -382,7 +411,7 @@ text = "Type"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="SizeHeader" type="Label" parent="TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
+[node name="SizeHeader" type="Label" parent="DevTools/TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
@@ -390,7 +419,7 @@ text = "Size"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="TimeHeader" type="Label" parent="TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
+[node name="TimeHeader" type="Label" parent="DevTools/TabContainer/Network/MainContainer/LeftPanel/HeaderRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
@@ -398,31 +427,31 @@ text = "Time"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="ScrollContainer" type="ScrollContainer" parent="TabContainer/Network/MainContainer/LeftPanel"]
+[node name="ScrollContainer" type="ScrollContainer" parent="DevTools/TabContainer/Network/MainContainer/LeftPanel"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="RequestList" type="VBoxContainer" parent="TabContainer/Network/MainContainer/LeftPanel/ScrollContainer"]
+[node name="RequestList" type="VBoxContainer" parent="DevTools/TabContainer/Network/MainContainer/LeftPanel/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="RightPanel" type="VBoxContainer" parent="TabContainer/Network/MainContainer"]
+[node name="RightPanel" type="VBoxContainer" parent="DevTools/TabContainer/Network/MainContainer"]
 visible = false
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PanelContainer" type="PanelContainer" parent="TabContainer/Network/MainContainer/RightPanel"]
+[node name="PanelContainer" type="PanelContainer" parent="DevTools/TabContainer/Network/MainContainer/RightPanel"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_6hj4c")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="TabContainer/Network/MainContainer/RightPanel/PanelContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="DevTools/TabContainer/Network/MainContainer/RightPanel/PanelContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 0
 
-[node name="CloseButton" type="Button" parent="TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer"]
+[node name="CloseButton" type="Button" parent="DevTools/TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
@@ -432,7 +461,7 @@ theme_override_styles/focus = SubResource("StyleBoxEmpty_xkykt")
 text = "✕"
 flat = true
 
-[node name="TabContainer" type="TabContainer" parent="TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer"]
+[node name="TabContainer" type="TabContainer" parent="DevTools/TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -445,21 +474,21 @@ theme_override_styles/tab_hovered = SubResource("StyleBoxFlat_8muo7")
 theme_override_styles/tab_unselected = SubResource("StyleBoxFlat_xkykt")
 current_tab = 0
 
-[node name="Headers" type="VBoxContainer" parent="TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer/TabContainer"]
+[node name="Headers" type="VBoxContainer" parent="DevTools/TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer/TabContainer"]
 layout_mode = 2
 metadata/_tab_index = 0
 
-[node name="Preview" type="VBoxContainer" parent="TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer/TabContainer"]
+[node name="Preview" type="VBoxContainer" parent="DevTools/TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer/TabContainer"]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
-[node name="Response" type="VBoxContainer" parent="TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer/TabContainer"]
+[node name="Response" type="VBoxContainer" parent="DevTools/TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer/TabContainer"]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 
-[node name="Application" type="Label" parent="TabContainer"]
+[node name="Application" type="Label" parent="DevTools/TabContainer"]
 visible = false
 layout_mode = 2
 text = "Application tab - Coming soon"
@@ -467,5 +496,20 @@ horizontal_alignment = 1
 vertical_alignment = 1
 metadata/_tab_index = 4
 
-[connection signal="item_selected" from="TabContainer/Network/HBoxContainer/FilterDropdown" to="TabContainer/Network" method="_on_filter_selected"]
-[connection signal="pressed" from="TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer/CloseButton" to="TabContainer/Network" method="hide_details_panel"]
+[node name="CloseButton" type="Button" parent="."]
+layout_mode = 2
+offset_left = 9.0
+offset_top = 2.0
+offset_right = 33.0
+offset_bottom = 26.0
+theme_override_styles/focus = SubResource("StyleBoxEmpty_apu5o")
+theme_override_styles/hover = SubResource("StyleBoxFlat_dbrn0")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_heash")
+theme_override_styles/normal = SubResource("StyleBoxFlat_heash")
+icon = ExtResource("2_pqhy6")
+flat = true
+icon_alignment = 1
+
+[connection signal="item_selected" from="DevTools/TabContainer/Network/HBoxContainer/FilterDropdown" to="DevTools/TabContainer/Network" method="_on_filter_selected"]
+[connection signal="pressed" from="DevTools/TabContainer/Network/MainContainer/RightPanel/PanelContainer/HBoxContainer/CloseButton" to="DevTools/TabContainer/Network" method="hide_details_panel"]
+[connection signal="pressed" from="CloseButton" to="." method="_on_close_button_pressed"]

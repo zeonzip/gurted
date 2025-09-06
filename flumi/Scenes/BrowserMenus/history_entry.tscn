@@ -30,13 +30,23 @@ layout_mode = 2
 [node name="TextureRect" type="TextureRect" parent="."]
 custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
 texture = ExtResource("2_k4hqm")
-stretch_mode = 3
+expand_mode = 1
+stretch_mode = 5
 
 [node name="RichTextLabel2" type="RichTextLabel" parent="."]
-custom_minimum_size = Vector2(350, 0)
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 text = "Selection - Google Fonts"
+vertical_alignment = 1
+
+[node name="DomainLabel" type="RichTextLabel" parent="."]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme_override_colors/default_color = Color(0.817521, 0.817521, 0.817521, 1)
+text = "example.com"
 vertical_alignment = 1
 
 [connection signal="toggled" from="CheckBox" to="." method="_on_check_box_toggled"]

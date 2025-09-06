@@ -251,6 +251,7 @@ item_5/id = 5
 item_6/text = "Bookmarks                             (CTRL SHIFT B)"
 item_6/icon = ExtResource("17_ueoa1")
 item_6/id = 7
+item_6/disabled = true
 item_7/id = 7
 item_7/separator = true
 item_8/text = "Help"
@@ -283,9 +284,6 @@ theme_override_constants/separation = 22
 
 [node name="HistoryContainer" parent="VBoxContainer/ScrollContainer" instance=ExtResource("24_3pmx8")]
 visible = false
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
 
 [node name="Panel" type="Panel" parent="."]
 z_index = -5
@@ -311,6 +309,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_21xkr")
 
 [connection signal="pressed" from="VBoxContainer/TabContainer/NewTabButton" to="VBoxContainer/TabContainer" method="_on_new_tab_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/ForwardButton" to="." method="_on_forward_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/RefreshButton" to="." method="_on_refresh_button_pressed"]
 [connection signal="focus_entered" from="VBoxContainer/HBoxContainer/LineEdit" to="." method="_on_search_focus_entered"]
 [connection signal="focus_exited" from="VBoxContainer/HBoxContainer/LineEdit" to="." method="_on_search_focus_exited"]
 [connection signal="text_submitted" from="VBoxContainer/HBoxContainer/LineEdit" to="." method="_on_search_submitted"]

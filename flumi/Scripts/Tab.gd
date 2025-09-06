@@ -41,6 +41,8 @@ var dev_tools_visible: bool = false
 var lua_apis: Array[LuaAPI] = []
 var current_url: String = ""
 var has_content: bool = false
+var navigation_history: Array[String] = []
+var history_index: int = -1
 
 func _ready():
 	add_to_group("tabs")
@@ -70,7 +72,10 @@ func update_icon_from_url(icon_url: String) -> void:
 	if icon_url.is_empty():
 		const GLOBE_ICON = preload("res://Assets/Icons/globe.svg")
 		set_icon(GLOBE_ICON)
+		remove_meta("original_icon_url")
 		return
+	
+	set_meta("original_icon_url", icon_url)
 	
 	var icon_resource = await Network.fetch_image(icon_url)
 	
@@ -252,3 +257,39 @@ func get_dev_tools_console() -> DevToolsConsole:
 	if dev_tools and dev_tools.has_method("get_console"):
 		return dev_tools.get_console()
 	return null
+
+func add_to_navigation_history(url: String) -> void:
+	if url.is_empty():
+		return
+	
+	# If we're not at the end of history, remove everything after current position
+	if history_index < navigation_history.size() - 1:
+		navigation_history = navigation_history.slice(0, history_index + 1)
+	
+	# Don't add duplicate consecutive entries
+	if navigation_history.is_empty() or navigation_history[-1] != url:
+		navigation_history.append(url)
+		history_index = navigation_history.size() - 1
+
+func can_go_back() -> bool:
+	return history_index > 0
+
+func can_go_forward() -> bool:
+	return history_index < navigation_history.size() - 1
+
+func go_back() -> String:
+	if can_go_back():
+		history_index -= 1
+		return navigation_history[history_index]
+	return ""
+
+func go_forward() -> String:
+	if can_go_forward():
+		history_index += 1
+		return navigation_history[history_index]
+	return ""
+
+func get_current_history_url() -> String:
+	if history_index >= 0 and history_index < navigation_history.size():
+		return navigation_history[history_index]
+	return ""

@@ -4,6 +4,9 @@ extends Control
 @onready var website_container: Control = %WebsiteContainer
 @onready var tab_container: TabManager = $VBoxContainer/TabContainer
 @onready var search_bar: LineEdit = $VBoxContainer/HBoxContainer/LineEdit
+@onready var back_button: Button = $VBoxContainer/HBoxContainer/BackButton
+@onready var forward_button: Button = $VBoxContainer/HBoxContainer/ForwardButton
+@onready var refresh_button: Button = $VBoxContainer/HBoxContainer/RefreshButton
 
 const LOADER_CIRCLE = preload("res://Assets/Icons/loader-circle.svg")
 const AUTO_SIZING_FLEX_CONTAINER = preload("res://Scripts/AutoSizingFlexContainer.gd")
@@ -63,6 +66,7 @@ func _ready():
 		original_scroll.visible = false
 	
 	call_deferred("render")
+	call_deferred("update_navigation_buttons")
 
 func _input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("DevTools"):
@@ -87,7 +91,7 @@ func handle_link_click(meta: Variant) -> void:
 	else:
 		OS.shell_open(resolved_url)
 
-func _on_search_submitted(url: String) -> void:
+func _on_search_submitted(url: String, add_to_history: bool = true) -> void:
 	print("Search submitted: ", url)
 	
 	search_bar.release_focus()
@@ -102,11 +106,11 @@ func _on_search_submitted(url: String) -> void:
 		if not gurt_url.begins_with("gurt://"):
 			gurt_url = "gurt://" + gurt_url
 		
-		await fetch_gurt_content_async(gurt_url, tab, url)
+		await fetch_gurt_content_async(gurt_url, tab, url, add_to_history)
 	else:
 		print("Non-GURT URL entered: ", url)
 
-func fetch_gurt_content_async(gurt_url: String, tab: Tab, original_url: String) -> void:
+func fetch_gurt_content_async(gurt_url: String, tab: Tab, original_url: String, add_to_history: bool = true) -> void:
 	main_navigation_request = NetworkManager.start_request(gurt_url, "GET", false)
 	main_navigation_request.type = NetworkRequest.RequestType.DOC
 	network_start_time = Time.get_ticks_msec()
@@ -121,7 +125,7 @@ func fetch_gurt_content_async(gurt_url: String, tab: Tab, original_url: String) 
 	
 	var result = thread.wait_to_finish()
 	
-	_handle_gurt_result(result, tab, original_url, gurt_url)
+	_handle_gurt_result(result, tab, original_url, gurt_url, add_to_history)
 
 func _perform_gurt_request_threaded(request_data: Dictionary) -> Dictionary:
 	var gurt_url: String = request_data.gurt_url
@@ -149,7 +153,7 @@ func _perform_gurt_request_threaded(request_data: Dictionary) -> Dictionary:
 	
 	return {"success": true, "html_bytes": response.body}
 
-func _handle_gurt_result(result: Dictionary, tab: Tab, original_url: String, gurt_url: String) -> void:
+func _handle_gurt_result(result: Dictionary, tab: Tab, original_url: String, gurt_url: String, add_to_history: bool = true) -> void:
 	if not result.success:
 		print("GURT request failed: ", result.error)
 		handle_gurt_error(result.error, tab)
@@ -173,6 +177,11 @@ func _handle_gurt_result(result: Dictionary, tab: Tab, original_url: String, gur
 		main_navigation_request = null
 	
 	tab.stop_loading()
+	
+	if add_to_history:
+		add_to_history(gurt_url, tab)
+	else:
+		update_navigation_buttons()
 
 func handle_gurt_error(error_message: String, tab: Tab) -> void:
 	var error_html = GurtProtocol.create_error_page(error_message)
@@ -300,6 +309,9 @@ func render_content(html_bytes: PackedByteArray) -> void:
 	
 	var icon = parser.get_icon()
 	tab.update_icon_from_url(icon)
+	
+	if not icon.is_empty():
+		tab.set_meta("parsed_icon_url", icon)
 	
 	var body = parser.find_first("body")
 	
@@ -719,9 +731,12 @@ func reload_current_page() -> void:
 	if not current_domain.is_empty():
 		_on_search_submitted(current_domain)
 
-func navigate_to_url(url: String) -> void:
-	var resolved_url = resolve_url(url)
-	_on_search_submitted(resolved_url)
+func navigate_to_url(url: String, add_to_history: bool = true) -> void:
+	if url.begins_with("gurt://"):
+		_on_search_submitted(url, add_to_history)
+	else:
+		var resolved_url = resolve_url(url)
+		_on_search_submitted(resolved_url, add_to_history)
 
 func update_search_bar_from_current_domain() -> void:
 	if not search_bar.has_focus() and not current_domain.is_empty():
@@ -746,3 +761,54 @@ func get_dev_tools_console() -> DevToolsConsole:
 	if active_tab:
 		return active_tab.get_dev_tools_console()
 	return null
+
+func add_to_history(url: String, tab: Tab, add_to_navigation: bool = true):
+	if url.is_empty():
+		return
+	
+	var title = "New Tab"
+	var icon_url = ""
+	
+	if tab:
+		if add_to_navigation:
+			tab.add_to_navigation_history(url)
+		
+		if tab.button and tab.button.text:
+			title = tab.button.text
+		
+		if tab.has_meta("parsed_icon_url"):
+			icon_url = tab.get_meta("parsed_icon_url")
+	
+	var clean_url = url
+	if clean_url.begins_with("gurt://"):
+		clean_url = clean_url.substr(7)
+	
+	BrowserHistory.add_entry(clean_url, title, icon_url)
+	update_navigation_buttons()
+
+func _on_back_button_pressed() -> void:
+	var active_tab = get_active_tab()
+	if active_tab and active_tab.can_go_back():
+		var url = active_tab.go_back()
+		if not url.is_empty():
+			navigate_to_url(url, false)
+
+func _on_forward_button_pressed() -> void:
+	var active_tab = get_active_tab()
+	if active_tab and active_tab.can_go_forward():
+		var url = active_tab.go_forward()
+		if not url.is_empty():
+			navigate_to_url(url, false)
+
+func _on_refresh_button_pressed() -> void:
+	reload_current_page()
+
+func update_navigation_buttons() -> void:
+	var active_tab = get_active_tab()
+	if active_tab:
+		back_button.disabled = not active_tab.can_go_back()
+		forward_button.disabled = not active_tab.can_go_forward()
+	else:
+		back_button.disabled = true
+		forward_button.disabled = true
+

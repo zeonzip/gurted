@@ -205,6 +205,8 @@ func set_active_tab(index: int) -> void:
 			main.current_domain = ""
 			main.search_bar.text = ""
 			main.search_bar.grab_focus()
+		
+		main.update_navigation_buttons()
 
 func create_tab() -> void:
 	var index = tabs.size();

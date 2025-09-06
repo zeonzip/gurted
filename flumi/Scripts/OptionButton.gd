@@ -1,9 +1,30 @@
 extends Button
 
+const HISTORY = preload("res://Scenes/BrowserMenus/history.tscn")
+
 @onready var tab_container: TabManager = $"../../TabContainer"
+@onready var main: Main = $"../../../"
+
+var history_scene: PopupPanel = null
 
 func _on_pressed() -> void:
 	%OptionsMenu.show()
+
+func _input(_event: InputEvent) -> void:
+	if _event is InputEventKey and _event.pressed and _event.ctrl_pressed:
+		if _event.keycode == KEY_N:
+			if _event.shift_pressed:
+				# CTRL+SHIFT+N - New incognito window
+				_on_options_menu_id_pressed(2)
+				get_viewport().set_input_as_handled()
+			else:
+				# CTRL+N - New window
+				_on_options_menu_id_pressed(1)
+				get_viewport().set_input_as_handled()
+		elif _event.keycode == KEY_H:
+			# CTRL+H - History
+			_on_options_menu_id_pressed(4)
+			get_viewport().set_input_as_handled()
 
 func _on_options_menu_id_pressed(id: int) -> void:
 	if id == 0: # new tab
@@ -14,4 +35,21 @@ func _on_options_menu_id_pressed(id: int) -> void:
 		# TODO: handle incognito
 		OS.create_process(OS.get_executable_path(), ["--incognito"])
 	if id == 4: # history
-		modulate = Constants.SECONDARY_COLOR
+		show_history()
+	if id == 10: # exit
+		get_tree().quit()
+
+func show_history() -> void:
+	if history_scene == null:
+		history_scene = HISTORY.instantiate()
+		history_scene.navigate_to_url.connect(main.navigate_to_url)
+		main.add_child(history_scene)
+		
+		history_scene.connect("popup_hide", _on_history_closed)
+	else:
+		history_scene.load_history()
+		history_scene.show()
+
+func _on_history_closed() -> void:
+	if history_scene:
+		history_scene.hide()
