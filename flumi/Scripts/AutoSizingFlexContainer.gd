@@ -159,10 +159,19 @@ func _resort() -> void:
 			_draw_debug_rect(Rect2(offset, rect_size), Color(1, 0, 0, 0.8))
 
 
-	# Update background panel if needed
-	BackgroundUtils.update_background_panel(self)
+	if not _is_inside_background_container():
+		BackgroundUtils.update_background_panel(self)
 	
 	emit_signal("flex_resized")
+
+func _is_inside_background_container() -> bool:
+	var current_parent = get_parent()
+	while current_parent:
+		if current_parent is PanelContainer:
+			if current_parent.has_meta("hover_stylebox") or current_parent.has_meta("normal_stylebox"):
+				return true
+		current_parent = current_parent.get_parent()
+	return false
 
 func calculate_available_dimension(is_width: bool) -> float:
 	var percentage_key = "custom_css_width_percentage" if is_width else "custom_css_height_percentage"
@@ -196,7 +205,7 @@ func calculate_custom_dimension(is_width: bool) -> float:
 		else:
 			return 0.0
 	elif has_meta(fill_key):
-		return get_parent_or_fallback_size(is_width)
+		return 0.0
 	else:
 		return 0.0
 

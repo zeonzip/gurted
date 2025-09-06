@@ -366,6 +366,7 @@ func render_content(html_bytes: PackedByteArray) -> void:
 				# ul/ol handle their own adding
 				if element.tag_name != "ul" and element.tag_name != "ol":
 					safe_add_child(target_container, element_node)
+					
 
 				if contains_hyperlink(element):
 					if element_node is RichTextLabel:
@@ -456,16 +457,21 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser, co
 		if element.tag_name == "div":
 			if BackgroundUtils.needs_background_wrapper(styles) or BackgroundUtils.needs_background_wrapper(hover_styles):
 				final_node = BackgroundUtils.create_panel_container_with_background(styles, hover_styles)
+				
 				var flex_container = AUTO_SIZING_FLEX_CONTAINER.new()
 				flex_container.name = "Flex_" + element.tag_name
 				var vbox = final_node.get_child(0) as VBoxContainer
 				vbox.add_child(flex_container)
 				container_for_children = flex_container
 				FlexUtils.apply_flex_container_properties(flex_container, styles)
+				
+				if flex_container.has_meta("should_fill_horizontal"):
+					final_node.set_meta("needs_size_expand_fill", true)
 			else:
 				final_node = AUTO_SIZING_FLEX_CONTAINER.new()
 				final_node.name = "Flex_" + element.tag_name
 				container_for_children = final_node
+				
 				FlexUtils.apply_flex_container_properties(final_node, styles)
 		else:
 			final_node = AUTO_SIZING_FLEX_CONTAINER.new()
@@ -512,6 +518,11 @@ func create_element_node(element: HTMLParser.HTMLElement, parser: HTMLParser, co
 	# Applies background, size, etc. to the FlexContainer (top-level node)
 	final_node = StyleManager.apply_element_styles(final_node, element, parser)
 
+	if final_node and final_node.has_meta("needs_size_expand_fill"):
+		final_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if final_node.get_child_count() > 0:
+			var vbox = final_node.get_child(0)
+			vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	if is_grid_container:
 		var grid_container_node = final_node

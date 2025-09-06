@@ -32,7 +32,7 @@ static func fetch_cert_via_http(url: String) -> String:
 
 static func initialize():
 	load_builtin_ca()
-	print("📋 Certificate Manager initialized with ", trusted_ca_certificates.size(), " trusted CAs")
+	print("Certificate Manager initialized with ", trusted_ca_certificates.size(), " trusted CAs")
 
 static func load_builtin_ca():
 	var ca_file = FileAccess.open("res://Assets/gurted-ca.crt", FileAccess.READ)
@@ -42,8 +42,8 @@ static func load_builtin_ca():
 		
 		if not ca_cert_pem.is_empty():
 			trusted_ca_certificates.append(ca_cert_pem)
-			print("✅ Loaded built-in GURT CA certificate")
+			print("Loaded built-in GURT CA certificate")
 		else:
-			print("⚠️ Built-in CA certificate not yet configured")
+			print("Built-in CA certificate not yet configured")
 	else:
-		print("❌ Could not load built-in CA certificate")
+		print("Could not load built-in CA certificate")

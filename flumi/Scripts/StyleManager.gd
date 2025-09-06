@@ -325,15 +325,31 @@ static func apply_margin_wrapper(node: Control, styles: Dictionary) -> Control:
 	margin_container.name = "MarginWrapper_" + node.name
 	margin_container.set_meta("is_margin_wrapper", true)
 	
+	var needs_fill = false
+	
+	if node.has_meta("should_fill_horizontal"):
+		needs_fill = true
+	
+	if node.get_child_count() > 0:
+		var vbox = node.get_child(0)
+		if vbox is VBoxContainer and vbox.get_child_count() > 0:
+			var flex_child = vbox.get_child(0)
+			if flex_child and flex_child.has_meta("should_fill_horizontal"):
+				needs_fill = true
+	
+	if needs_fill:
+		margin_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	
 	var has_explicit_width = styles.has("width")
 	var has_explicit_height = styles.has("height")
 	
-	if has_explicit_width:
-		margin_container.size_flags_horizontal = node.size_flags_horizontal
-	else:
+	if has_explicit_width and not needs_fill:
+			margin_container.size_flags_horizontal = node.size_flags_horizontal
+	elif not needs_fill:
 		margin_container.size_flags_horizontal = node.size_flags_horizontal
 		node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		
+	
 	if has_explicit_height:
 		margin_container.size_flags_vertical = node.size_flags_vertical
 	else:

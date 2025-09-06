@@ -9,7 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://sqhcxhcre081" path="res://Scenes/Tab.tscn" id="4_344ge"]
 [ext_resource type="Texture2D" uid="uid://cu4hjoba6etf" path="res://Assets/Icons/rotate-cw.svg" id="5_344ge"]
 [ext_resource type="Texture2D" uid="uid://cehbtwq6gq0cn" path="res://Assets/Icons/plus.svg" id="5_ynf5e"]
-[ext_resource type="Script" uid="uid://nve723radqih" path="res://Scripts/SearchBar.gd" id="9_gt3je"]
+[ext_resource type="Script" path="res://Scripts/SearchBar.gd" id="9_gt3je"]
 [ext_resource type="Texture2D" uid="uid://cklatjc4m38dy" path="res://Assets/Icons/ellipsis-vertical.svg" id="10_6iyac"]
 [ext_resource type="Theme" uid="uid://bn6rbmdy60lhr" path="res://Scenes/Styles/BrowserText.tres" id="11_ee4r6"]
 [ext_resource type="Script" uid="uid://vjjhljlftlbk" path="res://Scripts/OptionButton.gd" id="11_gt3je"]
