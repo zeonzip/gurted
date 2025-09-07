@@ -16,6 +16,7 @@ func init(element, parser: HTMLParser) -> void:
 	
 	var element_id = element.get_attribute("id")
 	if element_id.is_empty():
+		var unique_id = "elem_" + str(Time.get_ticks_msec()) + "_" + str(randi())
 		element.set_attribute("id", unique_id)
 		element_id = unique_id
 	parser.register_dom_node(element, self)
