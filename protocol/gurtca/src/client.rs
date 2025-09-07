@@ -50,8 +50,58 @@ impl GurtCAClient {
                 return Ok(test_client);
             }
             Err(e) => {
-                if e.to_string().contains("UnknownIssuer") {
-                    anyhow::bail!("Custom CA certificate required - server not trusted by system")
+                if e.to_string().contains("UnknownIssuer") || e.to_string().contains("certificate") {
+                    println!("🔄 System CA failed, attempting to fetch CA certificate...");
+                    
+                    // Try to fetch CA certificate via HTTP bootstrap
+                    let http_url = ca_url.replace("gurt://", "http://").replace(":8877", ":8876");
+                    
+                    match reqwest::Client::new()
+                        .get(&format!("{}/ca/root", http_url))
+                        .send()
+                        .await
+                    {
+                        Ok(response) if response.status().is_success() => {
+                            match response.text().await {
+                                Ok(ca_cert) if ca_cert.contains("BEGIN CERTIFICATE") && ca_cert.contains("END CERTIFICATE") => {
+                                    println!("✅ Fetched CA certificate via HTTP bootstrap");
+                                    
+                                    // Create new client with custom CA
+                                    let mut config = gurt::client::GurtClientConfig::default();
+                                    config.custom_ca_certificates = vec![ca_cert];
+                                    let gurt_client = gurt::GurtClient::with_config(config);
+                                    let client_with_ca = Self {
+                                        ca_url,
+                                        gurt_client,
+                                    };
+                                    
+                                    // Test the connection with the custom CA
+                                    match client_with_ca.test_connection().await {
+                                        Ok(_) => {
+                                            println!("✅ Connection successful with fetched CA certificate");
+                                            return Ok(client_with_ca);
+                                        }
+                                        Err(ca_err) => {
+                                            println!("❌ Connection failed even with fetched CA: {}", ca_err);
+                                            return Err(ca_err);
+                                        }
+                                    }
+                                }
+                                Ok(_) => {
+                                    anyhow::bail!("Invalid CA certificate format received via HTTP")
+                                }
+                                Err(e) => {
+                                    anyhow::bail!("Failed to read CA certificate response: {}", e)
+                                }
+                            }
+                        }
+                        Ok(response) => {
+                            anyhow::bail!("HTTP bootstrap failed with status: {}", response.status())
+                        }
+                        Err(e) => {
+                            anyhow::bail!("Failed to fetch CA certificate via HTTP: {}", e)
+                        }
+                    }
                 } else {
                     return Err(e);
                 }
