@@ -102,10 +102,5 @@ async fn get_ca_certificate(
     std::fs::write(output_path, &ca_cert)?;
     
     println!("✅ CA certificate saved to: {}", output_path);
-    println!("💡 To trust this CA system-wide:");
-    println!("   Windows: Import {} into 'Trusted Root Certification Authorities'", output_path);
-    println!("   macOS: sudo security add-trusted-cert -d -r trustRoot -k /System/Library/Keychains/SystemRootCertificates.keychain {}", output_path);
-    println!("   Linux: Copy {} to /usr/local/share/ca-certificates/ and run sudo update-ca-certificates", output_path);
-    
     Ok(())
 }

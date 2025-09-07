@@ -60,13 +60,11 @@ impl GurtCAClient {
     }
     
     async fn test_connection(&self) -> Result<()> {
-        // Try a simple request to test if connection works
         let _response = self.gurt_client
             .get(&format!("{}/ca/root", self.ca_url))
             .await?;
         Ok(())
     }
-    
     
     pub async fn verify_domain_exists(&self, domain: &str) -> Result<bool> {
         let response = self.gurt_client
