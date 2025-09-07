@@ -25,6 +25,10 @@ func _input(_event: InputEvent) -> void:
 			# CTRL+H - History
 			_on_options_menu_id_pressed(4)
 			get_viewport().set_input_as_handled()
+		elif _event.keycode == KEY_J:
+			# CTRL+J - Downloads
+			_on_options_menu_id_pressed(5)
+			get_viewport().set_input_as_handled()
 
 func _on_options_menu_id_pressed(id: int) -> void:
 	if id == 0: # new tab
@@ -36,6 +40,8 @@ func _on_options_menu_id_pressed(id: int) -> void:
 		OS.create_process(OS.get_executable_path(), ["--incognito"])
 	if id == 4: # history
 		show_history()
+	if id == 5: # downloads
+		show_downloads()
 	if id == 10: # exit
 		get_tree().quit()
 
@@ -53,3 +59,6 @@ func show_history() -> void:
 func _on_history_closed() -> void:
 	if history_scene:
 		history_scene.hide()
+
+func show_downloads() -> void:
+	main.download_manager.show_downloads_history()

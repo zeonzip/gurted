@@ -35,6 +35,8 @@ const AUDIO = preload("res://Scenes/Tags/audio.tscn")
 const POSTPROCESS = preload("res://Scenes/Tags/postprocess.tscn")
 const CANVAS = preload("res://Scenes/Tags/canvas.tscn")
 
+const DOWNLOAD_MANAGER = preload("res://Scripts/Browser/DownloadManager.gd")
+
 const MIN_SIZE = Vector2i(750, 200)
 
 var font_dependent_elements: Array = []
@@ -42,6 +44,7 @@ var current_domain = ""
 var main_navigation_request: NetworkRequest = null
 var network_start_time: float = 0.0
 var network_end_time: float = 0.0
+var download_manager: DownloadManager = null
 
 func should_group_as_inline(element: HTMLParser.HTMLElement) -> bool:
 	if element.tag_name == "input":
@@ -60,6 +63,9 @@ func _ready():
 	DisplayServer.window_set_min_size(MIN_SIZE)
 	
 	CertificateManager.initialize()
+	
+	download_manager = DOWNLOAD_MANAGER.new(self)
+	add_child(download_manager)
 	
 	var original_scroll = website_container.get_parent()
 	if original_scroll:

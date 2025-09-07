@@ -122,7 +122,7 @@ func _on_audio_download_completed(_result: int, response_code: int, headers: Pac
 	var http_request = get_children().filter(func(child): return child is HTTPRequest)[0]
 	http_request.queue_free()
 	
-	if response_code != 200:
+	if response_code < 200 or response_code >= 300:
 		return
 	
 	if body.size() == 0:

@@ -744,6 +744,8 @@ func _handle_dom_operation(operation: Dictionary):
 			LuaCanvasUtils.handle_canvas_setLineWidth(operation, dom_parser)
 		"canvas_setFont":
 			LuaCanvasUtils.handle_canvas_setFont(operation, dom_parser)
+		"request_download":
+			_handle_download_request(operation)
 		_:
 			pass # Unknown operation type, ignore
 
@@ -990,3 +992,9 @@ func _notification(what: int):
 		if timeout_manager:
 			timeout_manager.cleanup_all_timeouts()
 		threaded_vm.stop_lua_thread()
+
+func _handle_download_request(operation: Dictionary):
+	var download_data = operation.get("download_data", {})
+	
+	var main_node = Engine.get_main_loop().current_scene
+	main_node.download_manager.handle_download_request(download_data)

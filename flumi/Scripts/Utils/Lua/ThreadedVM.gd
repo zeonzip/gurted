@@ -379,6 +379,7 @@ func _setup_additional_lua_apis():
 	LuaJSONUtils.setup_json_api(lua_vm)
 	LuaWebSocketUtils.setup_websocket_api(lua_vm)
 	LuaAudioUtils.setup_audio_api(lua_vm)
+	LuaDownloadUtils.setup_download_api(lua_vm)
 	LuaCrumbsUtils.setup_crumbs_api(lua_vm)
 	LuaRegexUtils.setup_regex_api(lua_vm)
 	LuaURLUtils.setup_url_api(lua_vm)
