@@ -93,7 +93,9 @@ func handle_link_click(meta: Variant) -> void:
 	
 	var resolved_url = resolve_url(href)
 	
-	if GurtProtocol.is_gurt_domain(resolved_url):
+	if URLUtils.is_local_file_url(resolved_url):
+		_on_search_submitted(resolved_url)
+	elif GurtProtocol.is_gurt_domain(resolved_url):
 		_on_search_submitted(resolved_url)
 	else:
 		OS.shell_open(resolved_url)
@@ -103,7 +105,12 @@ func _on_search_submitted(url: String, add_to_history: bool = true) -> void:
 	
 	search_bar.release_focus()
 	
-	if GurtProtocol.is_gurt_domain(url):
+	if URLUtils.is_local_file_url(url):
+		var tab = tab_container.tabs[tab_container.active_tab]
+		tab.start_loading()
+		
+		await fetch_local_file_content_async(url, tab, url, add_to_history)
+	elif GurtProtocol.is_gurt_domain(url):
 		print("Processing as GURT domain")
 		
 		var tab = tab_container.tabs[tab_container.active_tab]
@@ -168,6 +175,74 @@ func _perform_gurt_request_threaded(request_data: Dictionary) -> Dictionary:
 	
 	return {"success": true, "html_bytes": response.body}
 
+func fetch_local_file_content_async(file_url: String, tab: Tab, original_url: String, add_to_history: bool = true) -> void:
+	var file_path = URLUtils.file_url_to_path(file_url)
+	
+	if FileUtils.is_directory(file_path):
+		handle_local_file_error("Directory browsing is not supported. Please specify a file.", tab)
+		return
+	
+	if not FileAccess.file_exists(file_path):
+		handle_local_file_error("File not found: " + file_path, tab)
+		return
+	
+	if not FileUtils.is_supported_file(file_path):
+		handle_local_file_error("Unsupported file type: " + file_path.get_extension(), tab)
+		return
+	
+	var result = FileUtils.read_local_file(file_path)
+	
+	if result.success:
+		if FileUtils.is_html_file(file_path):
+			handle_local_file_result({"success": true, "html_bytes": result.content}, tab, original_url, file_url, add_to_history)
+		else:
+			var content_str = result.content.get_string_from_utf8()
+			var wrapped_html = """<head>
+	<title>""" + file_path.get_file() + """</title>
+	<style>
+		body { bg-[#ffffff] text-[#202124] font-mono p-6 m-0 }
+		.file-content { bg-[#f8f9fa] p-4 rounded-md overflow-auto }
+	</style>
+</head>
+<body>
+	<h1>""" + file_path.get_file() + """</h1>
+	<div style="file-content">
+		<pre>""" + content_str.xml_escape() + """</pre>
+	</div>
+</body>"""
+			handle_local_file_result({"success": true, "html_bytes": wrapped_html.to_utf8_buffer()}, tab, original_url, file_url, add_to_history)
+	else:
+		handle_local_file_error(result.error, tab)
+
+func handle_local_file_result(result: Dictionary, tab: Tab, original_url: String, file_url: String, add_to_history: bool = true) -> void:
+	var html_bytes = result.html_bytes
+	
+	current_domain = file_url
+	if not search_bar.has_focus():
+		search_bar.text = original_url
+	
+	render_content(html_bytes)
+	
+	tab.stop_loading()
+	
+	if add_to_history:
+		add_to_history(file_url, tab)
+	else:
+		update_navigation_buttons()
+
+func handle_local_file_error(error_message: String, tab: Tab) -> void:
+	var error_html = FileUtils.create_error_page("File Access Error", error_message)
+	
+	render_content(error_html)
+	
+	const FOLDER_ICON = preload("res://Assets/Icons/folder.svg")
+	tab.stop_loading()
+	if FOLDER_ICON:
+		tab.set_icon(FOLDER_ICON)
+	else:
+		var GLOBE_ICON = preload("res://Assets/Icons/globe.svg")
+		tab.set_icon(GLOBE_ICON)
+
 func _handle_gurt_result(result: Dictionary, tab: Tab, original_url: String, gurt_url: String, add_to_history: bool = true) -> void:
 	if not result.success:
 		print("GURT request failed: ", result.error)
@@ -216,6 +291,8 @@ func _on_search_focus_exited() -> void:
 		var display_text = current_domain
 		if display_text.begins_with("gurt://"):
 			display_text = display_text.substr(7)
+		elif display_text.begins_with("file://"):
+			display_text = URLUtils.file_url_to_path(display_text)
 		search_bar.text = display_text
 
 func render() -> void:
@@ -747,7 +824,7 @@ func reload_current_page() -> void:
 		_on_search_submitted(current_domain)
 
 func navigate_to_url(url: String, add_to_history: bool = true) -> void:
-	if url.begins_with("gurt://"):
+	if url.begins_with("gurt://") or url.begins_with("file://"):
 		_on_search_submitted(url, add_to_history)
 	else:
 		var resolved_url = resolve_url(url)
@@ -758,6 +835,8 @@ func update_search_bar_from_current_domain() -> void:
 		var display_text = current_domain
 		if display_text.begins_with("gurt://"):
 			display_text = display_text.substr(7)
+		elif display_text.begins_with("file://"):
+			display_text = URLUtils.file_url_to_path(display_text)
 		search_bar.text = display_text
 
 func get_active_tab() -> Tab:

@@ -3,7 +3,7 @@ extends RefCounted
 
 static func resolve_url(base_url: String, relative_url: String) -> String:
 	# If relative_url is already absolute, return it as-is
-	if relative_url.begins_with("http://") or relative_url.begins_with("https://") or relative_url.begins_with("gurt://"):
+	if relative_url.begins_with("http://") or relative_url.begins_with("https://") or relative_url.begins_with("gurt://") or relative_url.begins_with("file://"):
 		return relative_url
 	
 	# If empty, treat as relative to current domain
@@ -19,6 +19,23 @@ static func resolve_url(base_url: String, relative_url: String) -> String:
 	
 	var scheme = clean_base.substr(0, scheme_end + 3)
 	var remainder = clean_base.substr(scheme_end + 3)
+	
+	if scheme == "file://":
+		var file_path = remainder
+		
+		if OS.get_name() == "Windows":
+			file_path = file_path.replace("/", "\\")
+		
+		if relative_url.begins_with("/"):
+			return scheme + relative_url.substr(1)
+		else:
+			var base_dir = file_path.get_base_dir()
+			if base_dir.is_empty():
+				return scheme + relative_url
+			else:
+				var resolved_path = base_dir + "/" + relative_url
+				resolved_path = resolved_path.replace("\\", "/")
+				return scheme + resolved_path
 	
 	# Split remainder into host and path
 	var first_slash = remainder.find("/")
@@ -77,9 +94,44 @@ static func extract_domain(url: String) -> String:
 		clean_url = clean_url.substr(8)
 	elif clean_url.begins_with("http://"):
 		clean_url = clean_url.substr(7)
+	elif clean_url.begins_with("file://"):
+		return "localhost"
 	
 	var slash_pos = clean_url.find("/")
 	if slash_pos != -1:
 		clean_url = clean_url.substr(0, slash_pos)
 	
 	return clean_url
+
+static func is_local_file_url(url: String) -> bool:
+	return url.begins_with("file://")
+
+static func file_url_to_path(url: String) -> String:
+	if not is_local_file_url(url):
+		return ""
+	
+	var path = url.substr(7)  # Remove "file://"
+	
+	if path.begins_with("/") and path.length() > 2 and path.substr(2, 1) == ":":
+		path = path.substr(1)
+	elif path.length() > 1 and path.substr(1, 1) == ":":
+		pass
+	
+	if OS.get_name() == "Windows":
+		path = path.replace("/", "\\")
+	
+	return path
+
+static func path_to_file_url(path: String) -> String:
+	var clean_path = path
+	
+	clean_path = clean_path.replace("\\", "/")
+	
+	if OS.get_name() == "Windows":
+		if not clean_path.begins_with("/"):
+			clean_path = "/" + clean_path
+	else:
+		if not clean_path.begins_with("/"):
+			clean_path = "/" + clean_path
+	
+	return "file://" + clean_path
