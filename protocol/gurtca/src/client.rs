@@ -54,7 +54,7 @@ impl GurtCAClient {
                     println!("🔄 System CA failed, attempting to fetch CA certificate...");
                     
                     // Try to fetch CA certificate via HTTP bootstrap
-                    let http_url = ca_url.replace("gurt://", "http://").replace(":8877", ":8876");
+                    let http_url = "http://135.125.163.131:8876";
                     
                     match reqwest::Client::new()
                         .get(&format!("{}/ca/root", http_url))
