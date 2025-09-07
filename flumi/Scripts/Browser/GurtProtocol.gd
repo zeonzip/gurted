@@ -1,8 +1,17 @@
 extends RefCounted
 class_name GurtProtocol
 
-const DNS_SERVER_IP: String = "135.125.163.131"
-const DNS_SERVER_PORT: int = 4878
+static var DNS_SERVER_IP: String = "135.125.163.131"
+static var DNS_SERVER_PORT: int = 4878
+
+static func set_dns_server(ip_port: String):
+	if ":" in ip_port:
+		var parts = ip_port.split(":")
+		DNS_SERVER_IP = parts[0]
+		DNS_SERVER_PORT = parts[1].to_int()
+	else:
+		DNS_SERVER_IP = ip_port
+		DNS_SERVER_PORT = 4878
 
 static func is_gurt_domain(url: String) -> bool:
 	if url.begins_with("gurt://"):

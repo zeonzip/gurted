@@ -74,3 +74,14 @@ func get_download_data_array() -> Array[Dictionary]:
 	for entry in download_entries:
 		data_array.append(entry.get_download_data())
 	return data_array
+
+func clear_all_downloads():
+	for entry in download_entries:
+		entry.queue_free()
+	
+	download_entries.clear()
+	
+	var file = FileAccess.open(save_path, FileAccess.WRITE)
+	if file:
+		file.store_string("[]")
+		file.close()

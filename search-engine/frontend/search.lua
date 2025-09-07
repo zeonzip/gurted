@@ -169,7 +169,75 @@ searchQuery:on('keydown', function(e)
         if query and query ~= '' then
             performSearch(query:trim())
         end
+    elseif e.key == 'Escape' then
+        -- Clear search on Escape
+        searchQuery.value = ''
+        
+        -- Clear results
+        local children = results.children
+        for i = #children, 1, -1 do
+            children[i]:remove()
+        end
+        
+        stats.text = ''
+        loading.classList:add('hidden')
+        
+        -- Update URL to remove query parameter
+        local baseUrl = gurt.location.pathname
+        if gurt.location.href ~= baseUrl then
+            gurt.location.goto(baseUrl)
+        end
     end
 end)
 
-searchQuery:focus()
+
+local function checkForQueryParam()
+    local url = gurt.location.href
+    local queryIndex = url:find('?')
+    
+    if queryIndex then
+        local queryString = url:sub(queryIndex + 1)
+        local params = {}
+        
+        -- Parse query parameters
+        for param in queryString:gmatch('([^&]+)') do
+            local key, value = param:match('([^=]+)=(.+)')
+            if key and value then
+                params[key] = urlDecode(value)
+            end
+        end
+        
+        -- If 'q' parameter exists, populate search box and perform search
+        if params.q then
+            searchQuery.value = params.q
+            performSearch(params.q)
+            return
+        end
+    end
+    
+    -- Focus search input if no query parameter
+    searchQuery:focus()
+end
+
+searchQuery:on('input', function()
+    local query = searchQuery.value:trim()
+    
+    if query == '' then
+        -- Clear results when search box is empty
+        local children = results.children
+        for i = #children, 1, -1 do
+            children[i]:remove()
+        end
+        
+        stats.text = ''
+        loading.classList:add('hidden')
+        
+        -- Update URL to remove query parameter
+        local baseUrl = gurt.location.pathname
+        if gurt.location.href ~= baseUrl then
+            gurt.location.goto(baseUrl)
+        end
+    end
+end)
+
+checkForQueryParam()

@@ -13,6 +13,12 @@ func init(element, parser: HTMLParser) -> void:
 	size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	
 	mouse_filter = Control.MOUSE_FILTER_PASS
+	
+	var element_id = element.get_attribute("id")
+	if element_id.is_empty():
+		element.set_attribute("id", unique_id)
+		element_id = unique_id
+	parser.register_dom_node(element, self)
 
 	if get_child_count() > 0:
 		return
@@ -62,7 +68,6 @@ func create_styled_label(text: String, element, parser: HTMLParser) -> RichTextL
 	
 	add_child(label)
 	
-	parser.register_dom_node(element, label)
 	
 	var styles = parser.get_element_styles_with_inheritance(element, "", [])
 	StyleManager.apply_styles_to_label(label, styles, element, parser, text)
@@ -140,6 +145,9 @@ func set_text(new_text: String) -> void:
 		remove_child(child)
 		child.queue_free()
 	
+	if _element:
+		_element.text_content = new_text
+	
 	if _element and _parser:
 		create_styled_label(new_text, _element, _parser)
 	else:
@@ -172,8 +180,6 @@ func create_label(text: String) -> RichTextLabel:
 	
 	add_child(label)
 	
-	if _element and _parser:
-		_parser.register_dom_node(_element, label)
 	
 	call_deferred("_apply_auto_resize_to_label", label)
 	return label

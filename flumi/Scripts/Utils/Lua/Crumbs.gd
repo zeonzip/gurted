@@ -254,3 +254,15 @@ static func delete_crumb(domain: String, name: String) -> bool:
 		all_crumbs.erase(name)
 		save_all_crumbs(domain, all_crumbs)
 	return existed
+
+static func clear_all_crumbs():
+	if DirAccess.dir_exists_absolute(CRUMBS_DIR_PATH):
+		var dir = DirAccess.open(CRUMBS_DIR_PATH)
+		if dir:
+			dir.list_dir_begin()
+			var file_name = dir.get_next()
+			while file_name != "":
+				if file_name.ends_with(".json"):
+					dir.remove(file_name)
+				file_name = dir.get_next()
+			dir.list_dir_end()

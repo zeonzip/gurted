@@ -229,8 +229,11 @@ func create_tab() -> void:
 	
 	trigger_init_scene(tab)
 	
-	# WARNING: temporary
-	main.render()
+	var startup_behavior = main.get_startup_behavior()
+	if startup_behavior.specific_page and not startup_behavior.url.is_empty():
+		main._on_search_submitted(startup_behavior.url, true)
+	else:
+		main.render()
 
 func _input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("NewTab"):

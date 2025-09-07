@@ -451,7 +451,7 @@ func _input(event: InputEvent) -> void:
 
 func _handle_mousemove_event(mouse_event: InputEventMouseMotion, subscription: EventSubscription) -> void:
 	# TODO: pass reference instead of hardcoded path
-	var body_container = get_node("/root/Main").website_container
+	var body_container = Engine.get_main_loop().current_scene.website_container
 
 	if body_container.get_parent() is MarginContainer:
 		body_container = body_container.get_parent()
@@ -787,6 +787,10 @@ func _handle_text_setting(operation: Dictionary):
 		# If the element has a DOM node, update it directly without updating text_content
 		var element_id = get_or_assign_element_id(element)
 		var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+		
+		if not dom_node:
+			dom_node = dom_parser.parse_result.dom_nodes.get(element, null)
+		
 		if dom_node:
 			if element.tag_name == "button":
 				var button_node = dom_node.get_node_or_null("ButtonNode")
@@ -806,6 +810,7 @@ func _handle_text_setting(operation: Dictionary):
 			var text_node = get_dom_node(dom_node, "text")
 			if text_node:
 				if text_node is RichTextLabel:
+					element.text_content = text
 					StyleManager.apply_styles_to_label(text_node, dom_parser.get_element_styles_with_inheritance(element, "", []), element, dom_parser, text)
 					try_apply_auto_resize(text_node)
 				elif text_node.has_method("set_text"):

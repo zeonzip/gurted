@@ -1,11 +1,13 @@
 extends Button
 
 const HISTORY = preload("res://Scenes/BrowserMenus/history.tscn")
+const SETTINGS = preload("res://Scenes/BrowserMenus/settings.tscn")
 
 @onready var tab_container: TabManager = $"../../TabContainer"
 @onready var main: Main = $"../../../"
 
 var history_scene: PopupPanel = null
+var settings_scene: PopupPanel = null
 
 func _on_pressed() -> void:
 	%OptionsMenu.show()
@@ -42,6 +44,8 @@ func _on_options_menu_id_pressed(id: int) -> void:
 		show_history()
 	if id == 5: # downloads
 		show_downloads()
+	if id == 9: # settings
+		show_settings()
 	if id == 10: # exit
 		get_tree().quit()
 
@@ -62,3 +66,16 @@ func _on_history_closed() -> void:
 
 func show_downloads() -> void:
 	main.download_manager.show_downloads_history()
+
+func show_settings() -> void:
+	if settings_scene == null:
+		settings_scene = SETTINGS.instantiate()
+		main.add_child(settings_scene)
+		
+		settings_scene.connect("popup_hide", _on_settings_closed)
+	else:
+		settings_scene.show()
+
+func _on_settings_closed() -> void:
+	if settings_scene:
+		settings_scene.hide()

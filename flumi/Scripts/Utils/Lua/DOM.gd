@@ -507,7 +507,7 @@ static func is_same_element_visual_node(node1: Node, node2: Node) -> bool:
 	return false
 
 static func render_new_element_at_position(element: HTMLParser.HTMLElement, parent_node: Node, position: int, dom_parser: HTMLParser) -> void:
-	var main_scene = Engine.get_main_loop().current_scene.get_node("/root/Main")
+	var main_scene = Engine.get_main_loop().current_scene.Engine.get_main_loop().current_scene
 	if not main_scene:
 		return
 	
@@ -529,7 +529,7 @@ static func render_new_element_at_position(element: HTMLParser.HTMLElement, pare
 		container_node.move_child(element_node, position)
 
 static func render_new_element_by_reference(element: HTMLParser.HTMLElement, parent_node: Node, reference_element_id: String, insert_before: bool, dom_parser: HTMLParser) -> void:
-	var main_scene = Engine.get_main_loop().current_scene.get_node("/root/Main")
+	var main_scene = Engine.get_main_loop().current_scene.Engine.get_main_loop().current_scene
 	if not main_scene:
 		return
 	

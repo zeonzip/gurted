@@ -73,6 +73,7 @@ func _ready():
 	
 	call_deferred("render")
 	call_deferred("update_navigation_buttons")
+	call_deferred("_handle_startup_behavior")
 
 func _input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("DevTools"):
@@ -114,7 +115,15 @@ func _on_search_submitted(url: String, add_to_history: bool = true) -> void:
 		
 		await fetch_gurt_content_async(gurt_url, tab, url, add_to_history)
 	else:
-		print("Non-GURT URL entered: ", url)
+		print("Non-GURT URL entered, using search engine: ", url)
+		
+		if url.begins_with("http://") or url.begins_with("https://"):
+			# It's already a web URL, open in system browser
+			OS.shell_open(url)
+		else:
+			var search_engine_url = get_search_engine_url()
+			var search_url = search_engine_url + url.uri_encode()
+			_on_search_submitted(search_url, add_to_history)
 
 func fetch_gurt_content_async(gurt_url: String, tab: Tab, original_url: String, add_to_history: bool = true) -> void:
 	main_navigation_request = NetworkManager.start_request(gurt_url, "GET", false)
@@ -817,3 +826,18 @@ func update_navigation_buttons() -> void:
 	else:
 		back_button.disabled = true
 		forward_button.disabled = true
+
+func get_download_confirmation_setting() -> bool:
+	return SettingsManager.get_download_confirmation()
+
+func get_search_engine_url() -> String:
+	return SettingsManager.get_search_engine_url()
+
+func get_startup_behavior() -> Dictionary:
+	return SettingsManager.get_startup_behavior()
+
+func _handle_startup_behavior():
+	var startup_behavior = get_startup_behavior()
+	
+	if startup_behavior.specific_page and not startup_behavior.url.is_empty():
+		_on_search_submitted(startup_behavior.url, true)

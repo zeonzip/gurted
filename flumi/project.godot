@@ -24,6 +24,7 @@ Constants="*res://Scripts/Constants.gd"
 Network="*res://Scripts/Network.gd"
 NetworkManager="*res://Scripts/Browser/NetworkManager.gd"
 BrowserHistory="*res://Scripts/Browser/BrowserHistory.gd"
+SettingsManager="*res://Scripts/Browser/SettingsManager.gd"
 
 [display]
 

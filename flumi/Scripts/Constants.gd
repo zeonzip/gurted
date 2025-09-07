@@ -38,10 +38,20 @@ input[type="date"] { w-28 text-[16px] bg-[#1b1b1b] rounded-md text-white hover:b
 var HTML_CONTENT = """
 <head>
 <title>New tab</title>
+<script>
+local items = {"Hi","Hello","Salut","Bonjour","Hola","Ciao","Hallo","Hej","Hei","Ola","Privet","Zdravstvuyte","Konnichiwa","Ni hao","Annyeonghaseyo","Merhaba","Selam","Habari","Shalom","Namaste","Marhaba","Geia","Sawasdee","Selamat","Halo","Kumusta","Sawubona","Jambo","Aloha","Goddag","Tere","Moikka","Sveiki"}
+local h = gurt.select(".target")
+local res = items[math.random(#items)] .. "!"
+
+h.text = res
+</script>
 </head>
-<body>
-<p>Welcome to Flumi Browser!</p>
-<img src="https://httpbin.org/image/png" alt="Test image" />
-<p>This page includes a test image to verify network functionality.</p>
+<body style="bg-[#323949] text-white font-sans">
+	<div style="flex flex-col items-center justify-center w-full mt-12">
+		<h1 style="target text-8xl font-bold mb-4 text-[#4a9eff] font-serif font-italic">Hello!</h1>
+		<p style="text-lg mb-8 text-[#cccccc]">Start browsing by typing in the omnibar.</p>
+	
+		<p style="mb-2">Happy GURT:// exploration!</p>
+	</div>
 </body>
 """.to_utf8_buffer()

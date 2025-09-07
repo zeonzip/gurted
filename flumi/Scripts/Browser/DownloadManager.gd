@@ -29,20 +29,26 @@ func _ensure_download_progress_container():
 		main_node.add_child(anchor_container)
 
 func handle_download_request(download_data: Dictionary):
-	print("Download requested: ", download_data)
-	
 	var active_tab = main_node.get_active_tab()
 	if active_tab and active_tab.current_url:
 		download_data["current_site"] = URLUtils.extract_domain(active_tab.current_url)
 	else:
 		download_data["current_site"] = "Unknown site"
 	
-	var dialog = DOWNLOAD_DIALOG.instantiate()
-	main_node.add_child(dialog)
+	var settings_node = Engine.get_main_loop().current_scene
+	var skip_confirmation = !settings_node.get_download_confirmation_setting()
 	
-	dialog.download_confirmed.connect(_on_download_confirmed)
-	dialog.download_cancelled.connect(_on_download_cancelled)
-	dialog.show_download_dialog(download_data)
+	if skip_confirmation:
+		var filename = download_data.get("filename", "download")
+		var default_path = OS.get_system_dir(OS.SYSTEM_DIR_DOWNLOADS) + "/" + filename
+		_on_download_confirmed(download_data, default_path)
+	else:
+		var dialog = DOWNLOAD_DIALOG.instantiate()
+		main_node.add_child(dialog)
+		
+		dialog.download_confirmed.connect(_on_download_confirmed)
+		dialog.download_cancelled.connect(_on_download_cancelled)
+		dialog.show_download_dialog(download_data)
 
 func _on_download_confirmed(download_data: Dictionary, save_path: String):
 	var download_id = download_data.get("id", "")
