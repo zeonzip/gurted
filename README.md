@@ -1,36 +1,37 @@
-# Gurted
+<img style="width: 128px; height: 128px" src="site/static/favicon.svg" /><h1 style="font-size: 48px"><a href="https://rugplay.com">Gurted</a> - the ecosystem similar to World Wide Web.</h1>
 
-Gurted (verb)
-> “to do something smart, but also dangerous”
-
-Wayfinder (noun)
-> “a person helping others navigate”
+[Website](https://gurted.com/) | [Docs](https://docs.gurted.com/) | [License](LICENSE) | [YouTube video](https://www.youtube.com)
 
 Gurted is an ecosystem similar to the World Wide Web, it features:
-- It's own **Viewfinder** (a custom browser named Flumi) written in Rust and GDScript with [Godot](https://godotengine.org/),
-- A custom HTML, CSS and ***Lua*** engine (We do **not like javascript**)
-- A custom **DNS** that allows users to create domains with TLDs such as `.based`, `.delulu`, `.aura`, `.twin` and many more.
-- A search engine called **Ringle**.
+- ⚡ A custom protocol (TCP-based) named `GURT://` with mendatory TLS secutity with a [spec](docs.gurted.com)
+- 🌐 A custom **wayfinder** (browser) written in Rust and GDScript with [Godot](https://godotengine.org/)
+- 📄 A custom engine for HTML, CSS, and ***Lua*** (no JavaScript)
+- 🏷️ A custom **DNS** that allows users to create domains with TLDs such as `.based`, `.aura`, `.twin`, and many more
+- 🔍 A search engine
+- 🛠️ A **CLI tool** for setting up GURT protocol servers
+- 🔒 A certificate authority (**GurtCA**) for TLS certs on GURT
 
 ![Preview of Flumi, the official gurted wayfinder](images/flumi.png)
 
 # File structure
-- `/dns` - The source code for the **DNS** (Domain Name System)
-- `/docs` - The source code for the **Documentation page** available at https://docs.gurted.com
-- `/flumi` - The source code for the **Wayfinder** Flumi, used to view gurt:// sites
-- `/protocol` - Source code for all gurt related things, like the gdextension and the rust library
-- `/search-engine` - The Source code for the official **search engine** (Ringle)
+- `/dns` - The **DNS** (Domain Name System)
+- `/docs` - The **documentation** at https://docs.gurted.com
+- `/flumi` - The **wayfinder** Flumi, used to view gurt:// sites
+- `/protocol` - All protocol related things
+- `/protocol/library` - The Rust protocol implementation (client + server)
+- `/protocol/gdextension` - The Godot extension for GURT protocol (uses Rust library, used in Flumi)
+- `/protocol/gurtca` - The **C**ert **A**uthority (CA) for issuing TLS certs
+- `/protocol/cli` - The server management tool for GURT protocol servers (Gurty)
+- `/search-engine` - The official **search engine** (Ringle)
+- `/tests` - The browser test files demonstrating all features
+- `/site` - The WWW website (gurted.com)
 
 # Download and install
-
-## Windows 
-Grab the binary from the [releases page](https://github.com/outpoot/gurted/releases) and run it
-
-## Linux
-Download the binary from [releases page](https://github.com/outpoot/gurted/releases) and run it.
-
-## MacOS
-Download the binary from the [releases page](https://github.com/outpoot/gurted/releases) and copy it to your applications folder.
+Go to https://gurted.com/download
 
 # Compiling
-The process is identycal to compiling a godot game, however if you modified the protocol library or the gdextension you have to rebuild the gurted gdextension library by running build.sh in `/protocol/gdextension` and copy `/protocol/gdextension/target/x86_64-unknown-linux-gnu/release/libgurt_godot.so` (or the windows/macos library) to `flumi/addons/gurt-protocol/bin/linux` or `flumi/addons/gurt-protocol/bin/windows` for windows.
+The process is identical to compiling a Godot game, however, if you:
+1) modified the protocol library
+2) the gdextension
+
+...you have to rebuild the GDextension by running build.sh in `/protocol/gdextension` and copy `/addon` to `flumi/addons/gurt-protocol/`.
