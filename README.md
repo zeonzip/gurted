@@ -11,7 +11,7 @@ Gurted is an ecosystem similar to the World Wide Web, it features:
 - 🛠️ A **CLI tool** for setting up GURT protocol servers
 - 🔒 A certificate authority (**GurtCA**) for TLS certs on GURT
 
-![Preview of Flumi, the official gurted wayfinder](images/flumi.png)
+![snake](https://github.com/user-attachments/assets/d4d10cf2-ff87-4af3-9a38-0ebdc0fadc71)
 
 # File structure
 - `/dns` - The **DNS** (Domain Name System)
