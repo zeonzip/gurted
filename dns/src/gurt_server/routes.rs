@@ -20,11 +20,28 @@ fn parse_query_string(query: &str) -> HashMap<String, String> {
     params
 }
 
-pub(crate) async fn index(_app_state: AppState) -> Result<GurtResponse> {
+pub(crate) async fn index(ctx: &ServerContext, _app_state: AppState) -> Result<GurtResponse> {
+    let host_header = ctx.request.headers().get("host")
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("");
+    
+    let hostname = host_header.split(':').next().unwrap_or(host_header);
+    
+    log::info!("Index handler - Host header: '{}', hostname: '{}'", host_header, hostname);
+    
     let current_dir = std::env::current_dir()
         .map_err(|_| GurtError::invalid_message("Failed to get current directory"))?;
-    let frontend_dir = current_dir.join("frontend");
-    let index_path = frontend_dir.join("index.html");
+    
+    let (frontend_dir, file_name) = if hostname == "search.web" {
+        log::info!("Index handler serving search.html for search.web domain");
+        (current_dir.join("search-engine").join("frontend"), "search.html")
+    } else {
+        log::info!("Index handler serving index.html for domain: '{}'", hostname);
+        (current_dir.join("frontend"), "index.html")
+    };
+    
+    let index_path = frontend_dir.join(file_name);
+    log::info!("Index handler attempting to read: '{}'", index_path.display());
     
     match tokio::fs::read_to_string(&index_path).await {
         Ok(content) => {

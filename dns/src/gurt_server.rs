@@ -129,7 +129,7 @@ impl GurtHandler for AppHandler {
             log::info!("Handler started for {} {} from {}", ctx.method(), ctx.path(), ctx.remote_addr);
             
             let result = match handler_type {
-                HandlerType::Index => routes::index(app_state).await,
+                HandlerType::Index => routes::index(&ctx, app_state).await,
                 HandlerType::GetDomain => {
                     if ctx.path().contains("/records") {
                         handle_authenticated!(ctx, app_state, routes::get_domain_records)
