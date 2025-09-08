@@ -4,4 +4,9 @@ gurty.toml
 certs
 search_indexes
 config.toml
-.vscode
+
+build
+upx*
+flumi/build-scripts/Windows
+flumi/build-scripts/Linux
+flumi/build-scripts/MacOS

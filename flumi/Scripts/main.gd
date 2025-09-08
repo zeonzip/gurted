@@ -916,6 +916,13 @@ func get_startup_behavior() -> Dictionary:
 	return SettingsManager.get_startup_behavior()
 
 func _handle_startup_behavior():
+	var args = OS.get_cmdline_args()
+	for arg in args:
+		if arg.begins_with("gurt://"):
+			print("Opening URL from command line: ", arg)
+			_on_search_submitted(arg, true)
+			return
+	
 	var startup_behavior = get_startup_behavior()
 	
 	if startup_behavior.specific_page and not startup_behavior.url.is_empty():
