@@ -1,15 +1,6 @@
-# Domain Management API
+# Domain Name System
 
-This is a Domain Management API built with Rust (Actix Web) and PostgreSQL. It provides user authentication, domain registration with Discord approval workflow, and invite-based registration limits.
-
-## Features
-
-- 🔐 **JWT Authentication** - Secure user registration and login
-- 📝 **Domain Registration** - Submit domains for approval with usage limits
-- 🤖 **Discord Integration** - Automatic approval workflow via Discord bot
-- 📧 **Invite System** - Users can share registration slots via invite codes
-- 🛡️ **Rate Limiting** - Protection against abuse
-- 📊 **PostgreSQL Database** - Reliable data storage with migrations
+The gurted DNS is built with Rust (Actix Web) and PostgreSQL. It provides endpoints to create, read, update, and delete domain information, along with rate limiting for certain operations.
 
 ## Table of Contents
 
@@ -19,24 +10,24 @@ This is a Domain Management API built with Rust (Actix Web) and PostgreSQL. It p
   - [GET /auth/me](#get-authme)
   - [POST /auth/invite](#post-authinvite)
   - [POST /auth/redeem-invite](#post-authredeem-invite)
-  - [GET /auth/domains](#get-authdomains) 🔒
+  - [GET /auth/domains](#get-authdomains) *
 - [Domain Endpoints](#domain-endpoints)
   - [GET /](#get-)
-  - [POST /domain](#post-domain) 🔒
+  - [POST /domain](#post-domain) *
   - [GET /domain/:name/:tld](#get-domainnametld)
-  - [PUT /domain/:name/:tld](#put-domainnametld) 🔒
-  - [DELETE /domain/:name/:tld](#delete-domainnametld) 🔒
+  - [PUT /domain/:name/:tld](#put-domainnametld) *
+  - [DELETE /domain/:name/:tld](#delete-domainnametld) *
   - [GET /domains](#get-domains)
   - [GET /tlds](#get-tlds)
   - [POST /domain/check](#post-domaincheck)
 
-🔒 = Requires authentication
+* = Requires authentication
 
 ## Authentication Endpoints
 
 ### POST /auth/register
 
-Register a new user account. New users start with 3 domain registrations.
+Register a new user account. New users have a limit of 3 domain registrations by default.
 
 **Request:**
 ```json
@@ -84,7 +75,7 @@ Login with existing credentials.
 }
 ```
 
-### GET /auth/me 🔒
+### GET /auth/me *
 
 Get current user information. Requires `Authorization: Bearer <token>` header.
 
@@ -98,9 +89,9 @@ Get current user information. Requires `Authorization: Bearer <token>` header.
 }
 ```
 
-### POST /auth/invite 🔒
+### POST /auth/invite *
 
-Create an invite code that can be redeemed for 3 additional domain registrations. Requires authentication but does NOT consume any of your registrations.
+Create an invite code that can be redeemed for 3 additional domain registrations. Requires authentication but does NOT consume any of the registrations of the inviting user.
 
 **Response:**
 ```json
@@ -109,7 +100,7 @@ Create an invite code that can be redeemed for 3 additional domain registrations
 }
 ```
 
-### POST /auth/redeem-invite 🔒
+### POST /auth/redeem-invite *
 
 Redeem an invite code to get 3 additional domain registrations. Requires authentication.
 
@@ -128,9 +119,9 @@ Redeem an invite code to get 3 additional domain registrations. Requires authent
 }
 ```
 
-### GET /auth/domains 🔒
+### GET /auth/domains *
 
-Get all domains owned by the authenticated user, including their status. Requires `Authorization: Bearer <token>` header.
+Get all domains owned by the authenticated user, including their status. Requires authentication.
 
 **Query Parameters:**
 - `page` - Page number (default: 1)
@@ -191,9 +182,9 @@ GET /tlds.
 Ratelimits are as follows: 10 requests per 60s.
 ```
 
-### POST /domain 🔒
+### POST /domain *
 
-Submit a domain for approval. Requires authentication and consumes one registration slot. The domain will be sent to Discord for manual approval.
+Submit a domain for approval. Requires authentication and consumes one registration slot. The request will be sent to the moderators via discord for verification.
 
 **Request:**
 ```json
@@ -222,9 +213,9 @@ Fetch an approved domain by name and TLD. Only returns domains with 'approved' s
 }
 ```
 
-### PUT /domain/:name/:tld 🔒
+### PUT /domain/:name/:tld *
 
-Update the IP address of your approved domain. You can only update domains you own.
+Update the IP address of the user's approved domain.
 
 **Request:**
 ```json
@@ -240,17 +231,17 @@ Update the IP address of your approved domain. You can only update domains you o
 }
 ```
 
-### DELETE /domain/:name/:tld 🔒
+### DELETE /domain/:name/:tld *
 
-Delete your domain. You can only delete domains you own.
+Delete a domain owned by the account.
 
 **Response:**
 - `200 OK` - Domain deleted successfully
-- `404 Not Found` - Domain not found or not owned by you
+- `404 Not Found` - Domain not found or not owned by the requesting account
 
 ### GET /domains
 
-Fetch all approved domains with pagination support. Only shows domains with 'approved' status.
+Fetch all approved domains with pagination support.
 
 **Query Parameters:**
 - `page` (or `p`) - Page number (default: 1)
@@ -304,11 +295,11 @@ Check if domain name(s) are available.
 
 ## Discord Integration
 
-When a user submits a domain registration, it's automatically sent to a configured Discord channel with:
+When a user submits a domain registration, it's automatically sent to the configured Discord channel with:
 
 - 📝 Domain details (name, TLD, IP, user info)
 - ✅ **Approve** button - Marks domain as approved
-- ❌ **Deny** button - Opens modal asking for denial reason
+- ❌ **Deny** button - Opens a modal for inputing a denial reason
 
 Discord admins can approve or deny registrations directly from Discord.
 

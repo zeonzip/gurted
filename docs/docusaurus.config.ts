@@ -89,9 +89,8 @@ const config: Config = {
           position: 'left',
           label: 'Tutorial',
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://github.com/facebook/docusaurus',
+          href: 'https://github.com/outpoot/gurted',
           label: 'GitHub',
           position: 'right',
         },

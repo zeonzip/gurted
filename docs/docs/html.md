@@ -458,5 +458,14 @@ Gurted provides sensible defaults for all HTML elements:
 - **Code**: `text-xl font-mono`
 - **Mark**: `bg-[#FFFF00]` (yellow highlight)
 - **Small**: `text-xl` (smaller than base)
-
-And more.
+- **Pre**: `text-xl font-mono`
+- **B**: `font-bold`
+- **I**: `font-italic`
+- **U**: `underline`
+- **Images**: `object-fill`
+- **Select**: `text-[16px] bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] px-3 py-1.5`
+- **Color input**: `w-32`
+- **Range input**: Same as above
+- **Text input**: `text-[16px] w-64`
+- **Number input**: `w-32 text-[16px] bg-transparent border border-[#000000] rounded-[3px] text-[#000000] hover:border-[3px] hover:border-[#000000] px-3 py-1.5`
+- **Date input**: `w-28 text-[16px] bg-[#1b1b1b] rounded-md text-white hover:bg-[#2a2a2a] active:bg-[#101010] px-3 py-1.5`

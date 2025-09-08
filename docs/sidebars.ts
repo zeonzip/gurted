@@ -39,7 +39,21 @@ const sidebars: SidebarsConfig = {
       items: [
         'html',
         'css',
-        'lua',
+        {
+          type: 'category',
+          label: 'Lua',
+          items: [
+            'lua/intro',
+            'lua/elements',
+            'lua/audio',
+            'lua/canvas',
+            'lua/network',
+            'lua/regex',
+            'lua/handling',
+            'lua/utils'
+
+          ],
+        },
         'postprocess',
       ],
     },

@@ -1,35 +1,36 @@
-gurted (verb)
+# Gurted
+
+Gurted (verb)
 > “to do something smart, but also dangerous”
 
-wayfinder (noun)
+Wayfinder (noun)
 > “a person helping others navigate”
 
-In traditional web, you might be familiar with the term "browser." A **wayfinder** is that, but for the **GURT** protocol.
+Gurted is an ecosystem similar to the World Wide Web, it features:
+- It's own **Viewfinder** (a custom browser named Flumi) written in Rust and GDScript with [Godot](https://godotengine.org/),
+- A custom HTML, CSS and ***Lua*** engine (We do **not like javascript**)
+- A custom **DNS** that allows users to create domains with TLDs such as `.based`, `.delulu`, `.aura`, `.twin` and many more.
+- A search engine called **Ringle**.
 
-TODO:
-1. Write a new **selection system**. Godot's built-in `RichTextLabel` selection is limited by the node's boundaries. In normal web, holding click and dragging your mouse across the screen will select text across multiple nodes. Godot doesn't have a "set_selected_text" property, despite having one for "get_selected_text".
-2. **Right-click Dropdown** for basic text operations (Copy, Paste, Cut). Download options for images
-3. **Select-all CTRL+A shortcut**
-4. **Scrolling** in the website container
-5. **Store** tab containers so switching tabs won't erase previous tab.
-6. **GIF** support
-7. **Video** support via [GDE GoZen](https://github.com/VoylinsGamedevJourney/gde_gozen)
-8. **Required** attribute for inputs
-9. Installer should register **gurt://** as a valid protocol thru the registry.
-10. < input type=**datetime** />, essentially a type "date" but with a vertical separator, then `mm | ss | FORMAT` layout for time.
-11. **< table >** component. [🔗 Related Godot proposal](https://github.com/godotengine/godot-proposals/issues/97)
-12. **< canvas >** component should be theoretically impossible by exposing Godot `_draw()` APIs to Lua.
-13. `grid` display property for CSS, using `GridContainer` in Godot.
-14. Position `absolute` can be achieved by wrapping inside a Control node with a 0,0 size (so it's ignored by the layout), and moving the inner child according to CSS.
+![Preview of Flumi, the official gurted wayfinder](https://raw.githubusercontent.com/outpoot/gurted/master/images/flumi.png)
 
-Issues:
-1. **< br />** counts as 1 element in **WebsiteContainer**, therefore despite being (0,0) in size, it counts as double in spacing
-2. **Tween** API doesn't modify CSS, it operates independently at Godot level.
-3. Certain properties like `scale` and `rotate` don't apply to the `active` pseudo-class because they rely on mouse_enter and mouse_exit events
-4. `<div style="bg-[#3b82f6] w-[100px] h-[100px] flex hover:scale-110 transition hover:rotate-45">Box</div>` something like this has the "Box" text (presumably the PanelContainer) as the target of the hover, not the div itself (which has the w/h size)
-5. font in button doesn't comply with CSS, its the projects default
-6. The HTML, or Lua, doesn't support non-UTF8 characters. The HTML parser relies on `PackedByteArray` (for the XMLParser, from my memory).
+# File structure
+- `/dns` - The source code for the **DNS** (Domain Name System)
+- `/docs` - The source code for the **Documentation page** available at https://docs.gurted.com
+- `/flumi` - The source code for the **Wayfinder** Flumi, used to view gurt:// sites
+- `/protocol` - Source code for all gurt related things, like the gdextension and the rust library
+- `/search-engine` - The Source code for the official **search engine** (Ringle)
 
-Notes:
-- **< input />** is sort-of inline in normal web. We render it as a block element (new-line).
-- Fonts use **Flash of Unstyled Text (FOUT)** as opposed to **Flash of Invisible Text (FOIT)**, meaning the text with custom fonts will render with a generic font (sans-serif) while the custom ones downloads.
+# Download and install
+
+## Windows 
+Grab the installer from the [releases page](https://github.com/outpoot/gurted/releases) and run it as an administrator or download the binary and run it
+
+## Linux
+Download the binary from [releases page](https://github.com/outpoot/gurted/releases) and run it.
+
+## MacOS
+Download the binary from the [releases page](https://github.com/outpoot/gurted/releases) and copy it to your applications folder.
+
+# Compiling
+The process is identycal to compiling a godot game, however if you modified the protocol library or the gdextension you have to rebuild the gurted gdextension library by running build.sh in `/protocol/gdextension` and copy `/protocol/gdextension/target/x86_64-unknown-linux-gnu/release/libgurt_godot.so` (or the windows/macos library) to `flumi/addons/gurt-protocol/bin/linux` or `flumi/addons/gurt-protocol/bin/windows` for windows.
