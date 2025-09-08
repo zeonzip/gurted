@@ -35,6 +35,7 @@ WORKDIR /app
 COPY --from=builder /app/target/release/webx_dns /app/webx_dns
 COPY --from=builder /app/migrations ./migrations
 COPY dns/frontend ./frontend
+COPY search-engine/frontend ./search-engine/frontend
 
 RUN mkdir -p /app/config /app/data /home/matt/gurted/dns/certs && \
     chown -R appuser:appgroup /app && \
