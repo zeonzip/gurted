@@ -69,16 +69,6 @@ impl SearchServer {
                     }
                 }
             })
-            .get("/", {
-                move |_ctx| async {
-                    Ok(GurtResponse::ok().with_string_body(include_str!("../frontend/search.html")))
-                }
-            })
-            .get("/search.lua", {
-                move |_ctx| async {
-                    Ok(GurtResponse::ok().with_string_body(include_str!("../frontend/search.lua")))
-                }
-            })
             .get("/health", |_ctx| async {
                 Ok(GurtResponse::ok().with_json_body(&json!({"status": "healthy"}))?)
             })

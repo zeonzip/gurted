@@ -260,7 +260,8 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
         .route(Route::get("/signup.lua"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
         .route(Route::get("/dashboard.lua"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
         .route(Route::get("/domain.lua"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
-        .route(Route::get("/clanker.txt"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile });
+        .route(Route::get("/clanker.txt"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile })
+        .route(Route::get("/search.lua"), AppHandler { app_state: app_state.clone(), rate_limit_state: None, handler_type: HandlerType::StaticFile });
 
     let http_port = 8876;
     let ca_bootstrap_server = start_ca_bootstrap_server(app_state.clone(), http_port, config.server.address.clone());
@@ -337,6 +338,10 @@ async fn get_ca_certificate_content(app_state: &AppState) -> std::result::Result
 async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
     let path = ctx.path();
     
+    let host_header = ctx.request.headers().get("host")
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("");
+    
     // Strip query parameters from the path for static file serving
     let path_without_query = if let Some(query_pos) = path.find('?') {
         &path[..query_pos]
@@ -345,7 +350,11 @@ async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
     };
     
     let file_path = if path_without_query == "/" || path_without_query == "" {
-        "index.html"
+        if host_header == "search.web" {
+            "search.html"
+        } else {
+            "index.html"
+        }
     } else {
         if path_without_query.starts_with('/') {
             &path_without_query[1..]
@@ -362,7 +371,13 @@ async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
     
     let current_dir = std::env::current_dir()
         .map_err(|_| GurtError::invalid_message("Failed to get current directory"))?;
-    let frontend_dir = current_dir.join("frontend");
+    
+    let frontend_dir = if host_header == "search.web" {
+        current_dir.join("search-engine").join("frontend")
+    } else {
+        current_dir.join("frontend")
+    };
+    
     let full_path = frontend_dir.join(file_path);
     
     match tokio::fs::read_to_string(&full_path).await {

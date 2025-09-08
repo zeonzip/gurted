@@ -93,7 +93,7 @@ local function performSearch(query)
 
     showLoading()
     
-    local url = '/api/search?q=' .. urlEncode(query) .. '&per_page=20'
+    local url = 'https://135.125.163.131:4880/api/search?q=' .. urlEncode(query) .. '&per_page=20'
     local response = fetch(url, {
         method = 'GET'
     })
@@ -120,7 +120,7 @@ local function performLuckySearch()
     local luckyTerms = {'test', 'demo', 'api', 'web', 'site', 'page', 'home', 'index'}
     local randomTerm = luckyTerms[math.random(#luckyTerms)]
     
-    local url = '/api/search?q=' .. urlEncode(randomTerm) .. '&per_page=50'
+    local url = 'https://135.125.163.131:4880/api/search?q=' .. urlEncode(randomTerm) .. '&per_page=50'
     local response = fetch(url, {
         method = 'GET'
     })
