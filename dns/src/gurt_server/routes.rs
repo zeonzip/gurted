@@ -21,8 +21,8 @@ fn parse_query_string(query: &str) -> HashMap<String, String> {
 }
 
 pub(crate) async fn index(ctx: &ServerContext, _app_state: AppState) -> Result<GurtResponse> {
-    let host_header = ctx.request.headers().get("host")
-        .and_then(|h| h.to_str().ok())
+    let host_header = ctx.request.header("host")
+        .map(|s| s.as_str())
         .unwrap_or("");
     
     let hostname = host_header.split(':').next().unwrap_or(host_header);

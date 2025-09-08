@@ -338,13 +338,12 @@ async fn get_ca_certificate_content(app_state: &AppState) -> std::result::Result
 async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
     let path = ctx.path();
     
-    let host_header = ctx.request.headers().get("host")
-        .and_then(|h| h.to_str().ok())
+    let host_header = ctx.request.header("host")
+        .map(|s| s.as_str())
         .unwrap_or("");
     
     // Debug logging
     log::info!("Static file request - Path: '{}', Host header: '{}'", path, host_header);
-    log::info!("All headers: {:?}", ctx.request.headers());
     
     // Extract hostname without port
     let hostname = host_header.split(':').next().unwrap_or(host_header);
