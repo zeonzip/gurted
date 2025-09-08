@@ -24,7 +24,7 @@ Gurted is an ecosystem similar to the World Wide Web, it features:
 # Download and install
 
 ## Windows 
-Grab the installer from the [releases page](https://github.com/outpoot/gurted/releases) and run it as an administrator or download the binary and run it
+Grab the binary from the [releases page](https://github.com/outpoot/gurted/releases) and run it
 
 ## Linux
 Download the binary from [releases page](https://github.com/outpoot/gurted/releases) and run it.
