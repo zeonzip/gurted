@@ -154,7 +154,7 @@
 							class="from-primary/20 to-secondary/20 mb-6 flex h-48 w-full items-center justify-center rounded-xl bg-gradient-to-br"
 						>
 							<img
-								src="/ringle-preview.png"
+								src="/ringle.png"
 								alt="Ringle Search Engine"
 								class="h-full w-full rounded-xl object-cover"
 							/>
