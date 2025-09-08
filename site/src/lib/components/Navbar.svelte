@@ -23,7 +23,7 @@
           GitHub
         </Button>
         <a href="/download">
-          <Button size="sm" class="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg">
+          <Button size="sm" class="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg" href="/download">
             Download
           </Button>
         </a>
