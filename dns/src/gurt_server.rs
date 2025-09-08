@@ -390,7 +390,7 @@ async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
     };
     
     let full_path = frontend_dir.join(file_path);
-    log::info!("Attempting to serve file: '{}'", full_path.display());
+    log::info!("Attempting to serve file: '{}' from directory: '{}'", full_path.display(), frontend_dir.display());
     
     match tokio::fs::read_to_string(&full_path).await {
         Ok(content) => {
