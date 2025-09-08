@@ -12,7 +12,7 @@ Gurted is an ecosystem similar to the World Wide Web, it features:
 - A custom **DNS** that allows users to create domains with TLDs such as `.based`, `.delulu`, `.aura`, `.twin` and many more.
 - A search engine called **Ringle**.
 
-![Preview of Flumi, the official gurted wayfinder](https://raw.githubusercontent.com/outpoot/gurted/master/images/flumi.png)
+![Preview of Flumi, the official gurted wayfinder](https://raw.githubusercontent.com/outpoot/gurted/refs/heads/main/images/flumi.png?token=GHSAT0AAAAAADIOOUTXJNIN6EFPUEPJVQCK2F6XLTA)
 
 # File structure
 - `/dns` - The source code for the **DNS** (Domain Name System)
