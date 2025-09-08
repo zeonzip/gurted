@@ -1,4 +1,4 @@
-<img style="width: 128px; height: 128px" src="site/static/favicon.svg" /><h1 style="font-size: 48px"><a href="https://rugplay.com">Gurted</a> - the ecosystem similar to World Wide Web.</h1>
+<img style="width: 128px; height: 128px" src="site/static/favicon.svg" /><h1 style="font-size: 48px"><a href="https://gurted.com">Gurted</a> - the ecosystem similar to World Wide Web.</h1>
 
 [Website](https://gurted.com/) | [Docs](https://docs.gurted.com/) | [License](LICENSE) | [YouTube video](https://www.youtube.com)
 
