@@ -86,7 +86,8 @@ func create_log_item(entry: Dictionary) -> Control:
 			"scroll_fit_content_height": true,
 			"transparent_background": true,
 			"syntax_highlighter": input_line.syntax_highlighter.duplicate(),
-			"block_editing_signals": true
+			"block_editing_signals": true,
+			"size_flags_vertical": Control.SIZE_SHRINK_CENTER
 		})
 		
 		message_code_edit.gui_input.connect(_on_log_code_edit_gui_input)

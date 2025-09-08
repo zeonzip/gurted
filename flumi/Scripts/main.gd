@@ -485,7 +485,12 @@ func render_content(html_bytes: PackedByteArray) -> void:
 	if scripts.size() > 0 and lua_api:
 		parser.process_scripts(lua_api, null)
 		if parse_result.external_scripts and not parse_result.external_scripts.is_empty():
-			await parser.process_external_scripts(lua_api, null, current_domain)
+			# Extract base URL without query parameters for script resolution
+			var base_url_for_scripts = current_domain
+			var query_pos = base_url_for_scripts.find("?")
+			if query_pos != -1:
+				base_url_for_scripts = base_url_for_scripts.substr(0, query_pos)
+			await parser.process_external_scripts(lua_api, null, base_url_for_scripts)
 	
 	var postprocess_element = parser.process_postprocess()
 	if postprocess_element:

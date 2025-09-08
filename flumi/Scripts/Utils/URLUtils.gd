@@ -48,6 +48,12 @@ static func resolve_url(base_url: String, relative_url: String) -> String:
 	else:
 		host = remainder.substr(0, first_slash)
 		var path = remainder.substr(first_slash + 1)
+		
+		# Remove query parameters from the path for URL resolution
+		var query_start = path.find("?")
+		if query_start != -1:
+			path = path.substr(0, query_start)
+		
 		if not path.is_empty():
 			current_path_parts = path.split("/")
 	

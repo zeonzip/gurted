@@ -342,12 +342,7 @@ async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
         .map(|s| s.as_str())
         .unwrap_or("");
     
-    // Debug logging
-    log::info!("Static file request - Path: '{}', Host header: '{}'", path, host_header);
-    
-    // Extract hostname without port
     let hostname = host_header.split(':').next().unwrap_or(host_header);
-    log::info!("Extracted hostname: '{}'", hostname);
     
     // Strip query parameters from the path for static file serving
     let path_without_query = if let Some(query_pos) = path.find('?') {
@@ -358,10 +353,8 @@ async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
     
     let file_path = if path_without_query == "/" || path_without_query == "" {
         if hostname == "search.web" {
-            log::info!("Serving search.html for search.web domain");
             "search.html"
         } else {
-            log::info!("Serving index.html for domain: '{}'", hostname);
             "index.html"
         }
     } else {
@@ -382,15 +375,12 @@ async fn serve_static_file(ctx: &ServerContext) -> Result<GurtResponse> {
         .map_err(|_| GurtError::invalid_message("Failed to get current directory"))?;
     
     let frontend_dir = if hostname == "search.web" {
-        log::info!("Using search-engine frontend directory");
         current_dir.join("search-engine").join("frontend")
     } else {
-        log::info!("Using default frontend directory");
         current_dir.join("frontend")
     };
     
     let full_path = frontend_dir.join(file_path);
-    log::info!("Attempting to serve file: '{}' from directory: '{}'", full_path.display(), frontend_dir.display());
     
     match tokio::fs::read_to_string(&full_path).await {
         Ok(content) => {
