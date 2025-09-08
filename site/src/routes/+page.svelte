@@ -54,7 +54,7 @@
 				</p>
 
 				<div class="flex flex-col justify-center gap-4 sm:flex-row">
-					<Button size="lg" class="px-8 py-6 text-lg">
+					<Button size="lg" class="px-8 py-6 text-lg" href="/download">
 						<Download class="h-5 w-5" />
 						Download
 					</Button>
@@ -303,7 +303,7 @@ end)
 						<CardDescription>Get the Flumi wayfinder for your platform</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<Button class="w-full">
+						<Button class="w-full" href="/download">
 							<Download class="h-4 w-4" />
 							Download
 						</Button>
