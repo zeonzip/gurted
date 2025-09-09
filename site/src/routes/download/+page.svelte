@@ -22,7 +22,7 @@
 	} from 'lucide-svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
 
-    const version = '1.0.0';
+    const version = '1.0.1';
 </script>
 
 <svelte:head>
