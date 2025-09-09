@@ -215,7 +215,8 @@ func get_element_styles_with_inheritance(element: HTMLElement, event: String = "
 	if element in visited_elements:
 		return {}
 
-	visited_elements.append(element)
+	var new_visited_for_styles = visited_elements.duplicate()
+	new_visited_for_styles.append(element)
 	
 	var styles = {}
 	
@@ -561,7 +562,7 @@ static func get_bbcode_with_styles(element: HTMLElement, styles: Dictionary, par
 	for child in element.children:
 		var child_styles = styles
 		if parser != null:
-			child_styles = parser.get_element_styles_with_inheritance(child, "", new_visited)
+			child_styles = parser.get_element_styles_with_inheritance(child, "", [])
 		var child_content = HTMLParser.get_bbcode_with_styles(child, child_styles, parser, new_visited)
 		child_content = apply_element_bbcode_formatting(child, child_styles, child_content)
 		text += child_content
