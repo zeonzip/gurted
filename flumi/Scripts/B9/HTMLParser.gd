@@ -404,7 +404,7 @@ func get_icon() -> String:
 	var icon_element = find_first("icon")
 	return icon_element.get_attribute("src") if icon_element != null else ""
 
-func process_fonts() -> void:
+func process_fonts(base_url: String = "") -> void:
 	var font_elements = find_all("font")
 	
 	for font_element in font_elements:
@@ -413,7 +413,8 @@ func process_fonts() -> void:
 		var weight = font_element.get_attribute("weight", "400")
 		
 		if name_str and src:
-			FontManager.register_font(name_str, src, weight)
+			var resolved_src = URLUtils.resolve_url(base_url, src)
+			FontManager.register_font(name_str, resolved_src, weight)
 
 func get_meta_content(name_: String) -> String:
 	var meta_elements = find_all("meta", "name")
