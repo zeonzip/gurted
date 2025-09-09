@@ -359,7 +359,8 @@ func _on_gui_input_click(event: InputEvent, subscription: EventSubscription) -> 
 	if event is InputEventMouseButton:
 		var mouse_event = event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
-			_execute_lua_callback(subscription)
+			var mouse_info = _get_element_relative_mouse_position(mouse_event, subscription.element_id)
+			_execute_lua_callback(subscription, [mouse_info])
 
 func _on_gui_input_mouse_universal(event: InputEvent, signal_node: Node) -> void:
 	if event is InputEventMouseButton:
@@ -376,7 +377,8 @@ func _on_gui_input_mouse_universal(event: InputEvent, signal_node: Node) -> void
 						should_trigger = true
 					
 					if should_trigger:
-						_execute_lua_callback(subscription)
+						var mouse_info = _get_element_relative_mouse_position(mouse_event, subscription.element_id)
+						_execute_lua_callback(subscription, [mouse_info])
 
 # Event callback handlers
 func _on_gui_input_mousemove(event: InputEvent, subscription: EventSubscription) -> void:
@@ -448,6 +450,30 @@ func _input(event: InputEvent) -> void:
 			if subscription.element_id == "body" and subscription.connected_signal == "input_mousemove":
 				if subscription.event_name == "mousemove":
 					_handle_mousemove_event(mouse_event, subscription)
+
+func _get_element_relative_mouse_position(mouse_event: InputEvent, element_id: String) -> Dictionary:
+	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+	if not dom_node or not dom_node is Control:
+		return {"x": 0, "y": 0}
+	
+	var control = dom_node as Control
+	var global_pos: Vector2
+	
+	if mouse_event is InputEventMouseButton:
+		global_pos = (mouse_event as InputEventMouseButton).global_position
+	elif mouse_event is InputEventMouseMotion:
+		global_pos = (mouse_event as InputEventMouseMotion).global_position
+	else:
+		return {"x": 0, "y": 0}
+	
+	var element_rect = control.get_global_rect()
+	var local_x = global_pos.x - element_rect.position.x
+	var local_y = global_pos.y - element_rect.position.y
+	
+	return {
+		"x": local_x,
+		"y": local_y
+	}
 
 func _handle_mousemove_event(mouse_event: InputEventMouseMotion, subscription: EventSubscription) -> void:
 	# TODO: pass reference instead of hardcoded path
@@ -1003,3 +1029,31 @@ func _handle_download_request(operation: Dictionary):
 	
 	var main_node = Engine.get_main_loop().current_scene
 	main_node.download_manager.handle_download_request(download_data)
+
+func _get_element_size_sync(result: Array, element_id: String):
+	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+	if dom_node and dom_node is Control:
+		var control = dom_node as Control
+		result[0] = control.size.x
+		result[1] = control.size.y
+		result[2] = true # completion flag
+		return
+	
+	# Fallback
+	result[0] = 0.0
+	result[1] = 0.0
+	result[2] = true # completion flag
+
+func _get_element_position_sync(result: Array, element_id: String):
+	var dom_node = dom_parser.parse_result.dom_nodes.get(element_id, null)
+	if dom_node and dom_node is Control:
+		var control = dom_node as Control
+		result[0] = control.position.x
+		result[1] = control.position.y
+		result[2] = true # completion flag
+		return
+	
+	# Fallback
+	result[0] = 0.0
+	result[1] = 0.0
+	result[2] = true # completion flag
