@@ -374,8 +374,14 @@ func register_dom_node(element: HTMLElement, node) -> void:
 	node.set_meta("html_element", element)
 
 func update_dom_node_id(element: HTMLElement, new_id: String) -> void:
+	var old_id = element.get_id()
 	var temp_key = "_element_" + str(element.get_instance_id())
-	if parse_result.dom_nodes.has(temp_key):
+	
+	if not old_id.is_empty() and parse_result.dom_nodes.has(old_id):
+		var node = parse_result.dom_nodes[old_id]
+		parse_result.dom_nodes.erase(old_id)
+		parse_result.dom_nodes[new_id] = node
+	elif parse_result.dom_nodes.has(temp_key):
 		var node = parse_result.dom_nodes[temp_key]
 		parse_result.dom_nodes.erase(temp_key)
 		parse_result.dom_nodes[new_id] = node

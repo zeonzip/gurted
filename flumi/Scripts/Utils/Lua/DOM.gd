@@ -955,10 +955,19 @@ static func _element_set_attribute_wrapper(vm: LuauVM) -> int:
 	if attribute_value == "":
 		element.attributes.erase(attribute_name)
 	else:
-		element.set_attribute(attribute_name, attribute_value)
+		if attribute_name == "id" and attribute_value != element_id:
+			element.set_attribute(attribute_name, attribute_value)
+			
+			lua_api.dom_parser.update_dom_node_id(element, attribute_value)
+			
+			vm.lua_pushstring(attribute_value)
+			vm.lua_setfield(1, "_element_id")
+		else:
+			element.set_attribute(attribute_name, attribute_value)
 	
 	# Trigger visual update by calling init() again for DOM nodes (must be on main thread)
-	var dom_node = lua_api.dom_parser.parse_result.dom_nodes.get(element_id, null)
+	var current_element_id = element.get_id()
+	var dom_node = lua_api.dom_parser.parse_result.dom_nodes.get(current_element_id, null)
 	if dom_node and dom_node.has_method("init"):
 		dom_node.call_deferred("init", element, lua_api.dom_parser)
 	
