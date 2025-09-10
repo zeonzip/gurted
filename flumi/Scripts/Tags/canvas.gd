@@ -9,6 +9,7 @@ var draw_commands: Array = []
 var context_2d: CanvasContext2D = null
 var context_shader: CanvasContextShader = null
 var pending_redraw: bool = false
+var max_draw_commands: int = 1000
 
 class CanvasContext2D:
 	var canvas: HTMLCanvas
@@ -327,6 +328,9 @@ func withContext(context_type: String):
 func _draw():
 	draw_rect(Rect2(Vector2.ZERO, size), Color.TRANSPARENT)
 	
+	# Skip if too many commands to prevent frame drops
+	if draw_commands.size() > max_draw_commands * 2:
+		return
 	
 	for cmd in draw_commands:
 		match cmd.type:
@@ -412,6 +416,8 @@ func _add_draw_command(cmd: Dictionary):
 	
 	draw_commands.append(cmd)
 	
+	if draw_commands.size() > max_draw_commands:
+		draw_commands = draw_commands.slice(draw_commands.size() - max_draw_commands)
 	
 	if not pending_redraw:
 		pending_redraw = true
