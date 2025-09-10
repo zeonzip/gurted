@@ -583,6 +583,9 @@ static func create_element_wrapper(vm: LuauVM, element: HTMLParser.HTMLElement, 
 		if element_id.is_empty():
 			element_id = lua_api.get_or_assign_element_id(element)
 			element.set_attribute("id", element_id)
+			
+			# Update the DOM node registration with the new ID
+			lua_api.dom_parser.update_dom_node_id(element, element_id)
 	
 	vm.lua_pushstring(element_id)
 	vm.lua_setfield(-2, "_element_id")
