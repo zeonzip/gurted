@@ -215,7 +215,8 @@ func get_element_styles_with_inheritance(element: HTMLElement, event: String = "
 	if element in visited_elements:
 		return {}
 
-	visited_elements.append(element)
+	var new_visited_for_styles = visited_elements.duplicate()
+	new_visited_for_styles.append(element)
 	
 	var styles = {}
 	
@@ -403,7 +404,7 @@ func get_icon() -> String:
 	var icon_element = find_first("icon")
 	return icon_element.get_attribute("src") if icon_element != null else ""
 
-func process_fonts() -> void:
+func process_fonts(base_url: String = "") -> void:
 	var font_elements = find_all("font")
 	
 	for font_element in font_elements:
@@ -412,7 +413,8 @@ func process_fonts() -> void:
 		var weight = font_element.get_attribute("weight", "400")
 		
 		if name_str and src:
-			FontManager.register_font(name_str, src, weight)
+			var resolved_src = URLUtils.resolve_url(base_url, src)
+			FontManager.register_font(name_str, resolved_src, weight)
 
 func get_meta_content(name_: String) -> String:
 	var meta_elements = find_all("meta", "name")
@@ -449,7 +451,7 @@ func process_scripts(lua_api: LuaAPI, _lua_vm) -> void:
 				parse_result.external_scripts = []
 			parse_result.external_scripts.append(src)
 		elif not inline_code.is_empty():
-			lua_api.execute_lua_script(inline_code)
+			lua_api.execute_lua_script(inline_code, "<inline script>")
 
 func process_external_scripts(lua_api: LuaAPI, _lua_vm, base_url: String = "") -> void:
 	if not lua_api or not parse_result.external_scripts or parse_result.external_scripts.is_empty():
@@ -460,7 +462,7 @@ func process_external_scripts(lua_api: LuaAPI, _lua_vm, base_url: String = "") -
 	for script_url in parse_result.external_scripts:
 		var script_content = await Network.fetch_external_resource(script_url, base_url)
 		if not script_content.is_empty():
-			lua_api.execute_lua_script(script_content)
+			lua_api.execute_lua_script(script_content, script_url)
 
 func process_postprocess() -> HTMLParser.HTMLElement:
 	var postprocess_elements = find_all("postprocess")
@@ -561,7 +563,7 @@ static func get_bbcode_with_styles(element: HTMLElement, styles: Dictionary, par
 	for child in element.children:
 		var child_styles = styles
 		if parser != null:
-			child_styles = parser.get_element_styles_with_inheritance(child, "", new_visited)
+			child_styles = parser.get_element_styles_with_inheritance(child, "", [])
 		var child_content = HTMLParser.get_bbcode_with_styles(child, child_styles, parser, new_visited)
 		child_content = apply_element_bbcode_formatting(child, child_styles, child_content)
 		text += child_content

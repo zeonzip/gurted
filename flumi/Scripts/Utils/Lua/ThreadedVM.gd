@@ -56,11 +56,12 @@ func stop_lua_thread():
 	lua_thread.wait_to_finish()
 	lua_thread = null
 
-func execute_script_async(script_code: String):
+func execute_script_async(script_code: String, chunk_name: String = "dostring"):
 	queue_mutex.lock()
 	command_queue.append({
 		"type": "execute_script",
-		"code": script_code
+		"code": script_code,
+		"chunk_name": chunk_name
 	})
 	queue_mutex.unlock()
 	thread_semaphore.post()
@@ -143,21 +144,28 @@ func _process_command_queue():
 	for command in commands_to_process:
 		match command.type:
 			"execute_script":
-				_execute_script_in_thread(command.code)
+				_execute_script_in_thread(command.code, command.get("chunk_name", "dostring"))
 			"execute_callback":
 				_execute_callback_in_thread(command.callback_ref, command.args)
 			"execute_timeout":
 				_execute_timeout_in_thread(command.timeout_id)
 
-func _execute_script_in_thread(script_code: String):
+func _execute_script_in_thread(script_code: String, chunk_name: String = "dostring"):
 	if not lua_vm:
 		call_deferred("_emit_script_error", "Lua VM not initialized")
 		return
 	
-	var result = lua_vm.lua_dostring(script_code)
+	# Use load_string with custom chunk name, then lua_pcall
+	var load_result = lua_vm.load_string(script_code, chunk_name)
 	
-	if result == lua_vm.LUA_OK:
-		call_deferred("_emit_script_completed", {"success": true})
+	if load_result == lua_vm.LUA_OK:
+		var call_result = lua_vm.lua_pcall(0, 0, 0)
+		if call_result == lua_vm.LUA_OK:
+			call_deferred("_emit_script_completed", {"success": true})
+		else:
+			var error_msg = lua_vm.lua_tostring(-1)
+			lua_vm.lua_pop(1)
+			call_deferred("_emit_script_error", error_msg)
 	else:
 		var error_msg = lua_vm.lua_tostring(-1)
 		lua_vm.lua_pop(1)
@@ -256,6 +264,16 @@ func _print_handler(vm: LuauVM) -> int:
 		"parts": message_parts,
 		"count": message_parts.size()
 	}
+	
+	# Also call trace.log with the formatted message
+	var message_strings: Array[String] = []
+	for part in message_parts:
+		if part.type == "table":
+			message_strings.append(str(part.data))
+		else:
+			message_strings.append(part.data)
+	var final_message = "\t".join(message_strings)
+	call_deferred("_emit_trace_message", final_message, "log")
 	
 	call_deferred("_emit_print_output", print_data)
 	
@@ -358,6 +376,12 @@ func _setup_threaded_gurt_api():
 		lua_vm.lua_pushcallable(_body_on_handler, "body.on")
 		lua_vm.lua_setfield(-2, "on")
 		lua_vm.lua_setfield(-2, "body")
+	
+	lua_vm.lua_pushcallable(_gurt_get_width_handler, "gurt.width")
+	lua_vm.lua_setfield(-2, "width")
+	
+	lua_vm.lua_pushcallable(_gurt_get_height_handler, "gurt.height")
+	lua_vm.lua_setfield(-2, "height")
 	
 	lua_vm.lua_setglobal("gurt")
 
@@ -499,9 +523,49 @@ func _set_interval_handler(vm: LuauVM) -> int:
 func get_current_href() -> String:
 	var main_node = Engine.get_main_loop().current_scene
 	
+	if main_node == null:
+		return ""
+	
+	return main_node.current_domain
+
+func _gurt_get_width_handler(vm: LuauVM) -> int:
+	var result = [0.0]
+	call_deferred("_get_width_sync", result)
+	while result[0] == 0.0:
+		OS.delay_msec(1)
+	vm.lua_pushnumber(result[0])
+	return 1
+
+func _gurt_get_height_handler(vm: LuauVM) -> int:
+	var result = [0.0]
+	call_deferred("_get_height_sync", result)
+	while result[0] == 0.0:
+		OS.delay_msec(1)
+	vm.lua_pushnumber(result[0])
+	return 1
+
+func _get_width_sync(result: Array):
+	var main_node = Engine.get_main_loop().current_scene
 	if main_node:
-		return main_node.current_domain
-	return ""
+		var active_tab = main_node.get_active_tab()
+		if active_tab and active_tab.website_container:
+			result[0] = active_tab.website_container.size.x
+		else:
+			result[0] = 1024.0
+	else:
+		result[0] = 1024.0
+
+func _get_height_sync(result: Array):
+	var main_node = Engine.get_main_loop().current_scene
+	if main_node:
+		var active_tab = main_node.get_active_tab()
+		if active_tab and active_tab.website_container:
+			result[0] = active_tab.website_container.size.y
+		else:
+			result[0] = 768.0
+	else:
+		result[0] = 768.0
+
 
 func _gurt_select_handler(vm: LuauVM) -> int:
 	var selector: String = vm.luaL_checkstring(1)
