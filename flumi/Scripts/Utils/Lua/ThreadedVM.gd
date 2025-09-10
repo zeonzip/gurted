@@ -505,6 +505,9 @@ func _set_interval_handler(vm: LuauVM) -> int:
 func get_current_href() -> String:
 	var main_node = Engine.get_main_loop().current_scene
 	
+	if main_node == null:
+		return ""
+	
 	return main_node.current_domain
 
 func _gurt_get_width_handler(vm: LuauVM) -> int:
