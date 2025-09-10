@@ -189,6 +189,11 @@ static func connect_body_event(event_name: String, subscription, lua_api) -> boo
 			subscription.connected_signal = "input_mousemove"
 			subscription.connected_node = lua_api
 			return true
+		"mousedown", "mouseup":
+			lua_api.set_process_input(true)
+			subscription.connected_signal = "input"
+			subscription.connected_node = lua_api
+			return true
 		"mouseenter", "mouseexit":
 			var main_container = lua_api.dom_parser.parse_result.dom_nodes.get("body", null)
 			if main_container:
