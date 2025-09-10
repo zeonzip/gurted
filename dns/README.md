@@ -244,7 +244,7 @@ Delete a domain owned by the account.
 Fetch all approved domains with pagination support.
 
 **Query Parameters:**
-- `page` (or `p`) - Page number (default: 1)
+- `page` - Page number (default: 1)
 - `page_size` (or `s`, `size`, `l`, `limit`) - Items per page (default: 15, max: 100)
 
 **Response:**
