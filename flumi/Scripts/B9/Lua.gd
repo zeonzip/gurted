@@ -660,13 +660,13 @@ func get_dom_node(node: Node, purpose: String = "general") -> Node:
 	return node
 
 # Main execution function
-func execute_lua_script(code: String):
+func execute_lua_script(code: String, chunk_name: String = "dostring"):
 	if not threaded_vm.lua_thread or not threaded_vm.lua_thread.is_alive():
 		# Start the thread if it's not running
 		threaded_vm.start_lua_thread(dom_parser, self)
 	
 	script_start_time = Time.get_ticks_msec() / 1000.0
-	threaded_vm.execute_script_async(code)
+	threaded_vm.execute_script_async(code, chunk_name)
 
 func _on_threaded_script_completed(_result: Dictionary):
 	pass
