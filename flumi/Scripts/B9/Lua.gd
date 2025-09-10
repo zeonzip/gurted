@@ -443,6 +443,7 @@ func _input(event: InputEvent) -> void:
 					}
 					_execute_lua_callback(subscription, [key_info])
 	
+	
 	elif event is InputEventMouseMotion:
 		var mouse_event = event as InputEventMouseMotion
 		for subscription_id in event_subscriptions:
@@ -675,7 +676,14 @@ func _on_threaded_script_error(error_message: String):
 	Trace.trace_error("RuntimeError: " + error_message)
 
 func _on_print_output(message: Dictionary):
-	Trace.get_instance().log_message.emit(message, "lua", Time.get_ticks_msec() / 1000.0)
+	var message_strings: Array[String] = []
+	for part in message.parts:
+		if part.type == "table":
+			message_strings.append(str(part.data))
+		else:
+			message_strings.append(part.data)
+	var formatted_message = "\t".join(message_strings)
+	Trace.get_instance().log_message.emit(formatted_message, "lua", Time.get_ticks_msec() / 1000.0)
 
 func kill_script_execution():
 	threaded_vm.stop_lua_thread()
