@@ -20,6 +20,16 @@ static func is_gurt_domain(url: String) -> bool:
 	if not url.contains("://"):
 		# Extract just the domain part (before any path)
 		var domain = url.split("/")[0]
+		
+		# Handle port numbers (e.g., localhost:4878)
+		if domain.contains(":"):
+			domain = domain.split(":")[0]
+		
+		# Check if it's a direct address (localhost, IP, etc.)
+		if is_direct_address(domain):
+			return true
+		
+		# Check if it's a standard domain (e.g., example.com)
 		var parts = domain.split(".")
 		return parts.size() == 2
 	
