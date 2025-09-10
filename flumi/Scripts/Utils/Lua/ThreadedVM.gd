@@ -265,6 +265,16 @@ func _print_handler(vm: LuauVM) -> int:
 		"count": message_parts.size()
 	}
 	
+	# Also call trace.log with the formatted message
+	var message_strings: Array[String] = []
+	for part in message_parts:
+		if part.type == "table":
+			message_strings.append(str(part.data))
+		else:
+			message_strings.append(part.data)
+	var final_message = "\t".join(message_strings)
+	call_deferred("_emit_trace_message", final_message, "log")
+	
 	call_deferred("_emit_print_output", print_data)
 	
 	return 0
