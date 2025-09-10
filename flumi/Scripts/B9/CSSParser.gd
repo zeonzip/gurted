@@ -572,8 +572,11 @@ static func parse_utility_class_internal(rule: CSSRule, utility_name: String) ->
 			val = val.substr(1, val.length() - 2)
 		rule.properties["width"] = SizeUtils.parse_size(val)
 		return
-	# Height, but h-full is temporarily disabled since it fucks with Yoga layout engine
-	if utility_name.begins_with("h-") and utility_name != "h-full":
+	# Height
+	if utility_name.begins_with("h-"):
+		# Skip h-full for flex containers as it conflicts with Yoga layout
+		if utility_name == "h-full" and rule.properties.has("display") and (rule.properties["display"] == "flex" or rule.properties["display"] == "inline-flex"):
+			return
 		var val = utility_name.substr(2)
 		if val.begins_with("[") and val.ends_with("]"):
 			val = val.substr(1, val.length() - 2)

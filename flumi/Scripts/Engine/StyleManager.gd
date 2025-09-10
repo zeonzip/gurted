@@ -89,13 +89,18 @@ static func apply_element_styles(node: Control, element: HTMLParser.HTMLElement,
 				if height == "100%":
 					node.size_flags_vertical = Control.SIZE_EXPAND_FILL
 					node.custom_minimum_size.y = 0
+					if node is PanelContainer and node.get_child_count() > 0:
+						var vbox = node.get_child(0)
+						if vbox is VBoxContainer:
+							vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+					node.set_meta("size_flags_set_by_style_manager", true)
 				else:
 					# For other percentages, convert to viewport-relative size
 					var percent = float(height.replace("%", "")) / 100.0
 					var viewport_height = node.get_viewport().get_visible_rect().size.y if node.get_viewport() else 600
 					node.custom_minimum_size.y = viewport_height * percent
-				node.set_meta("size_flags_set_by_style_manager", true)
-				node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+					node.set_meta("size_flags_set_by_style_manager", true)
+					node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 			else:
 				node.custom_minimum_size.y = height
 				node.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
