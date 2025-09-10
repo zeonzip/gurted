@@ -1072,6 +1072,7 @@ pub(crate) async fn get_certificate(
         &ca_cert.ca_cert_pem,
         &ca_cert.ca_key_pem,
         &domain,
+        Some(&ctx.client_ip().to_string()),
     )
     .map_err(|e| {
         log::error!("Failed to sign certificate: {}", e);
