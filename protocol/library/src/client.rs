@@ -719,10 +719,8 @@ mod tests {
         
         let original_host = "arson.dev";
         
-        let host_header = original_host;
-
         let handshake_request = GurtRequest::new(GurtMethod::HANDSHAKE, "/".to_string())
-            .with_header("Host", host_header)
+            .with_header("Host", original_host)
             .with_header("User-Agent", "GURT-Client/1.0.0");
         
         assert_eq!(handshake_request.headers.get("host").unwrap(), "arson.dev");
