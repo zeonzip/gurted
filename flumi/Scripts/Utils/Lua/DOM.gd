@@ -991,7 +991,7 @@ static func _element_index_wrapper(vm: LuauVM) -> int:
 	
 	match key:
 		"value":
-			if lua_api and (tag_name == "input" or tag_name == "select"):
+			if lua_api and (tag_name == "input" or tag_name == "select" or tag_name == "textarea"):
 				vm.lua_getfield(1, "_element_id")
 				var element_id: String = vm.lua_tostring(-1)
 				vm.lua_pop(1)
@@ -1005,6 +1005,11 @@ static func _element_index_wrapper(vm: LuauVM) -> int:
 						value_result = str(_get_input_value(element, dom_node))
 					elif tag_name == "select":
 						value_result = _get_select_value(element, dom_node)
+					elif tag_name == "textarea":
+						if dom_node is TextEdit:
+							value_result = dom_node.text
+						else:
+							value_result = element.text_content
 					
 					vm.lua_pushstring(value_result)
 					return 1
@@ -1343,7 +1348,7 @@ static func _element_newindex_wrapper(vm: LuauVM) -> int:
 	
 	match key:
 		"value":
-			if tag_name == "input" or tag_name == "select":
+			if tag_name == "input" or tag_name == "select" or tag_name == "textarea":
 				vm.lua_getfield(1, "_element_id")
 				var element_id: String = vm.lua_tostring(-1)
 				vm.lua_pop(1)
@@ -1358,6 +1363,11 @@ static func _element_newindex_wrapper(vm: LuauVM) -> int:
 					elif tag_name == "select":
 						element.set_attribute("value", str(value))
 						_set_select_value(element, dom_node, value)
+					elif tag_name == "textarea":
+						element.set_attribute("value", str(value))
+						element.text_content = str(value)
+						if dom_node is TextEdit:
+							dom_node.call_deferred("set", "text", str(value))
 			return 0
 		"text":
 			var text: String = str(value)  # Convert value to string
