@@ -380,6 +380,33 @@ func _on_gui_input_mouse_universal(event: InputEvent, signal_node: Node) -> void
 						var mouse_info = _get_element_relative_mouse_position(mouse_event, subscription.element_id)
 						_execute_lua_callback(subscription, [mouse_info])
 
+func _on_gui_input_keys_universal(event: InputEvent, signal_node: Node) -> void:
+	if event is InputEventKey:
+		var key_event = event as InputEventKey
+		for subscription_id in event_subscriptions:
+			var subscription = event_subscriptions[subscription_id]
+			if subscription.connected_node == signal_node and subscription.connected_signal == "gui_input_keys":
+				var should_trigger = false
+				match subscription.event_name:
+					"keydown":
+						should_trigger = key_event.pressed
+					"keyup": 
+						should_trigger = not key_event.pressed
+					"keypress":
+						should_trigger = key_event.pressed
+				
+				if should_trigger:
+					var key_info = {
+						"key": OS.get_keycode_string(key_event.keycode),
+						"keycode": key_event.keycode,
+						"ctrl": key_event.ctrl_pressed,
+						"shift": key_event.shift_pressed,
+						"alt": key_event.alt_pressed,
+						"meta": key_event.meta_pressed,
+						"echo": key_event.echo
+					}
+					_execute_lua_callback(subscription, [key_info])
+
 # Event callback handlers
 func _on_gui_input_mousemove(event: InputEvent, subscription: EventSubscription) -> void:
 	if not event_subscriptions.has(subscription.id):

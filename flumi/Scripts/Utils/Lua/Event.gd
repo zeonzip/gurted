@@ -86,6 +86,21 @@ static func connect_element_event(signal_node: Node, event_name: String, subscri
 				subscription.connected_signal = "focus_exited"
 				subscription.connected_node = signal_node
 				return true
+		"keydown", "keypress", "keyup":
+			if signal_node is Control:
+				var already_connected = false
+				for existing_id in subscription.lua_api.event_subscriptions:
+					var existing_sub = subscription.lua_api.event_subscriptions[existing_id]
+					if existing_sub.connected_node == signal_node and existing_sub.connected_signal == "gui_input_keys":
+						already_connected = true
+						break
+				
+				if not already_connected:
+					signal_node.gui_input.connect(subscription.lua_api._on_gui_input_keys_universal.bind(signal_node))
+				
+				subscription.connected_signal = "gui_input_keys"
+				subscription.connected_node = signal_node
+				return true
 		"change":
 			# Check for DateButton first before generic button signals
 			if is_date_button(signal_node):
@@ -246,6 +261,9 @@ static func disconnect_subscription(subscription, lua_api) -> void:
 			"gui_input_focus":
 				if target_node.has_signal("gui_input"):
 					target_node.gui_input.disconnect(lua_api._on_focus_gui_input.bind(subscription))
+			"gui_input_keys":
+				if target_node.has_signal("gui_input"):
+					target_node.gui_input.disconnect(lua_api._on_gui_input_keys_universal.bind(target_node))
 			"mouse_entered":
 				if target_node.has_signal("mouse_entered"):
 					# Check if this is a body event or element event
