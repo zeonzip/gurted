@@ -45,17 +45,24 @@ static func _lua_fetch_handler(vm: LuauVM) -> int:
 	
 	# Set request options
 	var headers_array: PackedStringArray = []
-	
+	var headers_dict = {}
 	var has_user_agent = false
 	for header_name in headers:
 		if str(header_name).to_lower() == "user-agent":
 			has_user_agent = true
 		headers_array.append(str(header_name) + ": " + str(headers[header_name]))
+		headers_dict[str(header_name)] = str(headers[header_name])
 	
 	if not has_user_agent:
-		headers_array.append("User-Agent: " + UserAgent.get_user_agent())
+		var ua_value = UserAgent.get_user_agent()
+		headers_array.append("User-Agent: " + ua_value)
+		headers_dict["User-Agent"] = ua_value
 	
-	var response_data = make_http_request(url, method, headers_array, body)
+	var start_ms = Time.get_ticks_msec()
+	var response_data = make_http_request(url, method, headers_array, str(body))
+	var elapsed_ms = Time.get_ticks_msec() - start_ms
+
+	NetworkManager.call_deferred("add_completed_request", url, method, true, int(response_data.status), str(response_data.status_text), response_data.headers, str(response_data.body), [], headers_dict, str(body), float(elapsed_ms))
 	
 	# Create response object with actual data
 	vm.lua_newtable()
