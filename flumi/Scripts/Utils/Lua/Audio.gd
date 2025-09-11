@@ -127,6 +127,12 @@ static func _lua_audio_index_handler(vm: LuauVM) -> int:
 		"paused":
 			vm.lua_pushboolean(not audio_node.is_playing)
 			return 1
+		"src":
+			if audio_node.current_element:
+				vm.lua_pushstring(audio_node.current_element.get_attribute("src"))
+			else:
+				vm.lua_pushstring("")
+			return 1
 		_:
 			# Look up other methods/properties in the table itself
 			vm.lua_rawget(1)
@@ -150,6 +156,12 @@ static func _lua_audio_newindex_handler(vm: LuauVM) -> int:
 			return 0
 		"currentTime":
 			audio_node.call_deferred("set_current_time", float(value))
+			return 0
+		"src":
+			var src_url = str(value)
+			if audio_node.current_element:
+				audio_node.current_element.set_attribute("src", src_url)
+			audio_node.call_deferred("load_audio_async", src_url)
 			return 0
 		_:
 			vm.lua_rawset(1)
@@ -222,6 +234,12 @@ static func handle_dom_audio_index(vm: LuauVM, element_id: String, key: String) 
 		"paused":
 			vm.lua_pushboolean(not audio_node.is_playing)
 			return 1
+		"src":
+			if audio_node.current_element:
+				vm.lua_pushstring(audio_node.current_element.get_attribute("src"))
+			else:
+				vm.lua_pushstring("")
+			return 1
 	
 	return 0
 
@@ -238,5 +256,10 @@ static func handle_dom_audio_newindex(vm: LuauVM, element_id: String, key: Strin
 			audio_node.call_deferred("set", "loop", bool(value))
 		"currentTime":
 			audio_node.call_deferred("set_current_time", float(value))
+		"src":
+			var src_url = str(value)
+			if audio_node.current_element:
+				audio_node.current_element.set_attribute("src", src_url)
+			audio_node.call_deferred("load_audio_async", src_url)
 	
 	return 0
