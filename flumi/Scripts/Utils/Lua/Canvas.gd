@@ -314,13 +314,10 @@ static func _2d_drawText_wrapper(vm: LuauVM) -> int:
 	var x: float = vm.luaL_checknumber(2)
 	var y: float = vm.luaL_checknumber(3)
 	var text: String = vm.luaL_checkstring(4)
-	var font_name: String = "default"
 	var color: String = "#000000"
 	
 	if vm.lua_gettop() >= 5:
-		font_name = vm.luaL_checkstring(5)
-	if vm.lua_gettop() >= 6:
-		color = vm.luaL_checkstring(6)
+		color = vm.luaL_checkstring(5)
 	
 	vm.lua_getfield(1, "_element_id")
 	var element_id: String = vm.lua_tostring(-1)
@@ -332,7 +329,6 @@ static func _2d_drawText_wrapper(vm: LuauVM) -> int:
 		"x": x,
 		"y": y,
 		"text": text,
-		"font_name": font_name,
 		"color": color
 	}
 	

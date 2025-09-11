@@ -87,8 +87,8 @@ class CanvasContext2D:
 		}
 		canvas._add_draw_command(cmd)
 	
-	func drawText(x: float, y: float, text: String, color_hex: String = "#000000"):
-		var color = _parse_color(fill_style if color_hex == "#000000" else color_hex)
+	func drawText(x: float, y: float, text: String, color_hex: String = ""):
+		var color = _parse_color(fill_style if color_hex.is_empty() else color_hex)
 		var cmd = {
 			"type": "text",
 			"x": x,
