@@ -504,6 +504,10 @@ static func apply_element_bbcode_formatting(element: HTMLElement, styles: Dictio
 	# Apply general styling first (color, font-weight) for all elements
 	var formatted_content = content
 	
+	# Don't apply any formatting to empty content
+	if formatted_content.strip_edges().length() == 0:
+		return formatted_content
+	
 	# Apply font weight (bold/semibold/etc)
 	if styles.has("font-bold") and styles["font-bold"]:
 		formatted_content = "[b]" + formatted_content + "[/b]"
