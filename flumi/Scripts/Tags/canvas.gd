@@ -9,7 +9,7 @@ var draw_commands: Array = []
 var context_2d: CanvasContext2D = null
 var context_shader: CanvasContextShader = null
 var pending_redraw: bool = false
-var max_draw_commands: int = 1000
+var max_draw_commands: int = 10000
 
 class CanvasContext2D:
 	var canvas: HTMLCanvas

@@ -406,8 +406,40 @@ func _setup_additional_lua_apis():
 	LuaDownloadUtils.setup_download_api(lua_vm)
 	LuaCrumbsUtils.setup_crumbs_api(lua_vm)
 	LuaRegexUtils.setup_regex_api(lua_vm)
+	
+	lua_vm.lua_pushcallable(_onNextFrame_handler, "onNextFrame")
+	lua_vm.lua_setglobal("onNextFrame")
 	LuaURLUtils.setup_url_api(lua_vm)
 	Trace.setup_trace_api(lua_vm)
+
+func _onNextFrame_handler(vm: LuauVM) -> int:
+	vm.luaL_checktype(1, vm.LUA_TFUNCTION)
+	
+	vm.lua_pushstring("THREADED_CALLBACKS")
+	vm.lua_rawget(vm.LUA_REGISTRYINDEX)
+	if vm.lua_isnil(-1):
+		vm.lua_pop(1)
+		vm.lua_newtable()
+		vm.lua_pushstring("THREADED_CALLBACKS")
+		vm.lua_pushvalue(-2)
+		vm.lua_rawset(vm.LUA_REGISTRYINDEX)
+	
+	var callback_ref = lua_api.next_callback_ref
+	lua_api.next_callback_ref += 1
+	
+	vm.lua_pushinteger(callback_ref)
+	vm.lua_pushvalue(1)
+	vm.lua_rawset(-3)
+	vm.lua_pop(1)
+	
+	# Schedule callback execution on next frame
+	var scene_tree = Engine.get_main_loop() as SceneTree
+	if scene_tree:
+		var frame_callback = func():
+			execute_callback_async(callback_ref, [])
+		scene_tree.process_frame.connect(frame_callback, CONNECT_ONE_SHOT)
+	
+	return 0
 
 func _table_tostring_handler(vm: LuauVM) -> int:
 	vm.luaL_checktype(1, vm.LUA_TTABLE)

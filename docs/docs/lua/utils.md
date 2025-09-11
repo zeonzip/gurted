@@ -58,4 +58,17 @@ local clean = string.trim(messy)
 trace.log('"' .. clean .. '"')  -- "Hello World"
 ```
 
-This is particularly useful for debugging and logging complex data structures.
+### onNextFrame(callback)
+
+Schedules a function to execute on the next frame render cycle. This helps sync your code with Godot's render pipeline, eliminating stuff like flickering.
+
+```lua
+local canvas = gurt.select("#my-canvas")
+local ctx = canvas:withContext("2d")
+
+onNextFrame(function()
+    local x = math.random(0, canvas.width - 100)
+    local y = math.random(0, canvas.height - 100)
+    ctx:fillRect(x, y, 100, 100, "#ff0000")
+end)
+```

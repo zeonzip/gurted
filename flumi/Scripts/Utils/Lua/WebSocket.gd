@@ -124,6 +124,8 @@ class WebSocketWrapper:
 			# Call the function
 			var result = vm.lua_pcall(1, 0, 0)
 			if result != vm.LUA_OK:
+				var error_msg = vm.lua_tostring(-1)
+				print("WebSocket event error: ", error_msg)
 				vm.lua_pop(1)
 		else:
 			vm.lua_pop(1)  # Pop the non-function value

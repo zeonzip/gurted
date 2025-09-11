@@ -9,16 +9,32 @@ static var batch_timer: SceneTreeTimer = null
 static func emit_canvas_operation(lua_api: LuaAPI, operation: Dictionary) -> void:
 	var element_id = operation.get("element_id", "")
 	
-	if not pending_operations.has(element_id):
-		pending_operations[element_id] = []
+	# SUPER HACKY WAY TO FIX ODD ERRORS DESPITE EXISTING CHECKS
+	if element_id == "":
+		return
 	
-	pending_operations[element_id].append(operation)
+	var safe_element_id = str(element_id)
+	var ops_array = pending_operations.get(safe_element_id, null)
 	
-	if not batch_timer or batch_timer.time_left <= 0:
+	if ops_array == null or not (ops_array is Array):
+		ops_array = []
+		pending_operations[safe_element_id] = ops_array
+	
+	ops_array.append(operation)
+	
+	var should_create_timer = false
+	if batch_timer == null or not is_instance_valid(batch_timer):
+		should_create_timer = true
+	else:
+		if batch_timer.time_left <= 0:
+			should_create_timer = true
+	
+	if should_create_timer:
 		var scene_tree = lua_api.get_tree() if lua_api else Engine.get_main_loop()
 		if scene_tree:
 			batch_timer = scene_tree.create_timer(0.001) # 1ms batch window
 			batch_timer.timeout.connect(_flush_pending_operations.bind(lua_api))
+	# END HACKY WAY
 
 static func _flush_pending_operations(lua_api: LuaAPI) -> void:
 	if not lua_api or not lua_api.is_inside_tree():

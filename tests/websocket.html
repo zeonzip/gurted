@@ -114,17 +114,6 @@
 			addLog('WebSocket API demo ready')
 		end)
 
-		messageInput:on('keypress', function(e)
-			if e.key == 'Enter' and socket and connected then
-				local message = messageInput.text
-				if message and message ~= '' then
-					socket:send(message)
-					addLog('📤 Sent: ' .. message)
-					messageInput.text = ''
-				end
-			end
-		end)
-
 		updateStatus('Disconnected', 'disconnected')
 		addLog('WebSocket API demo ready')
 		addLog('Enter a WebSocket URL and click Connect to start!')
