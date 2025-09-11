@@ -46,6 +46,8 @@ func _ready():
 	update_status_bar()
 	
 	NetworkManager.register_dev_tools_network_tab(self)
+	for req in NetworkManager.get_all_requests():
+		add_network_request(req)
 
 func add_network_request(request: NetworkRequest):
 	network_requests.append(request)
