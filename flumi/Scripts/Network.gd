@@ -1,47 +1,61 @@
 extends Node
 
 func fetch_image(url: String) -> ImageTexture:
-	var http_request = HTTPRequest.new()
-	add_child(http_request)
-	
 	if url.is_empty():
 		return null
 	
 	var network_request = NetworkManager.start_request(url, "GET", false)
 	
-	var request_headers = PackedStringArray()
-	request_headers.append("User-Agent: " + UserAgent.get_user_agent())
-	
-	var headers_dict = {}
-	headers_dict["User-Agent"] = UserAgent.get_user_agent()
-	NetworkManager.set_request_headers(network_request.id, headers_dict)
-	
-	var error = http_request.request(url, request_headers)
-	if error != OK:
-		print("Error making HTTP request: ", error)
-		NetworkManager.fail_request(network_request.id, "HTTP request error: " + str(error))
-		http_request.queue_free()
-		return null
-	
-	var response = await http_request.request_completed
-	
-	var result = response[0]  # HTTPClient.Result
-	var response_code = response[1]  # int
-	var headers = response[2]  # PackedStringArray
-	var body = response[3]  # PackedByteArray
-	
-	http_request.queue_free()
-	
+	var body: PackedByteArray
+	var response_code: int
+	var headers: PackedStringArray
 	var response_headers = {}
-	for header in headers:
-		var parts = header.split(":", 1)
-		if parts.size() == 2:
-			response_headers[parts[0].strip_edges()] = parts[1].strip_edges()
 	
-	if result != HTTPRequest.RESULT_SUCCESS or response_code != 200:
-		print("Failed to fetch image. Result: ", result, " Response code: ", response_code)
-		NetworkManager.complete_request(network_request.id, response_code, "Request failed", response_headers, body.get_string_from_utf8(), body)
-		return null
+	if url.begins_with("gurt://"):
+		var gurt_body = await fetch_gurt_resource(url, true)
+		if gurt_body.is_empty():
+			return null
+		
+		body = gurt_body
+		response_code = 200
+		headers = PackedStringArray()
+	else:
+		# Handle HTTP/HTTPS URLs
+		var http_request = HTTPRequest.new()
+		add_child(http_request)
+		
+		var request_headers = PackedStringArray()
+		request_headers.append("User-Agent: " + UserAgent.get_user_agent())
+		
+		var headers_dict = {}
+		headers_dict["User-Agent"] = UserAgent.get_user_agent()
+		NetworkManager.set_request_headers(network_request.id, headers_dict)
+		
+		var error = http_request.request(url, request_headers)
+		if error != OK:
+			print("Error making HTTP request: ", error)
+			NetworkManager.fail_request(network_request.id, "HTTP request error: " + str(error))
+			http_request.queue_free()
+			return null
+		
+		var response = await http_request.request_completed
+		
+		var result = response[0]  # HTTPClient.Result
+		response_code = response[1]  # int
+		headers = response[2]  # PackedStringArray
+		body = response[3]  # PackedByteArray
+		
+		http_request.queue_free()
+		
+		for header in headers:
+			var parts = header.split(":", 1)
+			if parts.size() == 2:
+				response_headers[parts[0].strip_edges()] = parts[1].strip_edges()
+		
+		if result != HTTPRequest.RESULT_SUCCESS or response_code != 200:
+			print("Failed to fetch image. Result: ", result, " Response code: ", response_code)
+			NetworkManager.complete_request(network_request.id, response_code, "Request failed", response_headers, body.get_string_from_utf8(), body)
+			return null
 	
 	NetworkManager.complete_request(network_request.id, response_code, "OK", response_headers, body.get_string_from_utf8(), body)
 	
