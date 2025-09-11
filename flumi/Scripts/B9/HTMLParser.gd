@@ -134,15 +134,32 @@ static func is_valid_tag_pattern(tag: String) -> bool:
 func parse() -> ParseResult:
 	xml_parser.open_buffer(bitcode)
 	var element_stack: Array[HTMLElement] = [parse_result.root]
+	var body_element: HTMLElement = null
 
 	while xml_parser.read() != ERR_FILE_EOF:
 		match xml_parser.get_node_type():
 			XMLParser.NODE_ELEMENT:
 				var element = create_element()
 				var current_parent = element_stack.back()
-				element.parent = current_parent
-				current_parent.children.append(element)
-				parse_result.all_elements.append(element)
+				
+				# Handle nested body tags by preventing multiple body elements
+				if element.tag_name == "body":
+					if body_element == null:
+						# First body tag - handle normally
+						body_element = element
+						element.parent = current_parent
+						current_parent.children.append(element)
+						parse_result.all_elements.append(element)
+					else:
+						# Nested body tag -- merge its content with the existing body
+						# Don't create a new element, just change the parent context
+						if not element.is_self_closing:
+							element_stack.append(body_element)
+						continue
+				else:
+					element.parent = current_parent
+					current_parent.children.append(element)
+					parse_result.all_elements.append(element)
 				
 				if element.tag_name == "style":
 					handle_style_element(element)
@@ -152,7 +169,12 @@ func parse() -> ParseResult:
 			
 			XMLParser.NODE_ELEMENT_END:
 				if element_stack.size() > 1:
-					element_stack.pop_back()
+					var tag_name = xml_parser.get_node_name()
+					# If this is a nested body closing tag, make sure we're using the right stack context
+					if tag_name == "body" and body_element != null and element_stack.back() == body_element:
+						element_stack.pop_back()
+					elif tag_name != "body":
+						element_stack.pop_back()
 			
 			XMLParser.NODE_TEXT:
 				var text = xml_parser.get_node_data().strip_edges()
