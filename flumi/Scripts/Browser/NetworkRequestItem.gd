@@ -27,10 +27,30 @@ func _ready():
 func init(network_request: NetworkRequest, parent_tab: NetworkTab):
 	request = network_request
 	network_tab = parent_tab
-	update_display()
+	if is_node_ready():
+		update_display()
+	else:
+		call_deferred("update_display")
 
 func update_display():
 	if not request:
+		return
+	
+	if icon == null:
+		icon = get_node_or_null("HBoxContainer/IconContainer/Icon") as TextureRect
+	if name_label == null:
+		name_label = get_node_or_null("HBoxContainer/NameLabel") as Label
+	if status_label == null:
+		status_label = get_node_or_null("HBoxContainer/StatusLabel") as Label
+	if type_label == null:
+		type_label = get_node_or_null("HBoxContainer/TypeLabel") as Label
+	if size_label == null:
+		size_label = get_node_or_null("HBoxContainer/SizeLabel") as Label
+	if time_label == null:
+		time_label = get_node_or_null("HBoxContainer/TimeLabel") as Label
+	
+	if icon == null or name_label == null or status_label == null or type_label == null or size_label == null or time_label == null:
+		call_deferred("update_display")
 		return
 	
 	# Update icon

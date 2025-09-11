@@ -122,3 +122,20 @@ func get_request_stats() -> Dictionary:
 		"pending": pending_requests,
 		"total_size": total_size
 	}
+
+func add_completed_request(url: String, method: String, is_from_lua: bool, status_code: int, status_text: String, response_headers: Dictionary, response_body: String, body_bytes: PackedByteArray = [], request_headers: Dictionary = {}, request_body: String = "", time_ms: float = 0.0):
+
+	var request = NetworkRequest.new(url, method)
+	request.is_from_lua = is_from_lua
+	request.request_headers = request_headers
+	request.request_body = request_body
+
+	if time_ms > 0.0:
+		request.start_time = Time.get_ticks_msec() - time_ms
+
+	request.set_response(status_code, status_text, response_headers, response_body, body_bytes)
+
+	all_requests.append(request)
+
+	if dev_tools_network_tab:
+		dev_tools_network_tab.add_network_request(request)
