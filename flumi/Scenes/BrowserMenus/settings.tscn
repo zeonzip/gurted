@@ -205,8 +205,6 @@ script = ExtResource("1_settings")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = 900.0
-offset_bottom = 700.0
 split_offset = 250
 dragger_visibility = 2
 
@@ -321,6 +319,7 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 0
 
 [node name="GeneralPanel" type="VBoxContainer" parent="HSplitContainer/Content/ScrollContainer/ContentStack"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 20
 
@@ -490,11 +489,11 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_button")
 text = "Clear Downloads"
 
 [node name="DownloadsPanel" type="VBoxContainer" parent="HSplitContainer/Content/ScrollContainer/ContentStack"]
-visible = false
 layout_mode = 2
 theme_override_constants/separation = 20
 
 [node name="DownloadsTitle" type="Label" parent="HSplitContainer/Content/ScrollContainer/ContentStack/DownloadsPanel"]
+visible = false
 layout_mode = 2
 theme = ExtResource("2_theme")
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -529,7 +528,6 @@ button_pressed = true
 text = " Ask for confirmation for each download"
 
 [node name="AdvancedPanel" type="VBoxContainer" parent="HSplitContainer/Content/ScrollContainer/ContentStack"]
-visible = false
 layout_mode = 2
 theme_override_constants/separation = 20
 
@@ -572,7 +570,6 @@ text = "135.125.163.131:4878"
 placeholder_text = "135.125.163.131:4878"
 
 [node name="AboutPanel" type="VBoxContainer" parent="HSplitContainer/Content/ScrollContainer/ContentStack"]
-visible = false
 layout_mode = 2
 theme_override_constants/separation = 20
 

@@ -34,12 +34,16 @@ const SETTINGS_FILE = "user://browser_settings.json"
 # Settings controls - Advanced
 @onready var dns_input: LineEdit = $HSplitContainer/Content/ScrollContainer/ContentStack/AdvancedPanel/DNSSection/VBoxContainer/HBoxContainer/DNSInput
 
+@onready var version_label: Label = $HSplitContainer/Content/ScrollContainer/ContentStack/AboutPanel/AboutSection/VBoxContainer/VersionLabel
+
 # Settings are now managed by SettingsManager singleton
 
 var tab_buttons = []
 var content_panels = []
 
 func _ready():
+	version_label.text = "v" + ProjectSettings.get_setting("application/config/version")
+	
 	tab_buttons = [tab_general, tab_privacy, tab_downloads, tab_advanced, tab_about]
 	content_panels = [general_panel, privacy_panel, downloads_panel, advanced_panel, about_panel]
 	
