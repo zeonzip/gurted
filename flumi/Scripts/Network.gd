@@ -135,11 +135,12 @@ func fetch_text(url: String) -> String:
 func fetch_external_resource(url: String, base_url: String = "") -> String:
 	var resolved_url = URLUtils.resolve_url(base_url, url)
 	
-	if resolved_url.begins_with("http://") or resolved_url.begins_with("https://"):
+	if resolved_url.begins_with("https://"):
 		return await fetch_text(resolved_url)
 	elif resolved_url.begins_with("gurt://"):
 		return fetch_gurt_resource(resolved_url)
 	else:
+		print("Resource loading error: Only HTTPS and GURT protocols are supported. Attempted: ", resolved_url)
 		return ""
 
 func fetch_gurt_resource(url: String, as_binary: bool = false):

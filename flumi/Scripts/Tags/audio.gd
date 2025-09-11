@@ -102,9 +102,22 @@ func load_audio_async(src: String) -> void:
 	
 	reset_stream_state()
 	
-	if not src.begins_with("http"):
+	if src.begins_with("https://") or src.begins_with("gurt://"):
+		await load_remote_audio(src)
+	else:
+		print("Audio loading error: Only HTTPS and GURT protocols are supported. Attempted: ", src)
+		return
+
+func load_remote_audio(src: String) -> void:
+	if not (src.begins_with("https://") or src.begins_with("gurt://")):
 		return
 	
+	if src.begins_with("https://"):
+		await load_https_audio(src)
+	elif src.begins_with("gurt://"):
+		await load_gurt_audio(src)
+
+func load_https_audio(src: String) -> void:
 	var http_request = HTTPRequest.new()
 	add_child(http_request)
 	
@@ -117,6 +130,39 @@ func load_audio_async(src: String) -> void:
 	if error != OK:
 		http_request.queue_free()
 		return
+
+func load_gurt_audio(src: String) -> void:
+	var response = await Network.fetch_gurt_resource(src, true)
+	if response is PackedByteArray and response.size() > 0:
+		var audio_stream = load_audio_from_buffer(response, src)
+		if audio_stream and audio_player:
+			audio_player.stream = audio_stream
+			on_stream_loaded()
+
+func load_audio_from_buffer(data: PackedByteArray, file_path: String) -> AudioStream:
+	if data.size() == 0:
+		return null
+	
+	var extension = file_path.get_extension().to_lower()
+	var audio_stream: AudioStream
+	
+	match extension:
+		"ogg", "oga":
+			audio_stream = AudioStreamOggVorbis.load_from_buffer(data)
+		"wav", "wave":
+			audio_stream = AudioStreamWAV.new()
+			audio_stream.data = data
+			audio_stream.format = AudioStreamWAV.FORMAT_16_BITS
+			audio_stream.mix_rate = 44100
+			audio_stream.stereo = true
+			audio_stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
+		"mp3":
+			audio_stream = AudioStreamMP3.load_from_buffer(data)
+			if not audio_stream:
+				audio_stream = AudioStreamMP3.new()
+				audio_stream.data = data
+	
+	return audio_stream
 
 func _on_audio_download_completed(_result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray):
 	var http_request = get_children().filter(func(child): return child is HTTPRequest)[0]
@@ -136,29 +182,26 @@ func _on_audio_download_completed(_result: int, response_code: int, headers: Pac
 	
 	var audio_stream: AudioStream
 
+	# Determine format from content type
+	var format_extension = ""
 	if "ogg" in content_type or "vorbis" in content_type:
-		audio_stream = AudioStreamOggVorbis.load_from_buffer(body)
-		if not audio_stream:
-			return
+		format_extension = "ogg"
 	elif "wav" in content_type or "wave" in content_type:
-		audio_stream = AudioStreamWAV.new()
-		audio_stream.data = body
-		audio_stream.format = AudioStreamWAV.FORMAT_16_BITS
-		audio_stream.mix_rate = 44100
-		audio_stream.stereo = true
-		audio_stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
+		format_extension = "wav"
 	elif "mp3" in content_type or "mpeg" in content_type:
-		audio_stream = AudioStreamMP3.load_from_buffer(body)
-		if not audio_stream:
-			audio_stream = AudioStreamMP3.new()
-			audio_stream.data = body
+		format_extension = "mp3"
 	else:
-		return
+		var url_extension = current_element.get_attribute("src").get_extension().to_lower()
+		if url_extension in ["ogg", "oga", "wav", "wave", "mp3"]:
+			format_extension = url_extension
+		else:
+			return
+	
+	audio_stream = load_audio_from_buffer(body, "remote." + format_extension)
 	
 	if audio_stream:
 		if audio_player:
 			audio_player.stream = audio_stream
-			
 			on_stream_loaded()
 
 func reset_stream_state():

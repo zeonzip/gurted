@@ -124,6 +124,9 @@ static func _lua_audio_index_handler(vm: LuauVM) -> int:
 		"duration":
 			vm.lua_pushnumber(audio_node.get_duration())
 			return 1
+		"paused":
+			vm.lua_pushboolean(not audio_node.is_playing)
+			return 1
 		_:
 			# Look up other methods/properties in the table itself
 			vm.lua_rawget(1)
@@ -215,6 +218,9 @@ static func handle_dom_audio_index(vm: LuauVM, element_id: String, key: String) 
 			return 1
 		"duration":
 			vm.lua_pushnumber(audio_node.get_duration())
+			return 1
+		"paused":
+			vm.lua_pushboolean(not audio_node.is_playing)
 			return 1
 	
 	return 0

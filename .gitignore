@@ -10,3 +10,4 @@ upx*
 flumi/build-scripts/Windows
 flumi/build-scripts/Linux
 flumi/build-scripts/MacOS
+~*.dll
