@@ -147,40 +147,23 @@ jobs:
       run: |
         New-Item -ItemType Directory -Path "release-assets" -Force
         
-        # Package Rust binaries (GurtCA + Gurty)
+        # Copy Rust binaries directly (GurtCA + Gurty)
         foreach ($platform in @("linux", "windows")) {
-          $tempDir = "temp-tools-$platform"
-          New-Item -ItemType Directory -Path $tempDir -Force
-          
-          # Copy GurtCA if available
+          # Copy GurtCA binaries
           if (Test-Path "artifacts/gurtca-$platform") {
-            Copy-Item "artifacts/gurtca-$platform/*" $tempDir -Force
-          }
-          
-          # Copy Gurty if available
-          if (Test-Path "artifacts/gurty-$platform") {
-            Copy-Item "artifacts/gurty-$platform/*" $tempDir -Force
-          }
-          
-          # Package if we have any files
-          $files = Get-ChildItem $tempDir -ErrorAction SilentlyContinue
-          if ($files.Count -gt 0) {
-            if ($platform -eq "windows") {
-              Compress-Archive -Path "$tempDir/*" -DestinationPath "release-assets/gurted-tools-$platform.zip" -Force
-            } else {
-              # For Linux files, we'll use 7zip if available, otherwise skip tar.gz creation on Windows
-              if (Get-Command "7z" -ErrorAction SilentlyContinue) {
-                & "7z" a -ttar "release-assets/gurted-tools-$platform.tar" "$tempDir/*"
-                & "7z" a -tgzip "release-assets/gurted-tools-$platform.tar.gz" "release-assets/gurted-tools-$platform.tar"
-                Remove-Item "release-assets/gurted-tools-$platform.tar" -Force
-              } else {
-                # Fallback to zip for Linux binaries too
-                Compress-Archive -Path "$tempDir/*" -DestinationPath "release-assets/gurted-tools-$platform.zip" -Force
-              }
+            Get-ChildItem "artifacts/gurtca-$platform" -File | ForEach-Object {
+              $newName = $_.BaseName
+              Copy-Item $_.FullName "release-assets/$newName" -Force
             }
           }
           
-          Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+          # Copy Gurty binaries  
+          if (Test-Path "artifacts/gurty-$platform") {
+            Get-ChildItem "artifacts/gurty-$platform" -File | ForEach-Object {
+              $newName = $_.BaseName
+              Copy-Item $_.FullName "release-assets/$newName" -Force
+            }
+          }
         }
         
         # Package Flumi builds
@@ -189,11 +172,6 @@ jobs:
             Push-Location "artifacts/flumi-$platform"
             
             if ($platform -eq "windows") {
-              # Create compressed binaries package (exclude installer files)
-              $filesToZip = Get-ChildItem -Exclude "Flumi-Setup-*.exe"
-              if ($filesToZip.Count -gt 0) {
-                Compress-Archive -Path $filesToZip -DestinationPath "../../release-assets/flumi-$platform-binaries.zip" -Force
-              }
               
               # Copy installer separately if it exists
               $installer = Get-ChildItem "Flumi-Setup-*.exe" -ErrorAction SilentlyContinue
@@ -213,24 +191,6 @@ jobs:
           }
         }
         
-        # Package GDExtension separately for developers
-        foreach ($platform in @("linux", "windows")) {
-          if (Test-Path "artifacts/gdextension-$platform") {
-            Push-Location "artifacts/gdextension-$platform"
-            if ($platform -eq "windows") {
-              Compress-Archive -Path "*" -DestinationPath "../../release-assets/gdextension-$platform.zip" -Force
-            } else {
-              if (Get-Command "7z" -ErrorAction SilentlyContinue) {
-                & "7z" a -ttar "../../release-assets/gdextension-$platform.tar" "*"
-                & "7z" a -tgzip "../../release-assets/gdextension-$platform.tar.gz" "../../release-assets/gdextension-$platform.tar"
-                Remove-Item "../../release-assets/gdextension-$platform.tar" -Force
-              } else {
-                Compress-Archive -Path "*" -DestinationPath "../../release-assets/gdextension-$platform.zip" -Force
-              }
-            }
-            Pop-Location
-          }
-        }
 
     - name: Get release tag
       id: get_tag
@@ -250,26 +210,24 @@ jobs:
         name: Gurted ${{ steps.get_tag.outputs.tag }}
         body: |
           ## Gurted Release ${{ steps.get_tag.outputs.tag }}
-          
+
+          ### NOTICE: THESE BUILDS ARE NOT OFFICIAL AND CONTAIN DIFFIRENCES FROM UPSTREAM.
           This release includes:
           - **GurtCA**: Certificate Authority for TLS certificates
           - **Gurty**: CLI tool for managing GURT protocol servers  
-          - **Flumi**: The official wayfinder (browser) for the GURT ecosystem
-          - **GDExtension**: Godot extension for GURT protocol integration
+          - **Flumi**: The official browser for the GURT ecosystem
           
           ### Downloads
-          - `gurted-tools-*.zip`: Contains GurtCA and Gurty binaries
-          - `flumi-linux.*`: Contains the Flumi wayfinder application for Linux
-          - `flumi-windows-binaries.zip`: Contains compressed Flumi binaries for Windows
-          - `Flumi-Setup-*.exe`: Windows installer for Flumi (recommended for Windows users)
-          - `gdextension-*.zip`: Contains the GDExtension library for developers
+          - `gurtca`: GurtCA binaries for Linux
+          - `gurty`: Gurty binaries for Linux
+          - `gurtca`: GurtCA binaries for Windows
+          - `gurty`: Gurty binaries for Windows
+          - `flumi-linux.*`: Contains the Flumi browser for Linux
+          - `Flumi-Setup-*.exe`: Windows installer for Flumi 
           
           ### Platform Support
           - Linux (x86_64)
           - Windows (x86_64)
-          
-          ### Windows Users
-          For the best experience on Windows, download and run the `Flumi-Setup-*.exe` installer.
           
           For documentation and usage instructions, visit [docs.gurted.com](https://docs.gurted.com)
         files: release-assets/*
@@ -277,8 +235,3 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
-
-
-
