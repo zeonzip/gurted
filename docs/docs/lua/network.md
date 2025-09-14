@@ -58,12 +58,12 @@ ws:on('message', function(message)
     trace.log('Received message: ' .. message.data)
 end)
 
-ws:on('close', function(code, reason)
-    trace.log('WebSocket closed: ' .. code .. ' - ' .. reason)
+ws:on('close', function()
+    trace.log('WebSocket closed.')
 end)
 
 ws:on('error', function(error)
-    trace.log('WebSocket error: ' .. error)
+    trace.log('WebSocket error: ' .. error.message)
 end)
 
 ws:send('Hello from client!')
