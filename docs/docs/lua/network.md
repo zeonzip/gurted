@@ -54,8 +54,8 @@ ws:on('open', function()
     ws:send('Hello server!')
 end)
 
-ws:on('message', function(data)
-    trace.log('Received: ' .. data)
+ws:on('message', function(message)
+    trace.log('Received message: ' .. message.data)
 end)
 
 ws:on('close', function(code, reason)
