@@ -70,17 +70,7 @@ ws:send('Hello from client!')
 ws:send(JSON.stringify({ type = 'chat', message = 'Hello!' }))
 
 ws:close()
-
-if ws.readyState == WebSocket.OPEN then
-    ws:send('Connected message')
-end
 ```
-
-**WebSocket States:**
-- `WebSocket.CONNECTING` (0) - Connection in progress
-- `WebSocket.OPEN` (1) - Connection established
-- `WebSocket.CLOSING` (2) - Connection closing
-- `WebSocket.CLOSED` (3) - Connection closed
 
 ## URL API
 
