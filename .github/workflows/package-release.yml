@@ -9,7 +9,7 @@ on:
       tag:
         description: 'Release tag'
         required: true
-        default: 'v0.1.0'
+        default: 'v1.0.2'
       download_artifacts:
         description: 'Download latest artifacts from main branch'
         required: false
@@ -211,7 +211,6 @@ jobs:
         body: |
           ## Gurted Release ${{ steps.get_tag.outputs.tag }}
 
-          ### NOTICE: THESE BUILDS ARE NOT OFFICIAL AND CONTAIN DIFFIRENCES FROM UPSTREAM.
           This release includes:
           - **GurtCA**: Certificate Authority for TLS certificates
           - **Gurty**: CLI tool for managing GURT protocol servers  
@@ -235,3 +234,4 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
