@@ -221,7 +221,7 @@ stretch_mode = 5
 [node name="OptionsButton" type="Button" parent="VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(45, 0)
 layout_mode = 2
-focus_mode = 0
+focus_mode = 1
 theme_override_styles/focus = SubResource("StyleBoxEmpty_d1ilt")
 theme_override_styles/hover = SubResource("StyleBoxFlat_fdnlq")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_d1ilt")
