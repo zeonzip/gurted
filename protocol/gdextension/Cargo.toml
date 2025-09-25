@@ -22,7 +22,7 @@ serde_json = "1.0"
 
 [profile.release]
 opt-level = 3
-lto = false
-codegen-units = 16
+lto = true
+codegen-units = 1
 strip = true
 panic = "abort"
