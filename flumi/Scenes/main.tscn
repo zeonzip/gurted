@@ -122,7 +122,7 @@ layout_mode = 2
 [node name="Popup" type="Button" parent="VBoxContainer/TabContainer"]
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
-focus_mode = 0
+focus_mode = 1
 theme_override_styles/focus = SubResource("StyleBoxEmpty_344ge")
 theme_override_styles/hover = SubResource("StyleBoxFlat_hptm8")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_6bp64")
