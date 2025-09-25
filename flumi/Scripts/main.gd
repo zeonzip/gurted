@@ -1,9 +1,7 @@
 class_name Main
 extends Control
 
-static var gurt_clients: Dictionary = {}
-static var client_last_used: Dictionary = {}
-static var client_timeout_ms: int = 30000
+const ClientPool = preload("res://Scripts/ClientPool.gd")
 
 @onready var website_container: Control = %WebsiteContainer
 @onready var tab_container: TabManager = $VBoxContainer/TabContainer
@@ -79,38 +77,6 @@ func _ready():
 	call_deferred("update_navigation_buttons")
 	call_deferred("_handle_startup_behavior")
 
-func _cleanup_idle_clients():
-	var current_time = Time.get_ticks_msec()
-	var to_remove = []
-	
-	for domain in client_last_used:
-		if current_time - client_last_used[domain] > client_timeout_ms:
-			to_remove.append(domain)
-	
-	for domain in to_remove:
-		if gurt_clients.has(domain):
-			gurt_clients[domain].disconnect()
-			gurt_clients.erase(domain)
-		client_last_used.erase(domain)
-
-func get_or_create_gurt_client(domain: String) -> GurtProtocolClient:
-	_cleanup_idle_clients()
-	
-	if gurt_clients.has(domain):
-		client_last_used[domain] = Time.get_ticks_msec()
-		return gurt_clients[domain]
-	
-	var client = GurtProtocolClient.new()
-	
-	for ca_cert in CertificateManager.trusted_ca_certificates:
-		client.add_ca_certificate(ca_cert)
-	
-	if not client.create_client_with_dns(30, GurtProtocol.DNS_SERVER_IP, GurtProtocol.DNS_SERVER_PORT):
-		return null
-	
-	gurt_clients[domain] = client
-	client_last_used[domain] = Time.get_ticks_msec()
-	return client
 
 func _input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("DevTools"):
@@ -189,14 +155,9 @@ func fetch_gurt_content_async(gurt_url: String, tab: Tab, original_url: String, 
 func _perform_gurt_request_threaded(request_data: Dictionary) -> Dictionary:
 	var gurt_url: String = request_data.gurt_url
 	
-	var host_domain = gurt_url
-	if host_domain.begins_with("gurt://"):
-		host_domain = host_domain.substr(7)
-	var slash_pos = host_domain.find("/")
-	if slash_pos != -1:
-		host_domain = host_domain.substr(0, slash_pos)
-	
-	var client = get_or_create_gurt_client(host_domain)
+	var host_domain = ClientPool.extract_domain_from_url(gurt_url)
+
+	var client = ClientPool.get_or_create_gurt_client(host_domain)
 	if client == null:
 		return {"success": false, "error": "Failed to connect to GURT DNS server at " + GurtProtocol.DNS_SERVER_IP + ":" + str(GurtProtocol.DNS_SERVER_PORT)}
 	
@@ -329,7 +290,7 @@ func _on_search_focus_exited() -> void:
 	if not current_domain.is_empty():
 		var display_text = current_domain
 		if display_text.begins_with("gurt://"):
-			display_text = display_text.substr(7)
+			display_text = display_text.right(-7)
 		elif display_text.begins_with("file://"):
 			display_text = URLUtils.file_url_to_path(display_text)
 		search_bar.text = display_text
@@ -528,7 +489,7 @@ func render_content(html_bytes: PackedByteArray) -> void:
 			var base_url_for_scripts = current_domain
 			var query_pos = base_url_for_scripts.find("?")
 			if query_pos != -1:
-				base_url_for_scripts = base_url_for_scripts.substr(0, query_pos)
+				base_url_for_scripts = base_url_for_scripts.left(query_pos)
 			await parser.process_external_scripts(lua_api, null, base_url_for_scripts)
 	
 	var postprocess_element = parser.process_postprocess()
@@ -877,7 +838,7 @@ func update_search_bar_from_current_domain() -> void:
 	if not search_bar.has_focus() and not current_domain.is_empty():
 		var display_text = current_domain
 		if display_text.begins_with("gurt://"):
-			display_text = display_text.substr(7)
+			display_text = display_text.right(-7)
 		elif display_text.begins_with("file://"):
 			display_text = URLUtils.file_url_to_path(display_text)
 		search_bar.text = display_text
@@ -918,7 +879,7 @@ func add_to_history(url: String, tab: Tab, add_to_navigation: bool = true):
 	
 	var clean_url = url
 	if clean_url.begins_with("gurt://"):
-		clean_url = clean_url.substr(7)
+		clean_url = clean_url.right(-7)
 	
 	BrowserHistory.add_entry(clean_url, title, icon_url)
 	update_navigation_buttons()
