@@ -211,8 +211,10 @@ static func format_bytes(given_size: int) -> String:
 		return str(given_size) + " B"
 	elif given_size < 1024 * 1024:
 		return str(given_size / 1024) + " KB"
+	elif given_size < 1024 * 1024 * 1024:
+		return "%.1f MB" % (given_size / (1024.0 * 1024.0))
 	else:
-		return str(given_size / (1024.0 * 1024)) + " MB"
+		return "%.2f GB" % (given_size / (1024.0 * 1024.0 * 1024.0))
 
 func get_time_display() -> String:
 	if status == RequestStatus.PENDING:

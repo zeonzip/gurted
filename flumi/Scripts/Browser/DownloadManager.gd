@@ -85,7 +85,7 @@ func _start_download(download_id: String, url: String, save_path: String, downlo
 	}
 
 	if url.begins_with("gurt://"):
-		_download_gurt_resource(download_id, url)
+		_start_gurt_download(download_id, url)
 	else:
 		_start_http_download(download_id, url)
 
@@ -122,56 +122,115 @@ func _start_http_download(download_id: String, url: String):
 
 	var timer = Timer.new()
 	timer.name = "ProgressTimer_" + download_id
-	timer.wait_time = 0.5
+	timer.wait_time = 0.2
 	timer.timeout.connect(func(): _update_download_progress(download_id))
 	main_node.add_child(timer)
 	timer.start()
 
-func _download_gurt_resource(download_id: String, url: String):
+func _start_gurt_download(download_id: String, url: String):
 	if not active_downloads.has(download_id):
 		return
 
 	var progress_ui = active_downloads[download_id]["progress_ui"]
 	var save_path = active_downloads[download_id]["save_path"]
 
-	if progress_ui:
-		progress_ui.update_progress(0, 0, -1) # -1 indicates unknown total size
+	var client = GurtProtocolClient.new()
+	for ca in CertificateManager.trusted_ca_certificates:
+		client.add_ca_certificate(ca)
+	if not client.create_client_with_dns(30, GurtProtocol.DNS_SERVER_IP, GurtProtocol.DNS_SERVER_PORT):
+		if progress_ui:
+			progress_ui.set_error("Failed to create GURT client")
+		active_downloads.erase(download_id)
+		return
 
-	var resource_data = await Network.fetch_gurt_resource(url, true)
+	active_downloads[download_id]["gurt_client"] = client
 
+	var started_cb = Callable(self, "_on_gurt_download_started")
+	if not client.download_started.is_connected(started_cb):
+		client.download_started.connect(started_cb)
+	var progress_cb = Callable(self, "_on_gurt_download_progress")
+	if not client.download_progress.is_connected(progress_cb):
+		client.download_progress.connect(progress_cb)
+	var completed_cb = Callable(self, "_on_gurt_download_completed")
+	if not client.download_completed.is_connected(completed_cb):
+		client.download_completed.connect(completed_cb)
+	var failed_cb = Callable(self, "_on_gurt_download_failed")
+	if not client.download_failed.is_connected(failed_cb):
+		client.download_failed.connect(failed_cb)
+
+	client.start_download(download_id, url, save_path)
+
+	var poll_timer = Timer.new()
+	poll_timer.wait_time = 0.2
+	poll_timer.one_shot = false
+	poll_timer.name = "GurtPoll_" + download_id
+	poll_timer.timeout.connect(func():
+		if not active_downloads.has(download_id):
+			poll_timer.queue_free()
+			return
+		var c = active_downloads[download_id].get("gurt_client", null)
+		if c:
+			c.poll_events()
+		else:
+			poll_timer.queue_free()
+	)
+	main_node.add_child(poll_timer)
+	poll_timer.start()
+
+func _on_gurt_download_started(download_id: String, total_bytes: int):
 	if not active_downloads.has(download_id):
 		return
+	var info = active_downloads[download_id]
+	info.total_bytes = max(total_bytes, 0)
+	info.downloaded_bytes = 0
+	var ui = info.progress_ui
+	if ui:
+		ui.update_progress(0.0, 0, info.total_bytes)
 
-	if resource_data.is_empty():
-		var error_msg = "Failed to fetch gurt:// resource"
-		print(error_msg)
-		if progress_ui:
-			progress_ui.set_error(error_msg)
-		active_downloads.erase(download_id)
+func _on_gurt_download_progress(download_id: String, downloaded_bytes: int, total_bytes: int):
+	if not active_downloads.has(download_id):
 		return
+	var info = active_downloads[download_id]
+	if total_bytes > 0:
+		info.total_bytes = total_bytes
+	info.downloaded_bytes = downloaded_bytes
+	var total = info.total_bytes
+	var p = 0.0
+	if total > 0:
+		p = float(downloaded_bytes) / float(total) * 100.0
+	var ui = info.progress_ui
+	if ui:
+		ui.update_progress(p, downloaded_bytes, total)
 
-	var file = FileAccess.open(save_path, FileAccess.WRITE)
-	if not file:
-		var error_msg = "Failed to create download file: " + save_path
-		print(error_msg)
-		if progress_ui:
-			progress_ui.set_error(error_msg)
-		active_downloads.erase(download_id)
+func _on_gurt_download_completed(download_id: String, save_path: String):
+	if not active_downloads.has(download_id):
 		return
+	var info = active_downloads[download_id]
+	var path = save_path if not save_path.is_empty() else info.save_path
+	var size = 0
+	if FileAccess.file_exists(path):
+		var f = FileAccess.open(path, FileAccess.READ)
+		if f:
+			size = f.get_length()
+			f.close()
+	info.total_bytes = size
+	info.downloaded_bytes = size
+	var ui = info.progress_ui
+	if ui:
+		ui.set_completed(path)
+	_add_to_download_history(info, size, path)
+	active_downloads.erase(download_id)
 
-	file.store_buffer(resource_data)
-	file.close()
-
-	var file_size = resource_data.size()
-
-	active_downloads[download_id]["total_bytes"] = file_size
-	active_downloads[download_id]["downloaded_bytes"] = file_size
-
-	if progress_ui:
-		progress_ui.set_completed(save_path)
-
-	_add_to_download_history(active_downloads[download_id], file_size, save_path)
-
+func _on_gurt_download_failed(download_id: String, message: String):
+	if not active_downloads.has(download_id):
+		return
+	var info = active_downloads[download_id]
+	var ui = info.progress_ui
+	if ui:
+		ui.set_error(message)
+	var path = info.save_path
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(path)
 	active_downloads.erase(download_id)
 
 func _update_download_progress(download_id: String):
@@ -240,6 +299,10 @@ func _on_download_progress_cancelled(download_id: String):
 		return
 	
 	var download_info = active_downloads[download_id]
+	if download_info.has("gurt_client"):
+		var c = download_info["gurt_client"]
+		c.cancel_download(download_id)
+		return
 
 	var http_request = download_info.get("http_request", null)
 	if http_request:
