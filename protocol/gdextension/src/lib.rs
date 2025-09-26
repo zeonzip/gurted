@@ -434,15 +434,6 @@ impl GurtProtocolClient {
         self.ca_certificates.borrow().len() as i32
     }
 
-    fn emit_download_failed(&mut self, download_id: &GString, message: String) {
-        let mut owner = self.base.to_gd();
-        let args = [
-            download_id.to_variant(),
-            GString::from(message).to_variant(),
-        ];
-        owner.emit_signal("download_failed".into(), &args);
-    }
-
     fn convert_response(&self, response: GurtResponse) -> Gd<GurtGDResponse> {
         let mut gd_response = GurtGDResponse::new_gd();
 
