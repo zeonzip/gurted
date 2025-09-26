@@ -565,14 +565,7 @@ impl GurtClient {
             match timeout(Duration::from_millis(400), tls_stream.read(&mut temp_buffer)).await {
                 Ok(Ok(0)) => {
                     if headers_parsed && !head_emitted {
-                        let head = crate::message::GurtResponseHead {
-                            version: String::new(),
-                            status_code: 0,
-                            status_message: String::new(),
-                            headers: std::collections::HashMap::new(),
-                        };
-                        on_head(&head);
-                        head_emitted = true;
+                        return Err(GurtError::connection("Connection closed before response headers were fully received"));
                     }
                     break;
                 }
