@@ -145,18 +145,11 @@ func _start_gurt_download(download_id: String, url: String):
 
 	active_downloads[download_id]["gurt_client"] = client
 
-	var started_cb = Callable(self, "_on_gurt_download_started")
-	if not client.download_started.is_connected(started_cb):
-		client.download_started.connect(started_cb)
-	var progress_cb = Callable(self, "_on_gurt_download_progress")
-	if not client.download_progress.is_connected(progress_cb):
-		client.download_progress.connect(progress_cb)
-	var completed_cb = Callable(self, "_on_gurt_download_completed")
-	if not client.download_completed.is_connected(completed_cb):
-		client.download_completed.connect(completed_cb)
-	var failed_cb = Callable(self, "_on_gurt_download_failed")
-	if not client.download_failed.is_connected(failed_cb):
-		client.download_failed.connect(failed_cb)
+	client.download_started.connect(_on_gurt_download_started)
+	client.download_progress.connect(_on_gurt_download_progress)
+	client.download_completed.connect(_on_gurt_download_completed)
+	client.download_failed.connect(_on_gurt_download_failed)
+
 
 	client.start_download(download_id, url, save_path)
 
