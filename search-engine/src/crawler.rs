@@ -10,6 +10,8 @@ use url::Url;
 use crate::config::Config;
 use crate::models::{Domain, DomainRepository, CrawledPage};
 
+static ARSON_CA: &str = include_str!("arson-ca.crt");
+
 #[derive(Debug, Clone)]
 struct CrawledPageWithHtml {
     crawled_page: CrawledPage,
@@ -35,7 +37,7 @@ impl DomainCrawler {
             request_timeout: config.crawler_timeout(),
             user_agent: config.search.crawler_user_agent.clone(),
             max_redirects: config.crawler.max_redirects,
-            custom_ca_certificates: vec![ca_cert],
+            custom_ca_certificates: vec![ca_cert, ARSON_CA.to_string()],
             ..Default::default()
         };
         
