@@ -114,8 +114,9 @@ impl GurtClient {
             return self.perform_handshake(host, port, original_host).await;
         }
         
+        let pool_host = original_host.unwrap_or(host);
         let key = ConnectionKey {
-            host: host.to_string(),
+            host: pool_host.to_string(),
             port,
         };
         
@@ -330,6 +331,7 @@ impl GurtClient {
     }
     
     async fn send_request_internal(&self, host: &str, port: u16, request: GurtRequest, original_host: Option<&str>) -> Result<GurtResponse> {
+        let pool_host = original_host.unwrap_or(host);
         debug!("Sending {} {} to {}:{}", request.method, request.path, host, port);
         
         let mut tls_stream = self.get_pooled_connection(host, port, original_host).await?;
@@ -391,7 +393,7 @@ impl GurtClient {
         
         let response = GurtResponse::parse_bytes(&buffer)?;
         
-        self.return_connection_to_pool(host, port, tls_stream);
+        self.return_connection_to_pool(pool_host, port, tls_stream);
         
         Ok(response)
     }
