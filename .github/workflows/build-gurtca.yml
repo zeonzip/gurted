@@ -120,6 +120,5 @@ jobs:
       with:
         name: gurtca-${{ matrix.platform }}
         path: artifacts/${{ matrix.platform }}
-
         retention-days: 30
 
