@@ -33,6 +33,7 @@ jobs:
         name: gurtca-.*
         path: artifacts/
         if_no_artifact_found: warn
+        branch: main
       continue-on-error: true
 
     - name: Download Gurty artifacts
@@ -44,6 +45,7 @@ jobs:
         name: gurty-.*
         path: artifacts/
         if_no_artifact_found: warn
+        branch: main
       continue-on-error: true
 
     - name: Download GDExtension artifacts
@@ -55,6 +57,7 @@ jobs:
         name: gdextension-.*
         path: artifacts/
         if_no_artifact_found: warn
+        branch: main
       continue-on-error: true
 
     - name: Download Flumi artifacts
@@ -66,6 +69,7 @@ jobs:
         name: flumi-.*
         path: artifacts/
         if_no_artifact_found: warn
+        branch: main
       continue-on-error: true
 
     - name: List downloaded artifacts
@@ -248,3 +252,4 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
