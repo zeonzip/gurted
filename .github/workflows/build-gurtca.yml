@@ -79,7 +79,13 @@ jobs:
           .\vcpkg.exe integrate install
         }
         cd C:\vcpkg
-        .\vcpkg.exe install openssl:x64-windows-static-md
+        $installed = .\vcpkg.exe list | Select-String "openssl:x64-windows-static-md"
+        if (!$installed) {
+          Write-Host "Installing OpenSSL..."
+          .\vcpkg.exe install openssl:x64-windows-static-md
+        } else {
+          Write-Host "OpenSSL already installed: $installed"
+        }
       shell: pwsh
 
     - name: Set OpenSSL environment variables (Windows)
@@ -105,4 +111,5 @@ jobs:
       with:
         name: gurtca-${{ matrix.platform }}
         path: artifacts/${{ matrix.platform }}
+
         retention-days: 30
