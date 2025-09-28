@@ -26,6 +26,7 @@ pub struct GurtClientConfig {
     pub custom_ca_certificates: Vec<String>,
     pub dns_server_ip: String,
     pub dns_server_port: u16,
+    pub read_timeout: Duration,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -52,6 +53,7 @@ impl Default for GurtClientConfig {
             custom_ca_certificates: Vec::new(),
             dns_server_ip: "135.125.163.131".to_string(),
             dns_server_port: 4878,
+            read_timeout: Duration::from_secs(5),
         }
     }
 }
