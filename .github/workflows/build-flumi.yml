@@ -45,6 +45,7 @@ jobs:
         name: gdextension-${{ matrix.platform }}
         path: gdextension-artifacts
         if_no_artifact_found: warn
+        branch: main
       continue-on-error: true
 
     - name: Cache Godot installation
@@ -146,4 +147,5 @@ jobs:
       with:
         name: flumi-${{ matrix.platform }}
         path: flumi-builds/${{ matrix.platform }}
+
         retention-days: 30
