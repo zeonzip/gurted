@@ -60,31 +60,40 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y pkg-config libssl-dev
 
-    - name: Cache vcpkg (Windows)
+    - name: Cache vcpkg and OpenSSL (Windows)
       if: matrix.os == 'windows-latest'
       uses: actions/cache@v4
       with:
-        path: C:\vcpkg
-        key: ${{ runner.os }}-vcpkg-openssl
+        path: |
+          C:\vcpkg
+          C:\vcpkg\installed\x64-windows-static-md
+        key: ${{ runner.os }}-vcpkg-openssl-${{ hashFiles('.github/workflows/build-gurtca.yml') }}
         restore-keys: |
+          ${{ runner.os }}-vcpkg-openssl-
           ${{ runner.os }}-vcpkg-
 
     - name: Install OpenSSL (Windows)
       if: matrix.os == 'windows-latest'
       run: |
         if (!(Test-Path "C:\vcpkg")) {
+          Write-Host "Installing vcpkg..."
           git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
           cd C:\vcpkg
           .\bootstrap-vcpkg.bat
           .\vcpkg.exe integrate install
         }
-        cd C:\vcpkg
-        $installed = .\vcpkg.exe list | Select-String "openssl:x64-windows-static-md"
-        if (!$installed) {
-          Write-Host "Installing OpenSSL..."
-          .\vcpkg.exe install openssl:x64-windows-static-md
+        
+        # Check if OpenSSL is properly installed
+        $opensslInstalled = (Test-Path "C:\vcpkg\installed\x64-windows-static-md\lib\libssl.lib") -and 
+                           (Test-Path "C:\vcpkg\installed\x64-windows-static-md\lib\libcrypto.lib") -and
+                           (Test-Path "C:\vcpkg\installed\x64-windows-static-md\include\openssl\opensslv.h")
+        
+        if ($opensslInstalled) {
+          Write-Host "OpenSSL already installed, skipping..."
         } else {
-          Write-Host "OpenSSL already installed: $installed"
+          Write-Host "Installing OpenSSL..."
+          cd C:\vcpkg
+          .\vcpkg.exe install openssl:x64-windows-static-md
         }
       shell: pwsh
 
@@ -113,3 +122,4 @@ jobs:
         path: artifacts/${{ matrix.platform }}
 
         retention-days: 30
+
