@@ -147,5 +147,4 @@ jobs:
       with:
         name: flumi-${{ matrix.platform }}
         path: flumi-builds/${{ matrix.platform }}
-
         retention-days: 30
