@@ -562,7 +562,7 @@ impl GurtClient {
                 return Err(GurtError::timeout("Request timeout"));
             }
 
-            match timeout(Duration::from_millis(400), tls_stream.read(&mut temp_buffer)).await {
+            match timeout(self.config.read_timeout, tls_stream.read(&mut temp_buffer)).await {
                 Ok(Ok(0)) => {
                     if headers_parsed && !head_emitted {
                         return Err(GurtError::connection("Connection closed before response headers were fully received"));
