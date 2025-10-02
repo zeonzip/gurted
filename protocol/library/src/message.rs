@@ -225,6 +225,14 @@ pub struct GurtResponse {
     pub body: Vec<u8>,
 }
 
+#[derive(Debug, Clone)]
+pub struct GurtResponseHead {
+    pub version: String,
+    pub status_code: u16,
+    pub status_message: String,
+    pub headers: GurtHeaders,
+}
+
 impl GurtResponse {
     pub fn new(status_code: GurtStatusCode) -> Self {
         Self {

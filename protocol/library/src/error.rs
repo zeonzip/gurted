@@ -31,6 +31,9 @@ pub enum GurtError {
     
     #[error("Client error: {0}")]
     Client(String),
+    
+    #[error("Cancelled")]
+    Cancelled,
 }
 
 pub type Result<T> = std::result::Result<T, GurtError>;

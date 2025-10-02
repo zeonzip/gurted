@@ -26,6 +26,7 @@ pub struct GurtClientConfig {
     pub custom_ca_certificates: Vec<String>,
     pub dns_server_ip: String,
     pub dns_server_port: u16,
+    pub read_timeout: Duration,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -52,6 +53,7 @@ impl Default for GurtClientConfig {
             custom_ca_certificates: Vec::new(),
             dns_server_ip: "135.125.163.131".to_string(),
             dns_server_port: 4878,
+            read_timeout: Duration::from_secs(5),
         }
     }
 }
@@ -114,8 +116,9 @@ impl GurtClient {
             return self.perform_handshake(host, port, original_host).await;
         }
         
+        let pool_host = original_host.unwrap_or(host);
         let key = ConnectionKey {
-            host: host.to_string(),
+            host: pool_host.to_string(),
             port,
         };
         
@@ -330,6 +333,7 @@ impl GurtClient {
     }
     
     async fn send_request_internal(&self, host: &str, port: u16, request: GurtRequest, original_host: Option<&str>) -> Result<GurtResponse> {
+        let pool_host = original_host.unwrap_or(host);
         debug!("Sending {} {} to {}:{}", request.method, request.path, host, port);
         
         let mut tls_stream = self.get_pooled_connection(host, port, original_host).await?;
@@ -391,7 +395,7 @@ impl GurtClient {
         
         let response = GurtResponse::parse_bytes(&buffer)?;
         
-        self.return_connection_to_pool(host, port, tls_stream);
+        self.return_connection_to_pool(pool_host, port, tls_stream);
         
         Ok(response)
     }
@@ -526,6 +530,132 @@ impl GurtClient {
         }
         
         Ok((host, port, path))
+    }
+
+    pub async fn stream_request<HeadCb, ChunkCb>(&self,
+        host: &str,
+        port: u16,
+        mut request: GurtRequest,
+        mut on_head: HeadCb,
+        mut on_chunk: ChunkCb,
+    ) -> Result<()>
+    where
+        HeadCb: FnMut(&crate::message::GurtResponseHead) + Send,
+        ChunkCb: FnMut(&[u8]) -> bool + Send,
+    {
+        let resolved_host = self.resolve_domain(host).await?;
+        request = request.with_header("Host", host);
+
+        let mut tls_stream = self.get_pooled_connection(&resolved_host, port, Some(host)).await?;
+
+        let request_data = request.to_string();
+        tls_stream.write_all(request_data.as_bytes()).await
+            .map_err(|e| GurtError::connection(format!("Failed to write request: {}", e)))?;
+
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut temp_buffer = [0u8; 8192];
+        let start_time = std::time::Instant::now();
+        let mut headers_parsed = false;
+        let mut expected_body_length: Option<usize> = None;
+        let mut headers_end_pos: Option<usize> = None;
+        let mut head_emitted = false;
+        let mut delivered: usize = 0;
+
+        loop {
+            if start_time.elapsed() > self.config.request_timeout {
+                return Err(GurtError::timeout("Request timeout"));
+            }
+
+            match timeout(self.config.read_timeout, tls_stream.read(&mut temp_buffer)).await {
+                Ok(Ok(0)) => {
+                    if headers_parsed && !head_emitted {
+                        return Err(GurtError::connection("Connection closed before response headers were fully received"));
+                    }
+                    break;
+                }
+                Ok(Ok(n)) => {
+                    buffer.extend_from_slice(&temp_buffer[..n]);
+
+                    if !headers_parsed {
+                        if let Some(pos) = buffer.windows(4).position(|w| w == b"\r\n\r\n") {
+                            headers_end_pos = Some(pos + 4);
+                            headers_parsed = true;
+
+                            let headers_section = std::str::from_utf8(&buffer[..pos])
+                                .map_err(|e| GurtError::invalid_message(format!("Invalid UTF-8 in headers: {}", e)))?;
+
+                            let mut lines = headers_section.split("\r\n");
+                            let status_line = lines.next().unwrap_or("");
+                            let parts: Vec<&str> = status_line.splitn(3, ' ').collect();
+                            let mut version = String::new();
+                            let mut status_code: u16 = 0;
+                            let mut status_message = String::new();
+                            if parts.len() >= 2 {
+                                version = parts[0].to_string();
+                                status_code = parts[1].parse().unwrap_or(0);
+                                if parts.len() > 2 { status_message = parts[2].to_string(); }
+                            }
+
+                            let mut headers = std::collections::HashMap::new();
+                            for line in lines {
+                                if line.is_empty() { break; }
+                                if let Some(colon) = line.find(':') {
+                                    let key = line[..colon].trim().to_lowercase();
+                                    let value = line[colon+1..].trim().to_string();
+                                    if key == "content-length" { expected_body_length = value.parse().ok(); }
+                                    headers.insert(key, value);
+                                }
+                            }
+
+                            let head = crate::message::GurtResponseHead {
+                                version,
+                                status_code,
+                                status_message,
+                                headers,
+                            };
+                            on_head(&head);
+                            head_emitted = true;
+
+                            if let Some(end) = headers_end_pos {
+                                if buffer.len() > end {
+                                    let body_slice = &buffer[end..];
+                                    if !on_chunk(body_slice) {
+                                        return Err(GurtError::Cancelled);
+                                    }
+                                    delivered = body_slice.len();
+                                }
+                            }
+                        }
+                    } else {
+                        if let Some(end) = headers_end_pos {
+                            let available = buffer.len().saturating_sub(end + delivered);
+                            if available > 0 {
+                                let start = end + delivered;
+                                let end_pos = end + delivered + available;
+                                if !on_chunk(&buffer[start..end_pos]) {
+                                    return Err(GurtError::Cancelled);
+                                }
+                                delivered += available;
+                            }
+
+                            if let Some(expected_len) = expected_body_length {
+                                if delivered >= expected_len { break; }
+                            }
+                        }
+                    }
+                }
+                Ok(Err(e)) => return Err(GurtError::connection(format!("Read error: {}", e))),
+                Err(_) => continue,
+            }
+        }
+
+        if let (Some(end), Some(expected_len)) = (headers_end_pos, expected_body_length) {
+            if delivered >= expected_len {
+                self.return_connection_to_pool(&resolved_host, port, tls_stream);
+            }
+        }
+
+        Ok(())
     }
     
     async fn resolve_domain(&self, domain: &str) -> Result<String> {
